@@ -268,12 +268,12 @@ export default function FileUpload({
             Auto campaigns can be uploaded without an assigned agent. If one is
             assigned later, the leads stay available for dialing.
           </div>
-        ) : (
+        ) : campaign?.dialerType === "parallel" ? (
           <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
             Parallel caller campaigns assign leads at dial-time. No agent
             selection is needed here.
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="border-2 border-dashed border-primary-500 rounded-lg p-8 text-center bg-slate-100 dark:bg-slate-900/50 hover:bg-slate-200 dark:hover:bg-slate-900 transition cursor-pointer relative group">
