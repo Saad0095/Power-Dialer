@@ -239,6 +239,19 @@ export const uploadLeads = async (file, campaignId, agentId) => {
   return response.data;
 };
 
+export const uploadMultipleLeads = async (files, parentCampaignId) => {
+  const formData = new FormData();
+  for (const file of Array.from(files)) {
+    formData.append('files', file);
+  }
+  formData.append('parentCampaignId', parentCampaignId);
+
+  const response = await api.post('/caller-leads/upload-multi', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 export const getLeadByPhone = async (phoneNumber) => {
   const response = await api.get(`/caller-leads/phone/${encodeURIComponent(phoneNumber)}`);
   return response.data.data;

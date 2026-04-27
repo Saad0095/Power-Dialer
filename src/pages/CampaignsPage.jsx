@@ -15,6 +15,7 @@ import {
 } from "../utils/roleUtils";
 import CreateCampaignModal from "../components/modals/CreateCampaignModal";
 import EditCampaignModal from "../components/modals/EditCampaignModal";
+import FileUpload from "../components/FileUpload";
 import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -35,6 +36,8 @@ export default function CampaignsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [expandedRootIds, setExpandedRootIds] = useState(new Set());
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadParentCampaign, setUploadParentCampaign] = useState(null);
 
   const getParentName = (campaign) => {
     if (!campaign?.parentCampaign) return "None";
@@ -150,6 +153,17 @@ export default function CampaignsPage() {
   const handleEditSuccess = () => {
     setShowEditModal(false);
     showNotification("Campaign updated successfully", "success");
+    loadCampaigns();
+  };
+
+  const openUploadModal = (parentCampaign) => {
+    setUploadParentCampaign(parentCampaign);
+    setShowUploadModal(true);
+  };
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    setUploadParentCampaign(null);
     loadCampaigns();
   };
 
@@ -345,6 +359,13 @@ export default function CampaignsPage() {
                       <td className="py-3 px-4">
                         <div className="flex justify-end gap-2">
                           <button
+                            onClick={() => openUploadModal(root)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded transition text-xs cursor-pointer"
+                            title="Upload files to this parent campaign"
+                          >
+                            Upload Files
+                          </button>
+                          <button
                             onClick={() => handleEditClick(root)}
                             className="inline-flex items-center gap-1 px-3 py-1.5 bg-secondary-600 hover:bg-secondary-700 text-white rounded transition text-xs cursor-pointer"
                           >
@@ -479,6 +500,24 @@ export default function CampaignsPage() {
         }}
         onSuccess={handleEditSuccess}
       />
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Upload files to {uploadParentCampaign?.name}</h3>
+              <button onClick={closeUploadModal} className="text-sm text-slate-500 hover:text-slate-700">Close</button>
+            </div>
+            <FileUpload
+              campaignId={uploadParentCampaign?._id}
+              forceParentUpload={true}
+              disableParentSelect={true}
+              onSuccess={(msg) => showNotification(msg || 'Upload complete', 'success')}
+              onError={(msg) => showNotification(msg || 'Upload failed', 'error')}
+              onUploadComplete={() => loadCampaigns()}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
