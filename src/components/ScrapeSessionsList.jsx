@@ -11,6 +11,9 @@ const STATUS_STYLES = {
 
 export default function ScrapeSessionsList({
   sessions,
+  sessionPagination = { total: 0, page: 1, pages: 1 },
+  sessionFilters = { page: 1, limit: 10, search: "", datePreset: "all", creatorFilter: "all" },
+  setSessionFilters,
   selectedSessionId,
   setSelectedSessionId,
   handleDeleteSession,
@@ -21,64 +24,27 @@ export default function ScrapeSessionsList({
   refreshSessions,
   showNotification,
 }) {
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [datePreset, setDatePreset] = useState("all");
-  const [creatorFilter, setCreatorFilter] = useState("all");
+  const [localSearch, setLocalSearch] = useState(sessionFilters.search || "");
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
+    const t = setTimeout(() => {
+      if (sessionFilters.search !== localSearch) {
+        setSessionFilters((prev) => ({ ...prev, search: localSearch, page: 1 }));
+      }
+    }, 500);
     return () => clearTimeout(t);
-  }, [search]);
+  }, [localSearch, setSessionFilters, sessionFilters.search]);
 
-  const filteredSessions = useMemo(() => {
-    if (!sessions || sessions.length === 0) return [];
+  const handleFilterChange = (key, value) => {
+    setSessionFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+  };
 
-    return sessions.filter((s) => {
-      const created = new Date(s.createdAt);
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > sessionPagination.pages) return;
+    setSessionFilters((prev) => ({ ...prev, page: newPage }));
+  };
 
-      // SEARCH
-      if (debouncedSearch) {
-        const q = debouncedSearch;
-        const label = (formatSessionLabel(s) || "").toLowerCase();
-        const status = (s.status || "").toLowerCase();
-        if (!label.includes(q) && !status.includes(q)) return false;
-      }
 
-      // DATE PRESET
-      if (datePreset !== "all") {
-        const now = new Date();
-
-        if (datePreset === "today") {
-          const start = new Date();
-          start.setHours(0, 0, 0, 0);
-          if (created < start) return false;
-        }
-
-        if (datePreset === "7d") {
-          const past = new Date();
-          past.setDate(now.getDate() - 7);
-          if (created < past) return false;
-        }
-
-        if (datePreset === "30d") {
-          const past = new Date();
-          past.setDate(now.getDate() - 30);
-          if (created < past) return false;
-        }
-      }
-
-      // CREATED BY (manager) filter
-      if (creatorFilter && creatorFilter !== "all") {
-        const creatorId = creatorFilter;
-        const sessionCreatorId = s?.createdBy?._id || s?.createdBy;
-        if (!sessionCreatorId) return false;
-        if (String(sessionCreatorId) !== String(creatorId)) return false;
-      }
-
-      return true;
-    });
-  }, [sessions, debouncedSearch, datePreset, creatorFilter]);
 
   const managers = useMemo(() => {
     const found = agents.filter((a) => (a?.role || "").toString().toLowerCase() === "manager");
@@ -100,7 +66,7 @@ export default function ScrapeSessionsList({
 
   // Keep the select-all checkbox state (checked / indeterminate) in sync
   useEffect(() => {
-    const totalVisible = filteredSessions.length;
+    const totalVisible = sessions.length;
     const selectedCount = selectedIds.size;
     const el = selectAllRef.current;
     if (!el) return;
@@ -117,7 +83,7 @@ export default function ScrapeSessionsList({
       el.indeterminate = false;
       el.checked = false;
     }
-  }, [selectedIds, filteredSessions]);
+  }, [selectedIds, sessions]);
 
   const handleBulkDelete = async () => {
     if (!selectedIds.size) return;
@@ -168,10 +134,10 @@ export default function ScrapeSessionsList({
   };
 
   useEffect(() => {    
-    if (selectedSessionId && !filteredSessions.some((s) => s._id === selectedSessionId)) {
+    if (selectedSessionId && !sessions.some((s) => s._id === selectedSessionId)) {
       setSelectedSessionId?.(null);
     }
-  }, [filteredSessions, selectedSessionId, setSelectedSessionId]);
+  }, [sessions, selectedSessionId, setSelectedSessionId]);
 
   const formatAgentLabel = (a) => {
     if (!a) return "";
@@ -209,32 +175,34 @@ export default function ScrapeSessionsList({
 
           {/* Search */}
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search sessions..."
             className="flex-1 min-w-[180px] text-sm px-3 py-2 border rounded-md bg-white dark:bg-slate-900/20 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-primary-400 outline-none"
           />
 
-          {/* Date Preset Dropdown */}
-          <div className="relative inline-block">
-            <select
-              value={datePreset}
-              onChange={(e) => setDatePreset(e.target.value)}
-              className="text-sm pr-8 pl-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600 appearance-none"
-            >
-            <option value="all">All time</option>
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+          {/* Custom Date Range */}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={sessionFilters.startDate || ""}
+              onChange={(e) => handleFilterChange("startDate", e.target.value)}
+              className="text-sm px-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600"
+            />
+            <span className="text-slate-500 dark:text-slate-400 text-sm">to</span>
+            <input
+              type="date"
+              value={sessionFilters.endDate || ""}
+              onChange={(e) => handleFilterChange("endDate", e.target.value)}
+              className="text-sm px-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600"
+            />
           </div>
 
             {/* Created By (Managers) Dropdown */}
             <div className="relative inline-block">
               <select
-                value={creatorFilter}
-                onChange={(e) => setCreatorFilter(e.target.value)}
+                value={sessionFilters.creatorFilter}
+                onChange={(e) => handleFilterChange("creatorFilter", e.target.value)}
                 className="text-sm pr-8 pl-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600 appearance-none"
               >
                 <option value="all">All creators</option>
@@ -253,7 +221,7 @@ export default function ScrapeSessionsList({
                 type="checkbox"
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setSelectedIds(new Set(filteredSessions.map((s) => s._id)));
+                    setSelectedIds(new Set(sessions.map((s) => s._id)));
                   } else {
                     clearSelection();
                   }
@@ -276,12 +244,11 @@ export default function ScrapeSessionsList({
           </div>
 
           {/* Clear */}
-          {(search || datePreset !== "all" || creatorFilter !== "all") && (
+          {(sessionFilters.search || sessionFilters.startDate || sessionFilters.endDate || sessionFilters.creatorFilter !== "all") && (
             <button
               onClick={() => {
-                setSearch("");
-                setDatePreset("all");
-                setCreatorFilter("all");
+                setLocalSearch("");
+                setSessionFilters({ page: 1, limit: 10, search: "", startDate: "", endDate: "", creatorFilter: "all" });
               }}
               className="text-sm text-slate-500 hover:underline cursor-pointer"
             >
@@ -294,14 +261,10 @@ export default function ScrapeSessionsList({
       <div className="space-y-3 max-h-[42rem] overflow-auto pr-1">
         {sessions.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-slate-600 dark:text-slate-400">
-            {isLoadingSessions ? "Loading sessions..." : "No scraper sessions yet."}
-          </div>
-        ) : filteredSessions.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center text-slate-600 dark:text-slate-400">
-            No sessions match the current filters.
+            {isLoadingSessions ? "Loading sessions..." : "No sessions found matching criteria."}
           </div>
         ) : (
-          filteredSessions.map((session) => (
+          sessions.map((session) => (
             <div
               key={session._id}
               className={`relative rounded-lg border p-4 transition ${
@@ -394,6 +357,38 @@ export default function ScrapeSessionsList({
           ))
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {sessionPagination.total > 0 && (
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
+            Showing <span className="font-medium text-slate-900 dark:text-white">{((sessionPagination.page - 1) * sessionFilters.limit) + 1}</span> to <span className="font-medium text-slate-900 dark:text-white">{Math.min(sessionPagination.page * sessionFilters.limit, sessionPagination.total)}</span> of <span className="font-medium text-slate-900 dark:text-white">{sessionPagination.total}</span> sessions
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(sessionPagination.page - 1)}
+              disabled={sessionPagination.page <= 1}
+              className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2">
+              Page {sessionPagination.page} of {sessionPagination.pages}
+            </span>
+            <button
+              onClick={() => handlePageChange(sessionPagination.page + 1)}
+              disabled={sessionPagination.page >= sessionPagination.pages}
+              className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

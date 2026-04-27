@@ -630,8 +630,10 @@ export const startScrapeSession = async (payload) => {
   return response.data.data;
 };
 
-export const getScrapeSessions = async () => {
-  const response = await api.get('/scraper/sessions');
+export const getScrapeSessions = async (params = {}) => {
+  const queryParams = new URLSearchParams(params).toString();
+  const url = `/scraper/sessions${queryParams ? `?${queryParams}` : ''}`;
+  const response = await api.get(url);
   return response.data.data;
 };
 
@@ -640,8 +642,10 @@ export const getScrapeSession = async (sessionId) => {
   return response.data.data;
 };
 
-export const getScrapeSessionResults = async (sessionId) => {
-  const response = await api.get(`/scraper/sessions/${sessionId}/results`);
+export const getScrapeSessionResults = async (sessionId, params = {}) => {
+  const queryParams = new URLSearchParams(params).toString();
+  const url = `/scraper/sessions/${sessionId}/results${queryParams ? `?${queryParams}` : ''}`;
+  const response = await api.get(url);
   return response.data.data;
 };
 

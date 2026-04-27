@@ -101,6 +101,10 @@ export default function ScraperPage() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [results, setResults] = useState([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [filters, setFilters] = useState({ page: 1, limit: 50, hasPhone: false, hasWebsite: false, search: "" });
+  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
+  const [sessionFilters, setSessionFilters] = useState({ page: 1, limit: 10, search: "", startDate: "", endDate: "", creatorFilter: "all" });
+  const [sessionPagination, setSessionPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [campaigns, setCampaigns] = useState([]);
   const [agents, setAgents] = useState([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
@@ -140,12 +144,13 @@ export default function ScraperPage() {
     }
   };
 
-  const loadSessions = async (preferredSessionId = null, options = {}) => {
+  const loadSessions = async (preferredSessionId = null, options = {}, currentFilters = sessionFilters) => {
     const { silent = false } = options;
     try {
       if (!silent) setIsLoadingSessions(true);
-      const sessionList = await getScrapeSessions();
-      setSessions(sessionList);
+      const data = await getScrapeSessions(currentFilters);
+      setSessions(data.sessions || []);
+      setSessionPagination(data.pagination || { total: 0, page: 1, pages: 1 });
     } catch (error) {
       console.error("Failed to load scrape sessions:", error);
       showNotification?.("Failed to load scrape sessions", "error");
@@ -154,22 +159,25 @@ export default function ScraperPage() {
     }
   };
 
-  const loadSessionResults = async (sessionId) => {
+  const loadSessionResults = async (sessionId, currentFilters = filters) => {
     if (!sessionId) {
       setSelectedSession(null);
       setResults([]);
+      setPagination({ total: 0, page: 1, pages: 1 });
       return;
     }
     try {
       setIsLoadingResults(true);
-      const data = await getScrapeSessionResults(sessionId);
+      const data = await getScrapeSessionResults(sessionId, currentFilters);
       setSelectedSession(data.session);
       setResults(data.results || []);
+      setPagination(data.pagination || { total: 0, page: 1, pages: 1 });
     } catch (error) {
       console.error("Failed to load scrape results:", error);
       showNotification?.("Failed to load scrape results", "error");
       setSelectedSession(null);
       setResults([]);
+      setPagination({ total: 0, page: 1, pages: 1 });
     } finally {
       setIsLoadingResults(false);
     }
@@ -197,13 +205,28 @@ export default function ScraperPage() {
 
   useEffect(() => {
     void loadReferenceData();
-    void loadSessions();
     void loadDailyLeads();
   }, []);
 
   useEffect(() => {
-    void loadSessionResults(selectedSessionId);
+    void loadSessions(selectedSessionId, {}, sessionFilters);
+  }, [sessionFilters]);
+
+  useEffect(() => {
+    if (selectedSessionId) {
+      setFilters({ page: 1, limit: 50, hasPhone: false, hasWebsite: false, search: "" });
+    } else {
+      setSelectedSession(null);
+      setResults([]);
+      setPagination({ total: 0, page: 1, pages: 1 });
+    }
   }, [selectedSessionId]);
+
+  useEffect(() => {
+    if (selectedSessionId) {
+      void loadSessionResults(selectedSessionId, filters);
+    }
+  }, [selectedSessionId, filters]);
 
   // Poll sessions list while any job is active
   useEffect(() => {
@@ -237,9 +260,9 @@ export default function ScraperPage() {
         );
 
         if (latestSession.status === "running") {
-          const latestResults =
-            await getScrapeSessionResults(selectedSessionId);
-          setResults(latestResults.results || []);
+          const latestData = await getScrapeSessionResults(selectedSessionId, filters);
+          setResults(latestData.results || []);
+          if (latestData.pagination) setPagination(latestData.pagination);
         }
 
         if (
@@ -248,7 +271,7 @@ export default function ScraperPage() {
         ) {
           window.clearInterval(interval);
           await loadSessions(selectedSessionId);
-          await loadSessionResults(selectedSessionId);
+          await loadSessionResults(selectedSessionId, filters);
 
           if (latestSession.status === "done") {
             showNotification?.(
@@ -292,7 +315,7 @@ export default function ScraperPage() {
       });
       setForm((prev) => ({ ...prev, businessType: "", location: "" }));
       await loadSessions(response.sessionId);
-      await loadSessionResults(response.sessionId);
+      await loadSessionResults(response.sessionId, { page: 1, limit: 50, hasPhone: false, hasWebsite: false, search: "" });
       const msg =
         response.queuePosition > 1
           ? `Queued at position ${response.queuePosition}`
@@ -327,7 +350,7 @@ export default function ScraperPage() {
         "success",
       );
       await loadSessions(selectedSessionId);
-      await loadSessionResults(selectedSessionId);
+      await loadSessionResults(selectedSessionId, filters);
     } catch (error) {
       console.error("Failed to import scrape results:", error);
       showNotification?.(
@@ -385,30 +408,44 @@ export default function ScraperPage() {
     }
   };
 
-  const handleExportCsv = () => {
-    if (!results.length) return;
-    const headers = ["name", "phone", "address", "website", "mapUrl"];
-    const rows = [
-      headers.join(","),
-      ...results.map((row) =>
-        headers
-          .map((h) =>
-            h === "phone"
-              ? csvEscape(normalizeExportPhone(row.phone))
-              : csvEscape(row[h]),
-          )
-          .join(","),
-      ),
-    ];
-    const blob = new Blob([rows.join("\n")], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `scrape-${selectedSessionId || Date.now()}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleExportCsv = async () => {
+    if (!selectedSessionId) return;
+    try {
+      // Fetch all matching results for export based on current filters
+      const data = await getScrapeSessionResults(selectedSessionId, { ...filters, limit: 0 });
+      const exportResults = data.results || [];
+      
+      if (!exportResults.length) {
+        showNotification?.("No results to export", "info");
+        return;
+      }
+      
+      const headers = ["name", "phone", "address", "website", "mapUrl"];
+      const rows = [
+        headers.join(","),
+        ...exportResults.map((row) =>
+          headers
+            .map((h) =>
+              h === "phone"
+                ? csvEscape(normalizeExportPhone(row.phone))
+                : csvEscape(row[h]),
+            )
+            .join(","),
+        ),
+      ];
+      const blob = new Blob([rows.join("\n")], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `scrape-${selectedSessionId || Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+      showNotification?.("Failed to export results", "error");
+    }
   };
 
   // -------------------------------------------------------------------------
@@ -646,6 +683,9 @@ export default function ScraperPage() {
             <ScrapeResultsTable
               results={results}
               isLoadingResults={isLoadingResults}
+              pagination={pagination}
+              filters={filters}
+              setFilters={setFilters}
             />
           </div>
         </div>
@@ -665,6 +705,9 @@ export default function ScraperPage() {
           />
           <ScrapeSessionsList
             sessions={sessions}
+            sessionPagination={sessionPagination}
+            sessionFilters={sessionFilters}
+            setSessionFilters={setSessionFilters}
             selectedSessionId={selectedSessionId}
             setSelectedSessionId={setSelectedSessionId}
             handleDeleteSession={handleDeleteSession}
@@ -672,7 +715,7 @@ export default function ScraperPage() {
             isLoadingSessions={isLoadingSessions}
             isLoadingResults={isLoadingResults}
             agents={agents}
-            refreshSessions={() => void loadSessions()}
+            refreshSessions={() => void loadSessions(selectedSessionId, {}, sessionFilters)}
             showNotification={showNotification}
           />
         </div>
