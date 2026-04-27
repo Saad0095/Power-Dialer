@@ -181,6 +181,21 @@ export default function ScrapeSessionsList({
             className="flex-1 min-w-[180px] text-sm px-3 py-2 border rounded-md bg-white dark:bg-slate-900/20 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:border-primary-400 outline-none"
           />
 
+          {/* Per-page selector */}
+          <div className="relative inline-block">
+            <select
+              value={sessionFilters.limit}
+              onChange={(e) => handleFilterChange("limit", Number(e.target.value))}
+              className="text-sm pr-8 pl-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600 appearance-none"
+            >
+              <option value={10}>10 / page</option>
+              <option value={25}>25 / page</option>
+              <option value={50}>50 / page</option>
+              {/* <option value={100}>100 / page</option> */}
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+          </div>
+
           {/* Custom Date Range */}
           <div className="flex items-center gap-2">
             <input
