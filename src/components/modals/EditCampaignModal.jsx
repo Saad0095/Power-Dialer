@@ -127,20 +127,24 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
 
     setIsLoading(true);
     try {
+      // sanitize inputs to avoid sending string "null" or empty values
+      const sanitizeId = (v) => (v === undefined || v === null ? undefined : (String(v) === 'null' ? null : (v === '' ? null : v)));
+      const sanitizeArray = (arr) => (Array.isArray(arr) ? arr.map((a) => (String(a) === 'null' ? null : a)).filter(Boolean) : []);
+
       const payload = {
         name: formData.name.trim(),
         pipelineType: 'caller',
-        parentCampaign: formData.parentCampaign || null,
+        parentCampaign: sanitizeId(formData.parentCampaign) || null,
       };
 
       if (isChildCampaign) payload.dialerType = formData.dialerType;
       if (isAutoDialer) {
-        payload.assignedAgent = formData.assignedAgent;
+        payload.assignedAgent = sanitizeId(formData.assignedAgent) || null;
         payload.assignedAgents = [];
       }
       if (isParallelDialer) {
         payload.assignedAgent = null;
-        payload.assignedAgents = formData.assignedAgents;
+        payload.assignedAgents = sanitizeArray(formData.assignedAgents);
       }
 
       const updated = await updateCampaign(campaign._id, payload);
