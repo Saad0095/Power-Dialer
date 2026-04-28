@@ -17,7 +17,12 @@ import {
   TrendingUp,
   Trash2,
 } from "lucide-react";
-import { getAllAgents, getLeads, bulkDeleteLeads, deleteLead } from "../services/api";
+import {
+  getAllAgents,
+  getLeads,
+  bulkDeleteLeads,
+  deleteLead,
+} from "../services/api";
 import SmartCampaignSelector from "../components/SmartCampaignSelector";
 import LeadDetailModal from "../components/modals/LeadDetailModal";
 import EditLeadModal from "../components/modals/EditLeadModal";
@@ -62,14 +67,18 @@ export default function ManageCallerLeads() {
   const { user } = useAuth();
   const canExport = ["admin", "manager"].includes(user?.role);
   const canManageLeads = ["admin", "manager"].includes(user?.role);
-
+  const [dateFilterType, setDateFilterType] = useState("");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [dateField, setDateField] = useState("createdAt");
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [selectedDialerStatus, setSelectedDialerStatus] = useState("");
-  const [selectedDisposition, setSelectedDisposition] = useState("");
-  const [selectedAppointmentStatus, setSelectedAppointmentStatus] = useState("");
+  const [selectedDisposition, setSelectedDisposition] = useState("followup");
+  const [selectedAppointmentStatus, setSelectedAppointmentStatus] =
+    useState("");
   const [selectedAgent, setSelectedAgent] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -94,14 +103,16 @@ export default function ManageCallerLeads() {
 
   // Bulk selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
-  const allSelected = leads.length > 0 && selectedLeadIds.length === leads.length;
-  const someSelected = selectedLeadIds.length > 0 && selectedLeadIds.length < leads.length;
+  const allSelected =
+    leads.length > 0 && selectedLeadIds.length === leads.length;
+  const someSelected =
+    selectedLeadIds.length > 0 && selectedLeadIds.length < leads.length;
 
   const handleSelectLead = (leadId) => {
     setSelectedLeadIds((prev) =>
       prev.includes(leadId)
         ? prev.filter((id) => id !== leadId)
-        : [...prev, leadId]
+        : [...prev, leadId],
     );
   };
 
@@ -115,16 +126,27 @@ export default function ManageCallerLeads() {
 
   const handleBulkDelete = async () => {
     if (!selectedLeadIds.length) return;
-    if (!window.confirm(`Delete ${selectedLeadIds.length} selected lead${selectedLeadIds.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
-    
+    if (
+      !window.confirm(
+        `Delete ${selectedLeadIds.length} selected lead${selectedLeadIds.length > 1 ? "s" : ""}? This cannot be undone.`,
+      )
+    )
+      return;
+
     try {
       setIsLoading(true);
       await bulkDeleteLeads(selectedLeadIds);
-      showNotification(`Deleted ${selectedLeadIds.length} lead${selectedLeadIds.length > 1 ? 's' : ''}`, "success");
+      showNotification(
+        `Deleted ${selectedLeadIds.length} lead${selectedLeadIds.length > 1 ? "s" : ""}`,
+        "success",
+      );
       setSelectedLeadIds([]);
       loadFollowupLeads();
     } catch (e) {
-      showNotification(e.response?.data?.error || "Bulk delete failed", "error");
+      showNotification(
+        e.response?.data?.error || "Bulk delete failed",
+        "error",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +154,7 @@ export default function ManageCallerLeads() {
 
   const handleDeleteSingle = async (leadId) => {
     if (!window.confirm("Delete this lead? This cannot be undone.")) return;
-    
+
     try {
       setIsLoading(true);
       await deleteLead(leadId);
@@ -159,7 +181,13 @@ export default function ManageCallerLeads() {
         appointmentStatus: selectedAppointmentStatus || null,
         agentId: selectedAgent || null,
         assignedOnly: true,
+        filterType: dateFilterType || null,
+        startDate: customStartDate || null,
+        endDate: customEndDate || null,
+        dateField: dateField || null,
       });
+
+      console.log("Response: ", response.leads);
 
       setLeads(Array.isArray(response?.leads) ? response.leads : []);
       setTotal(response?.pagination?.total || 0);
@@ -178,7 +206,8 @@ export default function ManageCallerLeads() {
     }
   }, [
     selectedCampaignId,
-    currentPage,
+    showNotification,
+    dateField,
     pageSize,
     searchInput,
     selectedDialerStatus,
@@ -186,6 +215,9 @@ export default function ManageCallerLeads() {
     selectedAppointmentStatus,
     selectedAgent,
     showNotification,
+    dateFilterType,
+    customStartDate,
+    customEndDate,
   ]);
 
   useEffect(() => {
@@ -293,7 +325,10 @@ export default function ManageCallerLeads() {
 
   const handleCreateOffer = (lead) => {
     if (!QUALIFIED_STATUSES.has(lead?.appointmentStatus)) {
-      showNotification("Only qualified leads can be offered to clients", "error");
+      showNotification(
+        "Only qualified leads can be offered to clients",
+        "error",
+      );
       return;
     }
     setSelectedLeadForOffer(lead || null);
@@ -314,6 +349,10 @@ export default function ManageCallerLeads() {
     setSelectedDisposition("");
     setSelectedAppointmentStatus("");
     setSelectedAgent("");
+    setDateFilterType("");
+    setCustomStartDate("");
+    setCustomEndDate("");
+    setDateField("createdAt");
     setCurrentPage(1);
   };
 
@@ -677,6 +716,64 @@ export default function ManageCallerLeads() {
               Clear
             </button>
           </div>
+
+          {/* Date Filter */}
+          <div className="lg:col-span-3">
+            <select
+              value={dateFilterType}
+              onChange={(e) => {
+                setDateFilterType(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-11 flex-1 cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+            >
+              <option value="">All Time</option>
+              <option value="today">Today (7PM - 4AM)</option>
+              <option value="last7days">Last 7 Days</option>
+              <option value="month">This Month</option>
+              <option value="range">Custom Range</option>
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 ">
+            <div className="flex gap-3 items-center">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="h-11 rounded-lg border border-slate-300 px-3 bg-white text-sm text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+              />
+              <span className="text-sm text-slate-500">—</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="h-11 rounded-lg border border-slate-300 px-3 bg-white text-sm text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div className="w-full sm:w-auto">
+              <label className="sr-only">Date Field</label>
+              <select
+                value={dateField}
+                onChange={(e) => {
+                  setDateField(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-11 w-56 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <option value="createdAt">
+                  By Lead Created Date (default)
+                </option>
+                <option value="lastDialedAt">By Lead Last Dialed Date</option>
+                <option value="updatedAt">By Lead Last Updated Date</option>
+              </select>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                Choose which date the range filters by: created, dialed, or
+                updated.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Bar: Results Count + Actions */}
@@ -690,7 +787,7 @@ export default function ManageCallerLeads() {
             <span className="font-bold text-slate-900 dark:text-white">
               {total}
             </span>{" "}
-            followup leads
+            leads
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -705,6 +802,7 @@ export default function ManageCallerLeads() {
               <option value={10}>10 per page</option>
               <option value={20}>20 per page</option>
               <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
             </select>
 
             {canExport && leads.length > 0 && (
@@ -727,7 +825,7 @@ export default function ManageCallerLeads() {
         className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"
       >
         {canManageLeads && leads.length > 0 && (
-          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-2 py-3 dark:border-slate-700 dark:bg-slate-900">
             <input
               type="checkbox"
               checked={allSelected}
@@ -741,8 +839,8 @@ export default function ManageCallerLeads() {
               {allSelected
                 ? "All leads selected"
                 : someSelected
-                ? `${selectedLeadIds.length} selected`
-                : "Select leads to delete"}
+                  ? `${selectedLeadIds.length} selected`
+                  : "Select leads to delete"}
             </span>
             {selectedLeadIds.length > 0 && (
               <button
@@ -771,7 +869,7 @@ export default function ManageCallerLeads() {
               <thead className="bg-linear-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
                 <tr>
                   {canManageLeads && (
-                    <th className="px-4 py-3.5 text-left">
+                    <th className="px-2 py-2 text-left">
                       <input
                         type="checkbox"
                         checked={allSelected}
@@ -783,25 +881,28 @@ export default function ManageCallerLeads() {
                       />
                     </th>
                   )}
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Lead
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Agent
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Disposition
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Qualification
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Address
                   </th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Last Dialed
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Appointment Date & Time
                   </th>
-                  <th className="px-5 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Follow-Up Date & Time
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Actions
                   </th>
                 </tr>
@@ -813,7 +914,7 @@ export default function ManageCallerLeads() {
                     className="transition hover:bg-slate-50 dark:hover:bg-slate-700/30"
                   >
                     {canManageLeads && (
-                      <td className="px-4 py-4 text-sm">
+                      <td className="px-2 py-2 text-sm">
                         <input
                           type="checkbox"
                           checked={selectedLeadIds.includes(lead._id)}
@@ -822,7 +923,7 @@ export default function ManageCallerLeads() {
                         />
                       </td>
                     )}
-                    <td className="px-5 py-4 text-sm">
+                    <td className="px-3 py-2 text-sm">
                       <div className="flex flex-col">
                         <span className="font-semibold text-slate-900 dark:text-white">
                           {lead.businessName || "N/A"}
@@ -833,7 +934,7 @@ export default function ManageCallerLeads() {
                       </div>
                     </td>
 
-                    <td className="px-5 py-4 text-sm">
+                    <td className="px-3 py-2 text-sm">
                       <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700">
                           <User className="h-4 w-4 text-slate-600 dark:text-slate-400" />
@@ -843,7 +944,7 @@ export default function ManageCallerLeads() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm">
+                    <td className="px-3 py-2 text-sm">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${getDispositionColor(
                           lead.disposition,
@@ -853,7 +954,7 @@ export default function ManageCallerLeads() {
                           "—"}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm">
+                    <td className="px-3 py-2 text-sm">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${getAppointmentColor(
                           lead.appointmentStatus,
@@ -864,22 +965,33 @@ export default function ManageCallerLeads() {
                           .toUpperCase() || "—"}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-700 dark:text-slate-300">
+                    <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-300">
                       <span className="line-clamp-2 max-w-xs">
                         {lead.businessAddress || lead.address || "—"}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-sm">
+
+                    <td className="px-3 py-2 text-sm">
                       <div className="flex flex-col">
                         <span className="font-medium text-slate-900 dark:text-white">
-                          {formatDate(lead.lastDialedAt)}
+                          {formatDate(lead.appointmentDate)}
                         </span>
                         <span className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          {formatTime(lead.lastDialedAt)}
+                          {lead.appointmentTime}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-3 py-2 text-sm">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-900 dark:text-white">
+                          {formatDate(lead.followUpDate)}
+                        </span>
+                        <span className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          {lead.followUpTime}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleViewLead(lead._id)}

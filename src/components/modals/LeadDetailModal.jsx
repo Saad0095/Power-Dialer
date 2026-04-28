@@ -1,42 +1,48 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '../../hooks/useAuth.js';
-import { getCallerVisibleFields } from '../../utils/leadFieldConfig.js';
-import Modal from '../common/Modal.jsx';
-import { getLead, unlockManagerOffer } from '../../services/api.js';
-import { Edit3, ListChecks, User2, BadgeDollarSign, Unlock } from 'lucide-react';
+import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "../../hooks/useAuth.js";
+import { getCallerVisibleFields } from "../../utils/leadFieldConfig.js";
+import Modal from "../common/Modal.jsx";
+import { getLead, unlockManagerOffer } from "../../services/api.js";
+import {
+  Edit3,
+  ListChecks,
+  User2,
+  BadgeDollarSign,
+  Unlock,
+} from "lucide-react";
 
 const STATUS_COLORS = {
-  pending: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400',
-  dialing: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-  connected: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
-  failed: 'bg-rose-500/20 text-rose-700 dark:text-rose-400',
-  completed: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
-  new: 'bg-slate-500/20 text-slate-700 dark:text-slate-300',
-  contacted: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
-  interested: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
-  not_interested: 'bg-rose-500/20 text-rose-700 dark:text-rose-400',
-  callback: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-  converted: 'bg-emerald-600/20 text-emerald-700 dark:text-emerald-300',
-  closed: 'bg-slate-600/20 text-slate-700 dark:text-slate-300',
-  qualified: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
-  disqualified: 'bg-rose-500/20 text-rose-700 dark:text-rose-400',
-  'in-process': 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400',
-  reschedule: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-  onhold: 'bg-slate-500/20 text-slate-700 dark:text-slate-300',
+  pending: "bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
+  dialing: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  connected: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+  failed: "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+  completed: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+  new: "bg-slate-500/20 text-slate-700 dark:text-slate-300",
+  contacted: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+  interested: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+  not_interested: "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+  callback: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  converted: "bg-emerald-600/20 text-emerald-700 dark:text-emerald-300",
+  closed: "bg-slate-600/20 text-slate-700 dark:text-slate-300",
+  qualified: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+  disqualified: "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+  "in-process": "bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
+  reschedule: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  onhold: "bg-slate-500/20 text-slate-700 dark:text-slate-300",
 };
 
 const DISPOSITION_COLORS = {
-  'voicemail': 'bg-slate-500/20 text-slate-700 dark:text-slate-400',
-  'followup': 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-  'not-interested': 'bg-rose-500/20 text-rose-700 dark:text-rose-400',
-  'appointment': 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
-  'wrong-number': 'bg-orange-500/20 text-orange-700 dark:text-orange-400',
+  voicemail: "bg-slate-500/20 text-slate-700 dark:text-slate-400",
+  followup: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  "not-interested": "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+  appointment: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
+  "wrong-number": "bg-orange-500/20 text-orange-700 dark:text-orange-400",
 };
 
 const QUALIFIED_STATUSES = new Set([
-  'qualified-level-1',
-  'qualified-level-2',
-  'qualified-level-3',
+  "qualified-level-1",
+  "qualified-level-2",
+  "qualified-level-3",
 ]);
 
 export default function LeadDetailModal({
@@ -47,6 +53,14 @@ export default function LeadDetailModal({
   onEditLead,
   onCreateOffer,
 }) {
+  const formatDate = (date) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
   const { user } = useAuth();
   const visibleFields = getCallerVisibleFields(user?.role);
   const [lead, setLead] = useState(null);
@@ -59,7 +73,7 @@ export default function LeadDetailModal({
       const data = await getLead(leadId);
       setLead(data);
     } catch (error) {
-      console.error('Failed to load lead:', error);
+      console.error("Failed to load lead:", error);
     } finally {
       setIsLoading(false);
     }
@@ -83,13 +97,24 @@ export default function LeadDetailModal({
 
   if (!lead) return null;
 
-  const isManager = user?.role === 'manager';
+  const isManager = user?.role === "manager";
   const hasOffer = Boolean(lead.currentOffer);
-  const canCreateOffer = !hasOffer && onCreateOffer && QUALIFIED_STATUSES.has(lead.appointmentStatus);
-  const canUnlockOffer = hasOffer && lead.currentOffer.status === 'offered' && (user?.role === 'admin' || user?.role === 'manager');
+  const canCreateOffer =
+    !hasOffer &&
+    onCreateOffer &&
+    QUALIFIED_STATUSES.has(lead.appointmentStatus);
+  const canUnlockOffer =
+    hasOffer &&
+    lead.currentOffer.status === "offered" &&
+    (user?.role === "admin" || user?.role === "manager");
 
   const handleUnlockOffer = async () => {
-    if (!window.confirm("Unlock this offer? The client will be granted full access immediately.")) return;
+    if (
+      !window.confirm(
+        "Unlock this offer? The client will be granted full access immediately.",
+      )
+    )
+      return;
     setIsActioning(true);
     try {
       await unlockManagerOffer(lead.currentOffer._id);
@@ -103,18 +128,25 @@ export default function LeadDetailModal({
   };
 
   const renderFieldValue = (key, value) => {
-    if (!value) return '—';
-    if (key.includes('Date') || key.includes('date')) {
-      return typeof value === 'string' ? new Date(value).toLocaleDateString() : '—';
+    if (!value) return "—";
+    if (key.includes("Date") || key.includes("date")) {
+      return typeof value === "string"
+        ? new Date(value).toLocaleDateString()
+        : "—";
     }
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
     }
-    if (key === 'recordingLink') {
+    if (key === "recordingLink") {
       try {
         const url = String(value).trim();
         return (
-          <a href={url} target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary-600 hover:underline"
+          >
             {url}
           </a>
         );
@@ -133,9 +165,16 @@ export default function LeadDetailModal({
           <User2 className="w-7 h-7 text-cyan-600 dark:text-cyan-300" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">{lead.businessName || 'Lead Details'}</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
+            {lead.businessName || "Lead Details"}
+          </h2>
           {lead.contactName && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Contact: <span className="font-medium text-slate-700 dark:text-slate-200">{lead.contactName}</span></p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Contact:{" "}
+              <span className="font-medium text-slate-700 dark:text-slate-200">
+                {lead.contactName}
+              </span>
+            </p>
           )}
         </div>
       </div>
@@ -143,14 +182,18 @@ export default function LeadDetailModal({
       {/* Status & Disposition Badges */}
       <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="flex flex-col items-start">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${STATUS_COLORS[lead.dialerStatus] || 'bg-slate-600/20 text-slate-700 dark:text-slate-300'}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${STATUS_COLORS[lead.dialerStatus] || "bg-slate-600/20 text-slate-700 dark:text-slate-300"}`}
+          >
             {lead.dialerStatus}
           </span>
           <span className="text-xs text-slate-500">Dialer Status</span>
         </div>
         {lead.appointmentStatus && (
           <div className="flex flex-col items-start">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${STATUS_COLORS[lead.appointmentStatus] || 'bg-slate-600/20 text-slate-700 dark:text-slate-300'}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${STATUS_COLORS[lead.appointmentStatus] || "bg-slate-600/20 text-slate-700 dark:text-slate-300"}`}
+            >
               {lead.appointmentStatus}
             </span>
             <span className="text-xs text-slate-500">Appointment Status</span>
@@ -158,7 +201,9 @@ export default function LeadDetailModal({
         )}
         {lead.disposition && (
           <div className="flex flex-col items-start">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${DISPOSITION_COLORS[lead.disposition] || 'bg-slate-600/20 text-slate-700 dark:text-slate-300'}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${DISPOSITION_COLORS[lead.disposition] || "bg-slate-600/20 text-slate-700 dark:text-slate-300"}`}
+            >
               {lead.disposition}
             </span>
             <span className="text-xs text-slate-500">Disposition</span>
@@ -166,10 +211,14 @@ export default function LeadDetailModal({
         )}
         {isManager && (
           <div className="flex flex-col items-start">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${lead.wasPowerHour ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-slate-500/20 text-slate-700 dark:text-slate-300'}`}>
-              {lead.wasPowerHour ? 'Power Hour' : 'Normal Call'}
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${lead.wasPowerHour ? "bg-amber-500/20 text-amber-700 dark:text-amber-400" : "bg-slate-500/20 text-slate-700 dark:text-slate-300"}`}
+            >
+              {lead.wasPowerHour ? "Power Hour" : "Normal Call"}
             </span>
-            <span className="text-xs text-slate-500">Qualification Scenario</span>
+            <span className="text-xs text-slate-500">
+              Qualification Scenario
+            </span>
           </div>
         )}
       </div>
@@ -180,16 +229,26 @@ export default function LeadDetailModal({
           // Always show manager-only fields for managers even if empty
           const value = lead[field.key];
           if (
-            user?.role !== 'manager' &&
-            (!value || (typeof value === 'string' && value.trim() === ''))
-          ) return null;
+            user?.role !== "manager" &&
+            (!value || (typeof value === "string" && value.trim() === ""))
+          )
+            return null;
           return (
-            <div key={field.key} className="space-y-1 bg-slate-50 dark:bg-slate-800/40 rounded-lg p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">{field.label}</p>
-              {field.type === 'textarea' ? (
-                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{renderFieldValue(field.key, value)}</p>
+            <div
+              key={field.key}
+              className="space-y-1 bg-slate-50 dark:bg-slate-800/40 rounded-lg p-4 border border-slate-100 dark:border-slate-700 shadow-sm"
+            >
+              <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold mb-1">
+                {field.label}
+              </p>
+              {field.type === "textarea" ? (
+                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                  {renderFieldValue(field.key, value)}
+                </p>
               ) : (
-                <p className="text-base font-medium text-slate-900 dark:text-white">{renderFieldValue(field.key, value)}</p>
+                <p className="text-base font-medium text-slate-900 dark:text-white">
+                  {renderFieldValue(field.key, value)}
+                </p>
               )}
             </div>
           );
@@ -213,15 +272,16 @@ export default function LeadDetailModal({
             Edit
           </button>
         )}
-        {onStatusUpdate && (user?.role === 'manager' || user?.role === 'admin') && (
-          <button
-            onClick={() => onStatusUpdate?.(lead._id)}
-            className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-2 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-          >
-            <ListChecks className="w-4 h-4" />
-            Update Qualification
-          </button>
-        )}
+        {onStatusUpdate &&
+          (user?.role === "manager" || user?.role === "admin") && (
+            <button
+              onClick={() => onStatusUpdate?.(lead._id)}
+              className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-2 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            >
+              <ListChecks className="w-4 h-4" />
+              Update Qualification
+            </button>
+          )}
         {canCreateOffer && (
           <button
             onClick={() => onCreateOffer?.(lead)}

@@ -1,15 +1,16 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+export const AUTH_UNAUTHORIZED_EVENT = "auth:unauthorized";
 
 export const clearAuthStorage = () => {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("user");
 };
 
 const notifyUnauthorized = () => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
   }
 };
@@ -17,13 +18,13 @@ const notifyUnauthorized = () => {
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem("authToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -39,11 +40,12 @@ api.interceptors.response.use(
       notifyUnauthorized();
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 const getApiErrorMessage = (error, fallbackMessage) => {
-  const serverMessage = error.response?.data?.error || error.response?.data?.message;
+  const serverMessage =
+    error.response?.data?.error || error.response?.data?.message;
   const status = error.response?.status;
 
   if (serverMessage && status) {
@@ -71,24 +73,24 @@ const getApiErrorMessage = (error, fallbackMessage) => {
  */
 export const login = async (email, password) => {
   try {
-    console.log('🔄 API: Attempting login for email:', email);
-    const response = await api.post('/auth/login', { email, password });
-    
-    console.log('✅ API: Login successful', {
+    console.log("🔄 API: Attempting login for email:", email);
+    const response = await api.post("/auth/login", { email, password });
+
+    console.log("✅ API: Login successful", {
       user: response.data?.data?.user?.email,
-      token: response.data?.data?.token?.substring(0, 20) + '...'
+      token: response.data?.data?.token?.substring(0, 20) + "...",
     });
-    
+
     return response.data.data;
   } catch (error) {
-    console.error('❌ API: Login failed', {
+    console.error("❌ API: Login failed", {
       status: error.response?.status,
       statusText: error.response?.statusText,
       error: error.response?.data?.error,
       data: error.response?.data,
       message: error.message,
       url: error.config?.url,
-      baseURL: error.config?.baseURL
+      baseURL: error.config?.baseURL,
     });
     throw error;
   }
@@ -102,7 +104,7 @@ export const login = async (email, password) => {
  * @returns {Promise} User data
  */
 export const register = async (email, password, name) => {
-  const response = await api.post('/auth/register', { email, password, name });
+  const response = await api.post("/auth/register", { email, password, name });
   return response.data.data;
 };
 
@@ -111,7 +113,7 @@ export const register = async (email, password, name) => {
  * @returns {Promise} Current user data
  */
 export const getCurrentUser = async () => {
-  const response = await api.get('/auth/me');
+  const response = await api.get("/auth/me");
   return response.data.data;
 };
 
@@ -123,12 +125,12 @@ export const getCurrentUser = async () => {
  * @param {string} role - User role (manager or agent)
  * @returns {Promise} Created user data
  */
-export const createUser = async (email, password, name, role = 'agent') => {
-  const response = await api.post('/auth/create-user', { 
-    email, 
-    password, 
+export const createUser = async (email, password, name, role = "agent") => {
+  const response = await api.post("/auth/create-user", {
+    email,
+    password,
     name,
-    role 
+    role,
   });
   return response.data.data;
 };
@@ -140,7 +142,7 @@ export const createUser = async (email, password, name, role = 'agent') => {
  */
 export const getAllAgents = async (options = {}) => {
   const includeClients = Boolean(options?.includeClients);
-  const response = await api.get('/auth/agents', {
+  const response = await api.get("/auth/agents", {
     params: includeClients ? { includeClients: true } : undefined,
   });
   return response.data.data;
@@ -151,7 +153,7 @@ export const getAllAgents = async (options = {}) => {
  * @returns {Promise} List of all users
  */
 export const getUsers = async () => {
-  const response = await api.get('/auth/agents');
+  const response = await api.get("/auth/agents");
   return response.data.data;
 };
 
@@ -179,11 +181,14 @@ export const logout = () => {
  */
 export const logoutFromBackend = async () => {
   try {
-    const response = await api.post('/auth/logout');
-    console.log('✅ Backend logout successful');
+    const response = await api.post("/auth/logout");
+    console.log("✅ Backend logout successful");
     return response.data;
   } catch (error) {
-    console.error('⚠️ Backend logout failed (frontend logout still completed):', error.message);
+    console.error(
+      "⚠️ Backend logout failed (frontend logout still completed):",
+      error.message,
+    );
     // Still clear local storage even if backend fails
     throw error;
   }
@@ -192,23 +197,30 @@ export const logoutFromBackend = async () => {
 // ==================== Campaigns ====================
 
 export const createCampaign = async (name, options = {}) => {
-  const payload = typeof name === 'object' && name !== null
-    ? name
-    : {
-        name,
-        pipelineType: options.pipelineType || 'caller',
-        ...(options.parentCampaign ? { parentCampaign: options.parentCampaign } : {}),
-        ...(options.dialerType ? { dialerType: options.dialerType } : {}),
-        ...(options.assignedAgent ? { assignedAgent: options.assignedAgent } : {}),
-        ...(Array.isArray(options.assignedAgents) ? { assignedAgents: options.assignedAgents } : {}),
-      };
+  const payload =
+    typeof name === "object" && name !== null
+      ? name
+      : {
+          name,
+          pipelineType: options.pipelineType || "caller",
+          ...(options.parentCampaign
+            ? { parentCampaign: options.parentCampaign }
+            : {}),
+          ...(options.dialerType ? { dialerType: options.dialerType } : {}),
+          ...(options.assignedAgent
+            ? { assignedAgent: options.assignedAgent }
+            : {}),
+          ...(Array.isArray(options.assignedAgents)
+            ? { assignedAgents: options.assignedAgents }
+            : {}),
+        };
 
-  const response = await api.post('/campaigns', payload);
+  const response = await api.post("/campaigns", payload);
   return response.data.data;
 };
 
 export const getCampaigns = async () => {
-  const response = await api.get('/campaigns');
+  const response = await api.get("/campaigns");
   return response.data.data;
 };
 
@@ -230,11 +242,11 @@ export const deleteCampaign = async (id) => {
 
 export const uploadLeads = async (file, campaignId, agentId) => {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('campaignId', campaignId);
-  if (agentId) formData.append('agentId', agentId);
-  const response = await api.post('/caller-leads/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  formData.append("file", file);
+  formData.append("campaignId", campaignId);
+  if (agentId) formData.append("agentId", agentId);
+  const response = await api.post("/caller-leads/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
@@ -242,23 +254,25 @@ export const uploadLeads = async (file, campaignId, agentId) => {
 export const uploadMultipleLeads = async (files, parentCampaignId) => {
   const formData = new FormData();
   for (const file of Array.from(files)) {
-    formData.append('files', file);
+    formData.append("files", file);
   }
-  formData.append('parentCampaignId', parentCampaignId);
+  formData.append("parentCampaignId", parentCampaignId);
 
-  const response = await api.post('/caller-leads/upload-multi', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const response = await api.post("/caller-leads/upload-multi", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
 
 export const getLeadByPhone = async (phoneNumber) => {
-  const response = await api.get(`/caller-leads/phone/${encodeURIComponent(phoneNumber)}`);
+  const response = await api.get(
+    `/caller-leads/phone/${encodeURIComponent(phoneNumber)}`,
+  );
   return response.data.data;
 };
 
 export const createLead = async (payload) => {
-  const response = await api.post('/caller-leads', payload);
+  const response = await api.post("/caller-leads", payload);
   return response.data.data;
 };
 
@@ -272,21 +286,38 @@ export const getLeads = async (campaignId, options = {}) => {
     appointmentStatus = null,
     agentId = null,
     assignedOnly = false,
+    filterType = null,
+    startDate = null,
+    endDate = null,
+    dateField = null,
   } = options;
 
   let url = `/caller-leads?page=${page}&limit=${limit}`;
-  if (campaignId) url = `/caller-leads?campaignId=${campaignId}&page=${page}&limit=${limit}`;
+  if (campaignId)
+    url = `/caller-leads?campaignId=${campaignId}&page=${page}&limit=${limit}`;
   if (status) url += `&dialerStatus=${encodeURIComponent(status)}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   if (disposition) url += `&disposition=${encodeURIComponent(disposition)}`;
-  if (appointmentStatus) url += `&appointmentStatus=${encodeURIComponent(appointmentStatus)}`;
+  if (appointmentStatus)
+    url += `&appointmentStatus=${encodeURIComponent(appointmentStatus)}`;
   if (agentId) url += `&agentId=${encodeURIComponent(agentId)}`;
   if (assignedOnly) url += `&assignedOnly=true`;
+  if (filterType) url += `&filterType=${encodeURIComponent(filterType)}`;
+  if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
+  if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
+  if (dateField) url += `&dateField=${encodeURIComponent(dateField)}`;
 
+  console.log("Calling.." , url);
+  
   const response = await api.get(url);
   return {
     leads: response.data.data || [],
-    pagination: response.data.pagination || { total: 0, page, limit, totalPages: 0 },
+    pagination: response.data.pagination || {
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+    },
     stats: response.data.stats || {
       scopedTotal: 0,
       interested: 0,
@@ -304,7 +335,9 @@ export const getLead = async (id) => {
     const response = await api.get(`/caller-leads/${id}`);
     return response.data.data;
   } catch (error) {
-    const normalizedError = new Error(getApiErrorMessage(error, "Failed to load lead"));
+    const normalizedError = new Error(
+      getApiErrorMessage(error, "Failed to load lead"),
+    );
     normalizedError.status = error.response?.status;
     normalizedError.details = error.response?.data;
     throw normalizedError;
@@ -312,7 +345,9 @@ export const getLead = async (id) => {
 };
 
 export const updateQualificationStatus = async (id, status) => {
-  const response = await api.patch(`/caller-leads/${id}/qualification`, { appointmentStatus: status });
+  const response = await api.patch(`/caller-leads/${id}/qualification`, {
+    appointmentStatus: status,
+  });
   return response.data.data;
 };
 
@@ -327,7 +362,7 @@ export const deleteLead = async (id) => {
 };
 
 export const bulkDeleteLeads = async (leadIds) => {
-  const response = await api.delete('/caller-leads/bulk', {
+  const response = await api.delete("/caller-leads/bulk", {
     data: { leadIds },
   });
   return response.data;
@@ -339,24 +374,32 @@ export const updateDisposition = async (id, updates) => {
 };
 
 export const updateQualification = async (id, updates) => {
-  const response = await api.patch(`/caller-leads/${id}/qualification`, updates);
+  const response = await api.patch(
+    `/caller-leads/${id}/qualification`,
+    updates,
+  );
   return response.data.data;
 };
 
 export const getAllowedQualifications = async (leadId) => {
-  const response = await api.get(`/caller-leads/${leadId}/allowed-qualifications`);
+  const response = await api.get(
+    `/caller-leads/${leadId}/allowed-qualifications`,
+  );
   return response.data.data;
 };
 
 // ==================== Power Hour ====================
 
 export const getPowerHourStatus = async () => {
-  const response = await api.get('/power-hour/status');
+  const response = await api.get("/power-hour/status");
   return response.data.data;
 };
 
-export const startPowerHour = async (durationMinutes = 60, pipelineType = 'all') => {
-  const response = await api.post('/power-hour/start', {
+export const startPowerHour = async (
+  durationMinutes = 60,
+  pipelineType = "all",
+) => {
+  const response = await api.post("/power-hour/start", {
     durationMinutes,
     pipelineType,
   });
@@ -364,7 +407,7 @@ export const startPowerHour = async (durationMinutes = 60, pipelineType = 'all')
 };
 
 export const stopPowerHour = async () => {
-  const response = await api.post('/power-hour/stop');
+  const response = await api.post("/power-hour/stop");
   return response.data.data;
 };
 
@@ -373,24 +416,24 @@ export const stopPowerHour = async () => {
 export const startDialing = async (campaignId, agentId = null) => {
   const payload = { campaignId };
   if (agentId) payload.agentId = agentId;
-  const response = await api.post('/dialer/start', payload);
+  const response = await api.post("/dialer/start", payload);
   return response.data;
 };
 
 export const startAgentAutoDialing = async (campaignId, agentId) => {
-  const response = await api.post('/dialer/start', { campaignId, agentId });
+  const response = await api.post("/dialer/start", { campaignId, agentId });
   return response.data;
 };
 
 export const stopDialing = async (campaignId, agentId = null) => {
   const payload = { campaignId };
   if (agentId) payload.agentId = agentId;
-  const response = await api.post('/dialer/stop', payload);
+  const response = await api.post("/dialer/stop", payload);
   return response.data;
 };
 
 export const stopAgentAutoDialing = async (campaignId, agentId) => {
-  const response = await api.post('/dialer/stop', { campaignId, agentId });
+  const response = await api.post("/dialer/stop", { campaignId, agentId });
   return response.data;
 };
 
@@ -400,7 +443,9 @@ export const getDialerStatus = async (campaignId) => {
 };
 
 export const getAgentAutoDialerStatus = async (campaignId, agentId) => {
-  const response = await api.get(`/dialer/status?campaignId=${campaignId}&agentId=${agentId}`);
+  const response = await api.get(
+    `/dialer/status?campaignId=${campaignId}&agentId=${agentId}`,
+  );
   return response.data.data;
 };
 
@@ -451,9 +496,13 @@ export const getDailyAgentCallCounts = async (hours = 12, date = null) => {
     ? Math.max(1, Math.min(72, Math.floor(Number(hours))))
     : 12;
 
-  const queryParams = date ? `?date=${encodeURIComponent(date)}` : `?hours=${sanitizedHours}`;
-  const response = await api.get(`/dialer/calls/daily-agent-counts${queryParams}`);
-  
+  const queryParams = date
+    ? `?date=${encodeURIComponent(date)}`
+    : `?hours=${sanitizedHours}`;
+  const response = await api.get(
+    `/dialer/calls/daily-agent-counts${queryParams}`,
+  );
+
   return response.data.data;
 };
 
@@ -497,7 +546,9 @@ export const completeCall = async (leadId, data) => {
  * @returns {Promise} Updated lead with followUpDate
  */
 export const scheduleCallback = async (leadId, followUpDate) => {
-  const response = await api.patch(`/caller-leads/${leadId}/disposition`, { followUpDate });
+  const response = await api.patch(`/caller-leads/${leadId}/disposition`, {
+    followUpDate,
+  });
   return response.data.data;
 };
 
@@ -507,7 +558,10 @@ export const scheduleCallback = async (leadId, followUpDate) => {
  * @returns {Promise} Updated lead
  */
 export const cancelCallback = async (leadId) => {
-  const response = await api.patch(`/caller-leads/${leadId}/disposition`, { followUpDate: null, disposition: 'followup' });
+  const response = await api.patch(`/caller-leads/${leadId}/disposition`, {
+    followUpDate: null,
+    disposition: "followup",
+  });
   return response.data.data;
 };
 
@@ -518,7 +572,7 @@ export const cancelCallback = async (leadId) => {
  * @returns {Promise} List of available agents
  */
 export const getAvailableAgents = async () => {
-  const response = await api.get('/auth/agents/available');
+  const response = await api.get("/auth/agents/available");
   return response.data.data;
 };
 
@@ -529,57 +583,67 @@ export const getAvailableAgents = async () => {
  * @returns {Promise} Updated agent
  */
 export const updateAgentAvailability = async (agentId, isAvailable) => {
-  const response = await api.put(`/auth/agents/${agentId}/availability`, { isAvailable });
+  const response = await api.put(`/auth/agents/${agentId}/availability`, {
+    isAvailable,
+  });
   return response.data.data;
 };
 
-export const setMyDirectCallStatus = async (inCall, provider = 'direct') => {
-  const response = await api.put('/auth/me/call-status', { inCall, provider });
+export const setMyDirectCallStatus = async (inCall, provider = "direct") => {
+  const response = await api.put("/auth/me/call-status", { inCall, provider });
   return response.data.data;
 };
 
 export const checkIn = async () => {
-  const response = await api.post('/auth/attendance/check-in');
+  const response = await api.post("/auth/attendance/check-in");
   return response.data.data;
 };
 
 export const checkOut = async () => {
-  const response = await api.post('/auth/attendance/check-out');
+  const response = await api.post("/auth/attendance/check-out");
   return response.data.data;
 };
 
 export const startBreak = async () => {
-  const response = await api.post('/auth/attendance/break/start');
+  const response = await api.post("/auth/attendance/break/start");
   return response.data.data;
 };
 
 export const endBreak = async () => {
-  const response = await api.post('/auth/attendance/break/end');
+  const response = await api.post("/auth/attendance/break/end");
   return response.data.data;
 };
 
 export const getMyAttendance = async () => {
-  const response = await api.get('/auth/attendance/me');
+  const response = await api.get("/auth/attendance/me");
   return response.data.data;
 };
 
 export const managerCheckInAgent = async (agentId) => {
-  const response = await api.post(`/auth/attendance/agents/${agentId}/check-in`);
+  const response = await api.post(
+    `/auth/attendance/agents/${agentId}/check-in`,
+  );
   return response.data.data;
 };
 
 export const managerCheckOutAgent = async (agentId) => {
-  const response = await api.post(`/auth/attendance/agents/${agentId}/check-out`);
+  const response = await api.post(
+    `/auth/attendance/agents/${agentId}/check-out`,
+  );
   return response.data.data;
 };
 
 export const managerStartAgentBreak = async (agentId) => {
-  const response = await api.post(`/auth/attendance/agents/${agentId}/break/start`);
+  const response = await api.post(
+    `/auth/attendance/agents/${agentId}/break/start`,
+  );
   return response.data.data;
 };
 
 export const managerEndAgentBreak = async (agentId) => {
-  const response = await api.post(`/auth/attendance/agents/${agentId}/break/end`);
+  const response = await api.post(
+    `/auth/attendance/agents/${agentId}/break/end`,
+  );
   return response.data.data;
 };
 
@@ -589,12 +653,16 @@ export const managerEndAgentBreak = async (agentId) => {
  * @param {string} endDate - ISO date string
  * @param {string} agentId - Optional agent ID filter
  */
-export const getAttendanceHistory = async (startDate, endDate, agentId = null) => {
+export const getAttendanceHistory = async (
+  startDate,
+  endDate,
+  agentId = null,
+) => {
   let url = `/auth/attendance/history?`;
   if (startDate) url += `startDate=${encodeURIComponent(startDate)}&`;
   if (endDate) url += `endDate=${encodeURIComponent(endDate)}&`;
   if (agentId) url += `agentId=${agentId}&`;
-  
+
   const response = await api.get(url);
   return response.data.data;
 };
@@ -604,7 +672,7 @@ export const getAttendanceHistory = async (startDate, endDate, agentId = null) =
  * @returns {Promise} List of agents with stats
  */
 export const getAgentStats = async () => {
-  const response = await api.get('/auth/agents/stats');
+  const response = await api.get("/auth/agents/stats");
   return response.data.data;
 };
 
@@ -617,7 +685,9 @@ export const getAgentStats = async () => {
  * @returns {Promise} Updated lead
  */
 export const assignLead = async (leadId, agentId) => {
-  const response = await api.put(`/caller-leads/${leadId}`, { assignedCaller: agentId });
+  const response = await api.put(`/caller-leads/${leadId}`, {
+    assignedCaller: agentId,
+  });
   return response.data.data;
 };
 
@@ -630,7 +700,9 @@ export const assignLead = async (leadId, agentId) => {
 export const assignLeadsToAgent = async (leadIds, agentId) => {
   const results = [];
   for (const leadId of leadIds) {
-    const response = await api.put(`/caller-leads/${leadId}`, { assignedCaller: agentId });
+    const response = await api.put(`/caller-leads/${leadId}`, {
+      assignedCaller: agentId,
+    });
     results.push(response.data.data);
   }
   return results;
@@ -639,13 +711,13 @@ export const assignLeadsToAgent = async (leadIds, agentId) => {
 // ==================== Scraper ====================
 
 export const startScrapeSession = async (payload) => {
-  const response = await api.post('/scraper/start', payload);
+  const response = await api.post("/scraper/start", payload);
   return response.data.data;
 };
 
 export const getScrapeSessions = async (params = {}) => {
   const queryParams = new URLSearchParams(params).toString();
-  const url = `/scraper/sessions${queryParams ? `?${queryParams}` : ''}`;
+  const url = `/scraper/sessions${queryParams ? `?${queryParams}` : ""}`;
   const response = await api.get(url);
   return response.data.data;
 };
@@ -657,7 +729,7 @@ export const getScrapeSession = async (sessionId) => {
 
 export const getScrapeSessionResults = async (sessionId, params = {}) => {
   const queryParams = new URLSearchParams(params).toString();
-  const url = `/scraper/sessions/${sessionId}/results${queryParams ? `?${queryParams}` : ''}`;
+  const url = `/scraper/sessions/${sessionId}/results${queryParams ? `?${queryParams}` : ""}`;
   const response = await api.get(url);
   return response.data.data;
 };
@@ -669,7 +741,10 @@ export const getDailyScrapeLeads = async (days = 1) => {
 };
 
 export const importScrapeSessionResults = async (sessionId, payload) => {
-  const response = await api.post(`/scraper/sessions/${sessionId}/import`, payload);
+  const response = await api.post(
+    `/scraper/sessions/${sessionId}/import`,
+    payload,
+  );
   return response.data;
 };
 
@@ -691,11 +766,17 @@ export const cancelScrapeSession = async (sessionId) => {
  * @param {string} [timeframe] - all | month | week | today
  * @param {string} [campaignId]
  */
-export const getAgentEarningsSummary = async ({ agentId, timeframe = "all", campaignId }) => {
+export const getAgentEarningsSummary = async ({
+  agentId,
+  timeframe = "all",
+  campaignId,
+}) => {
   const params = new URLSearchParams();
   if (timeframe) params.append("timeframe", timeframe);
   if (campaignId) params.append("campaignId", campaignId);
-  const response = await api.get(`/earnings/summary/${agentId}?${params.toString()}`);
+  const response = await api.get(
+    `/earnings/summary/${agentId}?${params.toString()}`,
+  );
   return response.data.data;
 };
 
@@ -705,7 +786,11 @@ export const getAgentEarningsSummary = async ({ agentId, timeframe = "all", camp
  * @param {string} [timeframe]
  * @param {number} [limit]
  */
-export const getAgentEarningsLeaderboard = async ({ campaignId, timeframe = "all", limit = 10 } = {}) => {
+export const getAgentEarningsLeaderboard = async ({
+  campaignId,
+  timeframe = "all",
+  limit = 10,
+} = {}) => {
   const params = new URLSearchParams();
   if (campaignId) params.append("campaignId", campaignId);
   if (timeframe) params.append("timeframe", timeframe);
@@ -722,18 +807,26 @@ export const getAgentEarningsLeaderboard = async ({ campaignId, timeframe = "all
 export const getQualificationBreakdown = async ({ agentId, campaignId }) => {
   const params = new URLSearchParams();
   if (campaignId) params.append("campaignId", campaignId);
-  const response = await api.get(`/earnings/breakdown/${agentId}?${params.toString()}`);
+  const response = await api.get(
+    `/earnings/breakdown/${agentId}?${params.toString()}`,
+  );
   return response.data.data;
 };
 
 export const getMonthlyEarningsHistory = async ({ agentId } = {}) => {
   const params = new URLSearchParams();
   if (agentId) params.append("agentId", agentId);
-  const response = await api.get(`/earnings/monthly-history?${params.toString()}`);
+  const response = await api.get(
+    `/earnings/monthly-history?${params.toString()}`,
+  );
   return response.data.data;
 };
 
-export const getDetailedEarningsHistory = async ({ agentId, page = 1, limit = 20 } = {}) => {
+export const getDetailedEarningsHistory = async ({
+  agentId,
+  page = 1,
+  limit = 20,
+} = {}) => {
   const params = new URLSearchParams();
   if (agentId) params.append("agentId", agentId);
   if (page) params.append("page", page);
