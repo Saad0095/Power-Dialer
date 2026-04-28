@@ -1,5 +1,10 @@
 import { Upload, AlertCircle, CheckCircle } from "lucide-react";
-import { uploadLeads, uploadMultipleLeads, getCampaignById, getCampaigns } from "../services/api";
+import {
+  uploadLeads,
+  uploadMultipleLeads,
+  getCampaignById,
+  getCampaigns,
+} from "../services/api";
 import { useState, useContext, useEffect } from "react";
 import { LeadsContext } from "../context/LeadsContext";
 
@@ -23,12 +28,13 @@ export default function FileUpload({
   const [selectedParent, setSelectedParent] = useState(null);
   const [importSummary, setImportSummary] = useState([]);
   const leadsCtx = useContext(LeadsContext);
-  
-  const summaryStorageKey = (parentId) => `importSummary:${parentId || 'global'}`;
+
+  const summaryStorageKey = (parentId) =>
+    `importSummary:${parentId || "global"}`;
 
   // restore persisted summary for this parent on mount / when selectedParent changes
   useEffect(() => {
-    const parentIdToUse = selectedParent || campaignId || 'global';
+    const parentIdToUse = selectedParent || campaignId || "global";
     try {
       const raw = sessionStorage.getItem(summaryStorageKey(parentIdToUse));
       if (raw) {
@@ -39,14 +45,16 @@ export default function FileUpload({
       // ignore parse errors
     }
   }, [selectedParent, campaignId]);
-  const navigate = (typeof window !== 'undefined' && window.location) ? null : null;
+  const navigate =
+    typeof window !== "undefined" && window.location ? null : null;
 
   const handleOpenChildCampaign = (campaignId) => {
     try {
       // navigate via location to preserve simple behavior
-      if (campaignId) window.location.href = `/manager/leads?campaignId=${campaignId}`;
+      if (campaignId)
+        window.location.href = `/manager/leads?campaignId=${campaignId}`;
     } catch (err) {
-      console.error('Failed to open campaign leads', err);
+      console.error("Failed to open campaign leads", err);
     }
   };
 
@@ -98,12 +106,12 @@ export default function FileUpload({
     const fileName = file.name.toLowerCase();
     const validExtensions = [".csv", ".xlsx", ".xls"];
     const hasValidExtension = validExtensions.some((ext) =>
-      fileName.endsWith(ext)
+      fileName.endsWith(ext),
     );
 
     if (!hasValidExtension) {
       setFileError(
-        "Invalid file type. Only CSV and Excel files (.csv, .xlsx, .xls) are allowed."
+        "Invalid file type. Only CSV and Excel files (.csv, .xlsx, .xls) are allowed.",
       );
       return false;
     }
@@ -113,7 +121,7 @@ export default function FileUpload({
     if (file.size > maxSize) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       setFileError(
-        `File size (${sizeMB}MB) exceeds maximum limit of 5MB. Please reduce the file size.`
+        `File size (${sizeMB}MB) exceeds maximum limit of 5MB. Please reduce the file size.`,
       );
       return false;
     }
@@ -143,7 +151,10 @@ export default function FileUpload({
 
     // Determine multi-upload mode: either explicit parent-upload toggle OR selected campaign is a parent
     // also honor forceParentUpload prop
-    const isParentCampaign = forceParentUpload || isParentUpload || (campaign && !campaign.parentCampaign);
+    const isParentCampaign =
+      forceParentUpload ||
+      isParentUpload ||
+      (campaign && !campaign.parentCampaign);
 
     // Validate each file
     for (const f of Array.from(selectedFiles)) {
@@ -179,7 +190,7 @@ export default function FileUpload({
       let response;
 
       // clear previous summary (and persisted) before new upload
-      const parentIdToUse = selectedParent || campaignId || 'global';
+      const parentIdToUse = selectedParent || campaignId || "global";
       setImportSummary([]);
       try {
         sessionStorage.removeItem(summaryStorageKey(parentIdToUse));
@@ -195,11 +206,15 @@ export default function FileUpload({
         if (Array.isArray(response)) results = response;
         else if (Array.isArray(response?.data)) results = response.data;
         else if (Array.isArray(response?.results)) results = response.results;
-        else if (Array.isArray(response?.data?.data)) results = response.data.data;
+        else if (Array.isArray(response?.data?.data))
+          results = response.data.data;
         else results = [];
         setImportSummary(results);
         try {
-          sessionStorage.setItem(summaryStorageKey(parentIdToUse), JSON.stringify(results));
+          sessionStorage.setItem(
+            summaryStorageKey(parentIdToUse),
+            JSON.stringify(results),
+          );
         } catch (err) {
           // ignore storage errors
         }
@@ -209,7 +224,7 @@ export default function FileUpload({
         response = await uploadLeads(
           file,
           campaignId,
-          campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined
+          campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined,
         );
       }
 
@@ -218,9 +233,11 @@ export default function FileUpload({
 
       // show success or summary message
       if (isParentCampaign) {
-        onSuccess("Files imported — see summary below");
+        onSuccess("Files imported — see summary below", null);
       } else {
-        onSuccess(`Upload complete`);
+        // Pass back response.data so callers can read failedRows
+        const responseData = response?.data ?? response ?? null;
+        onSuccess(responseData?.message || "Upload complete", responseData);
       }
 
       // Refresh the parent count and the table data after a successful upload
@@ -235,7 +252,7 @@ export default function FileUpload({
       }
 
       // Reset after 1.5 seconds
-        setTimeout(() => {
+      setTimeout(() => {
         setUploadProgress(0);
         e.target.value = "";
       }, 1500);
@@ -281,7 +298,9 @@ export default function FileUpload({
           type="file"
           accept=".csv,.xlsx,.xls"
           onChange={handleFileUpload}
-          disabled={(!campaignId && !selectedParent) || isLoading || uploadProgress > 0}
+          disabled={
+            (!campaignId && !selectedParent) || isLoading || uploadProgress > 0
+          }
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
           multiple={isParentUpload || (campaign && !campaign.parentCampaign)}
         />
@@ -318,48 +337,67 @@ export default function FileUpload({
       )}
       {/* Parent upload option */}
       <div className="mt-4">
-      {!disableParentSelect && (
-        <>
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isParentUpload}
-              onChange={(ev) => setIsParentUpload(ev.target.checked)}
-              className="form-checkbox"
-            />
-            <span className="text-sm text-slate-700 dark:text-slate-300">Upload to parent campaign (create child campaigns per file)</span>
-          </label>
+        {!disableParentSelect && (
+          <>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isParentUpload}
+                onChange={(ev) => setIsParentUpload(ev.target.checked)}
+                className="form-checkbox"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                Upload to parent campaign (create child campaigns per file)
+              </span>
+            </label>
 
-          {isParentUpload && (
-            <div className="mt-2">
-              <label className="block text-sm text-slate-600 dark:text-slate-400">Select parent campaign</label>
-              <select
-                value={selectedParent || ""}
-                onChange={(e) => setSelectedParent(e.target.value || null)}
-                className="mt-1 block w-full rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm p-2"
-              >
-                <option value="">-- choose parent campaign --</option>
-                {parentOptions.map((p) => (
-                  <option key={p._id} value={p._id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </>
-      )}
+            {isParentUpload && (
+              <div className="mt-2">
+                <label className="block text-sm text-slate-600 dark:text-slate-400">
+                  Select parent campaign
+                </label>
+                <select
+                  value={selectedParent || ""}
+                  onChange={(e) => setSelectedParent(e.target.value || null)}
+                  className="mt-1 block w-full rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm p-2"
+                >
+                  <option value="">-- choose parent campaign --</option>
+                  {parentOptions.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
       </div>
       {importSummary && importSummary.length > 0 && (
         <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
-          <h3 className="text-sm font-semibold mb-2 text-slate-900 dark:text-white">Import Summary</h3>
+          <h3 className="text-sm font-semibold mb-2 text-slate-900 dark:text-white">
+            Import Summary
+          </h3>
           <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-2">
             {importSummary.map((item, idx) => (
-              <li key={item.campaignId || item.file || idx} className="flex items-center justify-between">
+              <li
+                key={item.campaignId || item.file || idx}
+                className="flex items-center justify-between"
+              >
                 <div>
-                  <strong className="block">{item.campaignName || item.file || 'Unnamed'}</strong>
-                  {item.reason ? <span className="text-rose-600 text-xs">{item.reason}</span> : null}
+                  <strong className="block">
+                    {item.campaignName || item.file || "Unnamed"}
+                  </strong>
+                  {item.reason ? (
+                    <span className="text-rose-600 text-xs">{item.reason}</span>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500 text-sm">{typeof item.imported === 'number' ? `${item.imported} leads` : ''}</span>
+                  <span className="text-slate-500 text-sm">
+                    {typeof item.imported === "number"
+                      ? `${item.imported} leads`
+                      : ""}
+                  </span>
                   {item.campaignId ? (
                     <button
                       onClick={() => handleOpenChildCampaign(item.campaignId)}
@@ -375,7 +413,7 @@ export default function FileUpload({
           <div className="mt-3 text-right">
             <button
               onClick={() => {
-                const parentIdToUse = selectedParent || campaignId || 'global';
+                const parentIdToUse = selectedParent || campaignId || "global";
                 setImportSummary([]);
                 try {
                   sessionStorage.removeItem(summaryStorageKey(parentIdToUse));
@@ -471,7 +509,7 @@ export default function FileUpload({
 
 //   const handleFileUpload = async (e) => {
 //     const file = e.target.files[0];
-    
+
 //     if (!validateFile(file)) {
 //       e.target.value = ""; // Reset input
 //       return;
@@ -500,7 +538,7 @@ export default function FileUpload({
 //       }, 200);
 
 //       const response = await uploadLeads(file, campaignId, campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined);
-      
+
 //       clearInterval(progressInterval);
 //       setUploadProgress(100);
 

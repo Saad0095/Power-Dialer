@@ -38,6 +38,7 @@ export default function CampaignsPage() {
   const [expandedRootIds, setExpandedRootIds] = useState(new Set());
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadParentCampaign, setUploadParentCampaign] = useState(null);
+const [uploadFailedRows, setUploadFailedRows] = useState([]);
 
   const getParentName = (campaign) => {
     if (!campaign?.parentCampaign) return "None";
@@ -162,10 +163,11 @@ export default function CampaignsPage() {
   };
 
   const closeUploadModal = () => {
-    setShowUploadModal(false);
-    setUploadParentCampaign(null);
-    loadCampaigns();
-  };
+  setShowUploadModal(false);
+  setUploadParentCampaign(null);
+  setUploadFailedRows([]);
+  loadCampaigns();
+};
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -500,7 +502,7 @@ export default function CampaignsPage() {
         }}
         onSuccess={handleEditSuccess}
       />
-      {showUploadModal && (
+      {/* {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -517,7 +519,92 @@ export default function CampaignsPage() {
             />
           </div>
         </div>
+      )} */}
+      {showUploadModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="w-full max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+          Upload files to {uploadParentCampaign?.name}
+        </h3>
+        <button
+          onClick={closeUploadModal}
+          className="text-sm text-slate-500 hover:text-slate-700"
+        >
+          Close
+        </button>
+      </div>
+
+      <FileUpload
+        campaignId={uploadParentCampaign?._id}
+        forceParentUpload={true}
+        disableParentSelect={true}
+        onSuccess={(msg, responseData) => {
+          showNotification(msg || "Upload complete", "success");
+          if (responseData?.failedRows?.length) {
+            setUploadFailedRows(responseData.failedRows);
+          } else {
+            setUploadFailedRows([]);
+          }
+        }}
+        onError={(msg) => showNotification(msg || "Upload failed", "error")}
+        onUploadComplete={() => loadCampaigns()}
+      />
+
+      {/* Failed rows panel */}
+      {uploadFailedRows.length > 0 && (
+        <div className="mt-5 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/30 px-4 py-2 border-b border-amber-300 dark:border-amber-600">
+            <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              ⚠ {uploadFailedRows.length} row{uploadFailedRows.length !== 1 ? "s" : ""} skipped
+            </span>
+            <button
+              onClick={() => setUploadFailedRows([])}
+              className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400"
+            >
+              Dismiss
+            </button>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-amber-50 dark:bg-amber-900/20 sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold w-16">
+                    Row #
+                  </th>
+                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
+                    Preview
+                  </th>
+                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
+                    Reason
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadFailedRows.map((fr, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-t border-amber-100 dark:border-amber-800 odd:bg-white dark:odd:bg-slate-800 even:bg-amber-50/40 dark:even:bg-amber-900/10"
+                  >
+                    <td className="px-4 py-1.5 text-slate-600 dark:text-slate-400">
+                      {fr.row}
+                    </td>
+                    <td className="px-4 py-1.5 text-slate-700 dark:text-slate-300 truncate max-w-[180px]">
+                      {fr.preview || "—"}
+                    </td>
+                    <td className="px-4 py-1.5 text-rose-600 dark:text-rose-400">
+                      {fr.reason}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
+    </div>
+  </div>
+)}
     </div>
   );
 }
