@@ -639,8 +639,9 @@ export default function ManageCallerLeads() {
 
       {/* Filters Section */}
       <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        {/* Top Row */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          {/* Search Bar */}
+          {/* Search */}
           <div className="relative lg:col-span-4">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -648,11 +649,11 @@ export default function ManageCallerLeads() {
               placeholder="Search by name, phone..."
               value={searchInput}
               onChange={handleSearch}
-              className="h-11 w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-400 dark:focus:border-cyan-400"
+              className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
             />
           </div>
 
-          {/* Qualification Status */}
+          {/* Qualification */}
           <div className="lg:col-span-3">
             <select
               value={selectedAppointmentStatus}
@@ -660,7 +661,7 @@ export default function ManageCallerLeads() {
                 setSelectedAppointmentStatus(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
             >
               <option value="">All Qualifications</option>
               {APPOINTMENT_STATUSES.map((status) => (
@@ -679,26 +680,26 @@ export default function ManageCallerLeads() {
                 setSelectedDisposition(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
             >
               <option value="">All Dispositions</option>
-              {DISPOSITIONS.map((disposition) => (
-                <option key={disposition} value={disposition}>
-                  {disposition.replace("-", " ").toUpperCase()}
+              {DISPOSITIONS.map((d) => (
+                <option key={d} value={d}>
+                  {d.replace("-", " ").toUpperCase()}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Agent + Clear Filters */}
-          <div className="flex gap-3 lg:col-span-3">
+          {/* Agent */}
+          <div className="lg:col-span-3">
             <select
               value={selectedAgent}
               onChange={(e) => {
                 setSelectedAgent(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-11 flex-1 cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
             >
               <option value="">All Agents</option>
               {agents.map((agent) => (
@@ -707,16 +708,11 @@ export default function ManageCallerLeads() {
                 </option>
               ))}
             </select>
-
-            <button
-              onClick={clearAllFilters}
-              className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-4 font-medium text-rose-700 transition hover:bg-rose-100 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/60"
-            >
-              <X className="h-4 w-4" />
-              Clear
-            </button>
           </div>
+        </div>
 
+        {/* Second Row: Date + Actions */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 items-end">
           {/* Date Filter */}
           <div className="lg:col-span-3">
             <select
@@ -725,7 +721,7 @@ export default function ManageCallerLeads() {
                 setDateFilterType(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-11 flex-1 cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
             >
               <option value="">All Time</option>
               <option value="today">Today (7PM - 4AM)</option>
@@ -735,86 +731,52 @@ export default function ManageCallerLeads() {
             </select>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 ">
-            <div className="flex gap-3 items-center">
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="h-11 rounded-lg border border-slate-300 px-3 bg-white text-sm text-slate-900 dark:bg-slate-900 dark:text-slate-100"
-              />
-              <span className="text-sm text-slate-500">—</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="h-11 rounded-lg border border-slate-300 px-3 bg-white text-sm text-slate-900 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </div>
-
-            <div className="w-full sm:w-auto">
-              <label className="sr-only">Date Field</label>
-              <select
-                value={dateField}
-                onChange={(e) => {
-                  setDateField(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-11 w-56 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <option value="createdAt">
-                  By Lead Created Date (default)
-                </option>
-                <option value="lastDialedAt">By Lead Last Dialed Date</option>
-                <option value="updatedAt">By Lead Last Updated Date</option>
-              </select>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-                Choose which date the range filters by: created, dialed, or
-                updated.
-              </p>
-            </div>
+          {/* Date Range */}
+          <div className="lg:col-span-5 flex items-center gap-3">
+            {dateFilterType === "range" && (
+              <>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="h-11 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:bg-slate-900"
+                />
+                <span className="text-slate-500">—</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="h-11 flex-1 rounded-lg border border-slate-300 bg-white px-3 text-sm dark:bg-slate-900"
+                />
+              </>
+            )}
           </div>
-        </div>
 
-        {/* Bottom Bar: Results Count + Actions */}
-        <div className="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-            Showing{" "}
-            <span className="font-bold text-slate-900 dark:text-white">
-              {leads.length > 0 ? startIndex : 0}–{endIndex}
-            </span>{" "}
-            of{" "}
-            <span className="font-bold text-slate-900 dark:text-white">
-              {total}
-            </span>{" "}
-            leads
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Date Field */}
+          <div className="lg:col-span-2">
             <select
-              value={pageSize}
+              value={dateField}
               onChange={(e) => {
-                setPageSize(parseInt(e.target.value, 10));
+                setDateField(e.target.value);
                 setCurrentPage(1);
               }}
-              className="h-10 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-cyan-400"
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3 text-sm dark:bg-slate-900"
             >
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-              <option value={100}>100 per page</option>
+              <option value="">--Filter By--</option>
+              <option value="createdAt">By Lead Created Date</option>
+              <option value="lastDialedAt">By Lead Last Dialed Date</option>
+              <option value="updatedAt">By Lead Last Updated Date</option>
             </select>
+          </div>
 
-            {canExport && leads.length > 0 && (
-              <button
-                onClick={handleExport}
-                className="flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-linear-to-r from-cyan-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/30 transition hover:from-cyan-700 hover:to-blue-700 hover:shadow-cyan-500/40"
-                title="Export as CSV"
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </button>
-            )}
+          {/* Clear */}
+          <div className="lg:col-span-2">
+            <button
+              onClick={clearAllFilters}
+              className="h-11 w-full cursor-pointer rounded-lg border border-rose-300 bg-rose-50 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:bg-rose-950/30"
+            >
+              Clear Filters
+            </button>
           </div>
         </div>
       </div>
