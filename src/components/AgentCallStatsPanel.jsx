@@ -126,10 +126,10 @@ export default function AgentCallStatsPanel({
                         {agent.callCount}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-medium">
+                    <td className="px-4 py-3 text-right text-yellow-500 font-medium">
                       {agent.followups}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-medium">
+                    <td className="px-4 py-3 text-right text-red-700 font-medium">
                       {agent.appointmentsCreated}
                     </td>
                   </tr>
