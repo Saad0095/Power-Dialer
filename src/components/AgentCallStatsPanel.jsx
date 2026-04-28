@@ -60,21 +60,32 @@ export default function AgentCallStatsPanel({
           Window: {new Date(dailyCallData.windowStart).toLocaleString()} - {new Date(dailyCallData.windowEnd).toLocaleString()}
         </p>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div className="bg-slate-100 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
           <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Calls</p>
           <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{dailyCallData.summary.totalCalls}</p>
         </div>
         <div className="bg-slate-100 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+          <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Followups</p>
+          <p className="text-2xl font-bold text-yellow-500 flex items-center gap-2">
+            {dailyCallData.summary.totalFollowups}
+          </p>
+        </div>
+        <div className="bg-slate-100 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+          <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Followups</p>
+          <p className="text-2xl font-bold text-red-700 flex items-center gap-2">
+            {dailyCallData.summary.totalAppointments}
+          </p>
+        </div>
+        <div className="bg-slate-100 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
           <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Agents with Calls</p>
           <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-            <Users className="w-5 h-5" />
             {dailyCallData.summary.activeAgents}
           </p>
         </div>
         <div className="bg-slate-100 dark:bg-slate-900/40 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
           <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">Total Agents</p>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{dailyCallData.summary.totalAgents}</p>
+          <p className="text-2xl font-bold text-gray-700 dark:text-gray-400">{dailyCallData.summary.totalAgents}</p>
         </div>
       </div>
       {dailyCallsError && (
@@ -90,7 +101,7 @@ export default function AgentCallStatsPanel({
                 <th className="text-left px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Agent</th>
                 <th className="text-left px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Role</th>
                 <th className="text-right px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Calls</th>
-                <th className="text-right px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Leads Assigned</th>
+                <th className="text-right px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Followups</th>
                 <th className="text-right px-4 py-3 text-slate-700 dark:text-slate-300 font-semibold">Appointments Created</th>
               </tr>
             </thead>
@@ -116,7 +127,7 @@ export default function AgentCallStatsPanel({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-medium">
-                      {agent.leadsAssigned}
+                      {agent.followups}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 font-medium">
                       {agent.appointmentsCreated}
