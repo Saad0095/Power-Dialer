@@ -1058,20 +1058,20 @@ export default function ManageCallerLeads() {
         isOpen={showDetailModal}
         leadId={selectedLeadId}
         onClose={() => setShowDetailModal(false)}
-        onEditLead={canManageLeads ? handleEditLead : undefined}
+        onEditLead={handleEditLead}
         onStatusUpdate={canManageLeads ? handleUpdateStatus : undefined}
         onCreateOffer={canManageLeads ? handleCreateOffer : undefined}
       />
 
+      <EditLeadModal
+        isOpen={showEditModal}
+        lead={selectedLeadForEdit}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditSave}
+      />
+
       {canManageLeads && (
         <>
-          <EditLeadModal
-            isOpen={showEditModal}
-            lead={selectedLeadForEdit}
-            onClose={() => setShowEditModal(false)}
-            onSave={handleEditSave}
-          />
-
           <UpdateQualificationModal
             isOpen={showStatusModal}
             lead={selectedLeadForStatus}
