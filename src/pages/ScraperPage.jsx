@@ -103,7 +103,7 @@ export default function ScraperPage() {
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [filters, setFilters] = useState({ page: 1, limit: 50, hasPhone: false, hasWebsite: false, search: "" });
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
-  const [sessionFilters, setSessionFilters] = useState({ page: 1, limit: 10, search: "", startDate: "", endDate: "", creatorFilter: "all" });
+  const [sessionFilters, setSessionFilters] = useState({ page: 1, limit: 50, search: "", startDate: "", endDate: "", creatorFilter: "all" });
   const [sessionPagination, setSessionPagination] = useState({ total: 0, page: 1, pages: 1 });
   const [campaigns, setCampaigns] = useState([]);
   const [agents, setAgents] = useState([]);

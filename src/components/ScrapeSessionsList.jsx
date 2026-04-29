@@ -12,7 +12,7 @@ const STATUS_STYLES = {
 export default function ScrapeSessionsList({
   sessions,
   sessionPagination = { total: 0, page: 1, pages: 1 },
-  sessionFilters = { page: 1, limit: 10, search: "", datePreset: "all", creatorFilter: "all" },
+  sessionFilters = { page: 1, limit: 50, search: "", datePreset: "all", creatorFilter: "all" },
   setSessionFilters,
   selectedSessionId,
   setSelectedSessionId,
@@ -182,7 +182,7 @@ export default function ScrapeSessionsList({
           />
 
           {/* Per-page selector */}
-          <div className="relative inline-block">
+          {/* <div className="relative inline-block">
             <select
               value={sessionFilters.limit}
               onChange={(e) => handleFilterChange("limit", Number(e.target.value))}
@@ -191,10 +191,9 @@ export default function ScrapeSessionsList({
               <option value={10}>10 / page</option>
               <option value={25}>25 / page</option>
               <option value={50}>50 / page</option>
-              {/* <option value={100}>100 / page</option> */}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-          </div>
+          </div> */}
 
           {/* Custom Date Range */}
           <div className="flex items-center gap-2">
