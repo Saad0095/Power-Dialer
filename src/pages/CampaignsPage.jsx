@@ -8,7 +8,13 @@ import {
   ChevronDown,
   Megaphone,
 } from "lucide-react";
-import api, { getCampaigns } from "../services/api";
+import api, {
+  getCampaigns,
+  bulkAssignSingleAgentToCampaigns,
+  bulkAssignAgentPoolToCampaigns,
+  bulkClearCampaignAssignments,
+  getAllAgents,
+} from "../services/api";
 import {
   isManager as checkIsManager,
   getRoleHomeRoute,
@@ -31,14 +37,16 @@ export default function CampaignsPage() {
   // Filters
   const [pipelineTypeFilter, setPipelineTypeFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [agents, setAgents] = useState([]);
   const [expandedRootIds, setExpandedRootIds] = useState(new Set());
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadParentCampaign, setUploadParentCampaign] = useState(null);
-const [uploadFailedRows, setUploadFailedRows] = useState([]);
+  const [uploadFailedRows, setUploadFailedRows] = useState([]);
 
   const getParentName = (campaign) => {
     if (!campaign?.parentCampaign) return "None";
@@ -85,6 +93,21 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
   useEffect(() => {
     loadCampaigns();
   }, []);
+
+  useEffect(() => {
+    loadAgents();
+  }, []);
+
+  const loadAgents = async () => {
+    try {
+      const res = await getAllAgents(); 
+      console.log("Agents:", res);
+
+      setAgents(res.data || res);
+    } catch (err) {
+      showNotification("Failed to load agents", "error");
+    }
+  };
 
   useEffect(() => {
     if (user && !checkIsManager(user?.role)) {
@@ -163,11 +186,11 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
   };
 
   const closeUploadModal = () => {
-  setShowUploadModal(false);
-  setUploadParentCampaign(null);
-  setUploadFailedRows([]);
-  loadCampaigns();
-};
+    setShowUploadModal(false);
+    setUploadParentCampaign(null);
+    setUploadFailedRows([]);
+    loadCampaigns();
+  };
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
@@ -198,6 +221,13 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
       if (next.has(rootId)) next.delete(rootId);
       else next.add(rootId);
       return next;
+    });
+  };
+
+  const toggleSelectCampaign = (id) => {
+    setSelectedCampaignIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      return [...prev, id];
     });
   };
 
@@ -243,8 +273,52 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
       return true;
     });
 
+  const handleAssignAgentPool = async (agentIds) => {
+    try {
+      await bulkAssignAgentPoolToCampaigns({
+        campaignIds: selectedCampaignIds,
+        agentIds,
+      });
+
+      showNotification("Agent pool assigned", "success");
+      loadCampaigns();
+    } catch (err) {
+      showNotification("Failed to assign agent pool", "error");
+    }
+  };
+
+  const handleAssignSingleAgent = async (agentId) => {
+    try {
+      await bulkAssignSingleAgentToCampaigns({
+        campaignIds: selectedCampaignIds,
+        agentId,
+      });
+
+      showNotification("Agent assigned", "success");
+      loadCampaigns();
+    } catch (err) {
+      showNotification("Failed to assign agent", "error");
+    }
+  };
+
+  const handleClearAssignments = async () => {
+    if (!selectedCampaignIds.length) return;
+
+    try {
+      await bulkClearCampaignAssignments({
+        campaignIds: selectedCampaignIds,
+      });
+
+      showNotification("Assignments cleared", "success");
+      setSelectedCampaignIds([]);
+      loadCampaigns();
+    } catch (err) {
+      showNotification("Failed to clear assignments", "error");
+    }
+  };
+
   if (isLoading) return <LoadingSpinner />;
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -297,10 +371,72 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
       {/* Campaigns Table */}
       {filteredCampaigns.length > 0 && (
         <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+          {selectedCampaignIds.length > 0 && (
+            <div className="mb-3 flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded border gap-3">
+              <span className="text-sm">
+                {selectedCampaignIds.length} campaigns selected
+              </span>
+
+              <div className="flex gap-2 items-center">
+                {/* 👇 Agent selector */}
+                <select
+                  value={selectedAgentId}
+                  onChange={(e) => setSelectedAgentId(e.target.value)}
+                  className="border px-2 py-1 rounded bg-white dark:bg-slate-900"
+                >
+                  <option value="">Select agent</option>
+                  {agents.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  className="px-3 py-1 bg-amber-600 text-white rounded text-xs cursor-pointer"
+                  onClick={() => handleAssignSingleAgent(selectedAgentId)}
+                  disabled={!selectedAgentId}
+                >
+                  Assign
+                </button>
+
+                <button
+                  className="px-3 py-1 bg-gray-500 text-white rounded text-xs cursor-pointer"
+                  onClick={handleClearAssignments}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-100 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
                 <th className="text-left py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold w-12"></th>
+                <th className="w-10 px-4 py-3">
+                  {/* Select all CHILD campaigns */}
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 cursor-pointer"
+                    checked={
+                      filteredCampaigns.flatMap((r) => r.children || [])
+                        .length > 0 &&
+                      selectedCampaignIds.length ===
+                        filteredCampaigns.flatMap((r) => r.children || [])
+                          .length
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allIds = filteredCampaigns.flatMap((r) =>
+                          (r.children || []).map((c) => c._id),
+                        );
+                        setSelectedCampaignIds(allIds);
+                      } else {
+                        setSelectedCampaignIds([]);
+                      }
+                    }}
+                  />
+                </th>
                 <th className="text-left py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
                   Campaign
                 </th>
@@ -347,6 +483,8 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
                           </button>
                         ) : null}
                       </td>
+
+                      <td className="py-3 px-4"></td>
                       <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
                         {root.name}{" "}
                         <span className="text-xs text-slate-500">
@@ -393,6 +531,14 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
                           className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/20 hover:bg-slate-100 dark:hover:bg-slate-700/30"
                         >
                           <td className="py-3 px-4"></td>
+                          <td className="px-4 py-2">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 cursor-pointer"
+                              checked={selectedCampaignIds.includes(child._id)}
+                              onChange={() => toggleSelectCampaign(child._id)}
+                            />
+                          </td>
                           <td className="py-3 px-4 pl-8 text-slate-900 dark:text-slate-100">
                             <button
                               onClick={() => handleOpenLeads(child._id)}
@@ -521,90 +667,93 @@ const [uploadFailedRows, setUploadFailedRows] = useState([]);
         </div>
       )} */}
       {showUploadModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div className="w-full max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-          Upload files to {uploadParentCampaign?.name}
-        </h3>
-        <button
-          onClick={closeUploadModal}
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
-          Close
-        </button>
-      </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Upload files to {uploadParentCampaign?.name}
+              </h3>
+              <button
+                onClick={closeUploadModal}
+                className="text-sm text-slate-500 hover:text-slate-700"
+              >
+                Close
+              </button>
+            </div>
 
-      <FileUpload
-        campaignId={uploadParentCampaign?._id}
-        forceParentUpload={true}
-        disableParentSelect={true}
-        onSuccess={(msg, responseData) => {
-          showNotification(msg || "Upload complete", "success");
-          if (responseData?.failedRows?.length) {
-            setUploadFailedRows(responseData.failedRows);
-          } else {
-            setUploadFailedRows([]);
-          }
-        }}
-        onError={(msg) => showNotification(msg || "Upload failed", "error")}
-        onUploadComplete={() => loadCampaigns()}
-      />
+            <FileUpload
+              campaignId={uploadParentCampaign?._id}
+              forceParentUpload={true}
+              disableParentSelect={true}
+              onSuccess={(msg, responseData) => {
+                showNotification(msg || "Upload complete", "success");
+                if (responseData?.failedRows?.length) {
+                  setUploadFailedRows(responseData.failedRows);
+                } else {
+                  setUploadFailedRows([]);
+                }
+              }}
+              onError={(msg) =>
+                showNotification(msg || "Upload failed", "error")
+              }
+              onUploadComplete={() => loadCampaigns()}
+            />
 
-      {/* Failed rows panel */}
-      {uploadFailedRows.length > 0 && (
-        <div className="mt-5 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/30 px-4 py-2 border-b border-amber-300 dark:border-amber-600">
-            <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              ⚠ {uploadFailedRows.length} row{uploadFailedRows.length !== 1 ? "s" : ""} skipped
-            </span>
-            <button
-              onClick={() => setUploadFailedRows([])}
-              className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400"
-            >
-              Dismiss
-            </button>
-          </div>
-          <div className="max-h-52 overflow-y-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-amber-50 dark:bg-amber-900/20 sticky top-0">
-                <tr>
-                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold w-16">
-                    Row #
-                  </th>
-                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
-                    Preview
-                  </th>
-                  <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
-                    Reason
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {uploadFailedRows.map((fr, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-t border-amber-100 dark:border-amber-800 odd:bg-white dark:odd:bg-slate-800 even:bg-amber-50/40 dark:even:bg-amber-900/10"
+            {/* Failed rows panel */}
+            {uploadFailedRows.length > 0 && (
+              <div className="mt-5 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/30 px-4 py-2 border-b border-amber-300 dark:border-amber-600">
+                  <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                    ⚠ {uploadFailedRows.length} row
+                    {uploadFailedRows.length !== 1 ? "s" : ""} skipped
+                  </span>
+                  <button
+                    onClick={() => setUploadFailedRows([])}
+                    className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400"
                   >
-                    <td className="px-4 py-1.5 text-slate-600 dark:text-slate-400">
-                      {fr.row}
-                    </td>
-                    <td className="px-4 py-1.5 text-slate-700 dark:text-slate-300 truncate max-w-[180px]">
-                      {fr.preview || "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-rose-600 dark:text-rose-400">
-                      {fr.reason}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    Dismiss
+                  </button>
+                </div>
+                <div className="max-h-52 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-amber-50 dark:bg-amber-900/20 sticky top-0">
+                      <tr>
+                        <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold w-16">
+                          Row #
+                        </th>
+                        <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
+                          Preview
+                        </th>
+                        <th className="text-left px-4 py-2 text-amber-700 dark:text-amber-400 font-semibold">
+                          Reason
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {uploadFailedRows.map((fr, idx) => (
+                        <tr
+                          key={idx}
+                          className="border-t border-amber-100 dark:border-amber-800 odd:bg-white dark:odd:bg-slate-800 even:bg-amber-50/40 dark:even:bg-amber-900/10"
+                        >
+                          <td className="px-4 py-1.5 text-slate-600 dark:text-slate-400">
+                            {fr.row}
+                          </td>
+                          <td className="px-4 py-1.5 text-slate-700 dark:text-slate-300 truncate max-w-[180px]">
+                            {fr.preview || "—"}
+                          </td>
+                          <td className="px-4 py-1.5 text-rose-600 dark:text-rose-400">
+                            {fr.reason}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
-    </div>
-  </div>
-)}
     </div>
   );
 }

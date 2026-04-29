@@ -234,6 +234,49 @@ export const updateCampaign = async (id, updates) => {
   return response.data.data;
 };
 
+// // GET campaigns
+// export const getCampaigns = async () => {
+//   const res = await api.get("/campaigns");
+//   return res.data;
+// };
+
+// BULK assign single agent
+export const bulkAssignSingleAgentToCampaigns = async (payload = {}) => {
+  const { campaignIds, agentId } = payload;
+  const res = await api.put("/campaigns/bulk/assign-agent", {
+    campaignIds,
+    agentId,
+  });
+  return res.data;
+};
+
+// BULK assign agent pool
+export const bulkAssignAgentPoolToCampaigns = async (payload = {}) => {
+  const { campaignIds, agentIds, options = {} } = payload;
+  const body = {
+    campaignIds,
+    agentIds,
+    ...(options || {}), // e.g. maxConcurrentLines, assignmentStrategy
+  };
+  const res = await api.put("/campaigns/bulk/assign-agent-pool", body);
+  return res.data;
+};
+
+// BULK clear assignments
+export const bulkClearCampaignAssignments = async (payload = {}) => {
+  const { campaignIds } = payload;
+  const res = await api.put("/campaigns/bulk/clear-assignments", {
+    campaignIds,
+  });
+  return res.data;
+};
+
+// // GET all agents (if needed)
+// export const getAllAgents = async () => {
+//   const res = await api.get("/users/agents");
+//   return res.data;
+// };
+
 export const deleteCampaign = async (id) => {
   await api.delete(`/campaigns/${id}`);
 };
