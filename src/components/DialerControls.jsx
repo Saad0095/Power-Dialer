@@ -1,4 +1,11 @@
-import { useContext, useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import {
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Play, Square, Pause, SkipForward, Phone } from "lucide-react";
 import {
   logAgentCallAttempt,
@@ -8,19 +15,22 @@ import {
 import { LeadsContext } from "../context/LeadsContext";
 import EditLeadModal from "./modals/EditLeadModal";
 
-const DialerControls = forwardRef(function DialerControls({
-  campaignId,
-  isDialing,
-  setIsDialing,
-  onError,
-  onSuccess,
-  totalLeads,
-  isLoading,
-  mode = "power",
-  agentId = null,
-  isOnBreak = false,
-  onCallTriggered,
-}, ref) {
+const DialerControls = forwardRef(function DialerControls(
+  {
+    campaignId,
+    isDialing,
+    setIsDialing,
+    onError,
+    onSuccess,
+    totalLeads,
+    isLoading,
+    mode = "power",
+    agentId = null,
+    isOnBreak = false,
+    onCallTriggered,
+  },
+  ref,
+) {
   const isAgentMode = mode === "agent";
   const leadsContext = useContext(LeadsContext);
   const leads = leadsContext ? leadsContext.leads : [];
@@ -122,14 +132,14 @@ const DialerControls = forwardRef(function DialerControls({
     let currentPageToFetch = pagination.page || 1;
     let currentTotalPages = pagination.totalPages || 1;
 
-    // Re-fetch the current page first. 
-    // If the table is filtered by "Pending", the completed leads fall off page 1, 
+    // Re-fetch the current page first.
+    // If the table is filtered by "Pending", the completed leads fall off page 1,
     // meaning the *next* batch of pending leads will slide into page 1!
     // If not filtered, re-fetching page 1 will just yield completed leads, and we'll naturally move to page 2.
     while (currentPageToFetch <= currentTotalPages) {
       const result = await changePage(currentPageToFetch);
       const fetchedLeads = result?.leads || [];
-      
+
       if (result?.pagination?.totalPages) {
         currentTotalPages = result.pagination.totalPages;
       }
@@ -187,31 +197,72 @@ const DialerControls = forwardRef(function DialerControls({
     }
   };
 
-  // Handle Agent Auto Dialer (Zoom Frontend)
-  const handleStartAutoDialer = () => {
+  // // Handle Agent Auto Dialer (Zoom Frontend)
+  // const handleStartAutoDialer = () => {
+  //   if (!campaignId) {
+  //     onError("Please select a campaign first");
+  //     return;
+  //   }
+  //   if (leads.length === 0) {
+  //     onError("No leads available on this page to dial");
+  //     return;
+  //   }
+  //   // Find the FIRST pending lead
+  //   const firstPendingIndex = leads.findIndex(
+  //     (l) => l.dialerStatus === "pending",
+  //   );
+  //   if (firstPendingIndex === -1) {
+  //     onError("All leads on this page have been dialed.");
+  //     return;
+  //   }
+  //   setIsDialing(true);
+  //   setAutoDialState({
+  //     active: true,
+  //     currentIndex: firstPendingIndex,
+  //     status: "calling",
+  //   });
+  //   triggerZoomCall(leads[firstPendingIndex]);
+  // };
+
+  const handleStartAutoDialer = async () => {
     if (!campaignId) {
       onError("Please select a campaign first");
       return;
     }
-    if (leads.length === 0) {
-      onError("No leads available on this page to dial");
+
+    if (!pagination || typeof changePage !== "function") {
+      onError("Pagination not ready");
       return;
     }
-    // Find the FIRST pending lead
-    const firstPendingIndex = leads.findIndex(
-      (l) => l.dialerStatus === "pending",
-    );
-    if (firstPendingIndex === -1) {
-      onError("All leads on this page have been dialed.");
-      return;
-    }
+
     setIsDialing(true);
-    setAutoDialState({
-      active: true,
-      currentIndex: firstPendingIndex,
-      status: "calling",
-    });
-    triggerZoomCall(leads[firstPendingIndex]);
+
+    let page = pagination.page || 1;
+    const totalPages = pagination.totalPages || 1;
+
+    while (page <= totalPages) {
+      const result = await changePage(page);
+      const fetchedLeads = result?.leads || [];
+
+      const index = fetchedLeads.findIndex((l) => l.dialerStatus === "pending");
+
+      if (index !== -1) {
+        setAutoDialState({
+          active: true,
+          currentIndex: index,
+          status: "calling",
+        });
+
+        triggerZoomCall(fetchedLeads[index]);
+        onSuccess(`Resumed dialing from page ${page}`);
+        return;
+      }
+
+      page++;
+    }
+
+    setIsDialing(false);
+    onError("No pending leads found in campaign");
   };
 
   const handleStopAutoDialer = () => {
