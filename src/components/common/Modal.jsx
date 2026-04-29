@@ -1,13 +1,17 @@
 import { X } from 'lucide-react';
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) {
+export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md', closeOnBackdropClick = false }) {
   if (!isOpen) return null;
 
+  const handleBackdropClick = () => {
+    if (closeOnBackdropClick && typeof onClose === 'function') onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div 
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleBackdropClick}>
+      <div
         className={`w-full ${maxWidth} rounded-lg bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-700 shadow-xl dark:shadow-slate-900/50`}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-6 py-4">
