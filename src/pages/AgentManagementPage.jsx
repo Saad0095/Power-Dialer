@@ -28,9 +28,9 @@ export default function AgentManagementPage() {
 
   const getAvailableRoles = () => {
     if (user?.role === 'admin') {
-      return ['admin', 'manager', 'caller-agent', 'closer-agent', 'client'];
+      return ['admin', 'manager', 'caller-agent', 'closer-agent', 'scrapper', 'client'];
     } else if (user?.role === 'manager') {
-      return ['caller-agent', 'closer-agent', 'client'];
+      return ['caller-agent', 'closer-agent', 'scrapper', 'client'];
     }
     return [];
   };
@@ -70,7 +70,11 @@ export default function AgentManagementPage() {
       
       if (user?.role === 'manager') {
         filteredUsers = filteredUsers.filter(
-          u => u.role === 'caller-agent' || u.role === 'closer-agent' || u.role === 'client'
+          u =>
+            u.role === 'caller-agent' ||
+            u.role === 'closer-agent' ||
+            u.role === 'scrapper' ||
+            u.role === 'client'
         );
       }
       
@@ -195,6 +199,7 @@ export default function AgentManagementPage() {
       'manager': 'Manager',
       'caller-agent': 'Caller Agent',
       'closer-agent': 'Closer Agent',
+      'scrapper': 'Scrapper',
       'client': 'Client',
     };
     return labels[role] || role;
@@ -206,6 +211,7 @@ export default function AgentManagementPage() {
       'manager': 'bg-purple-500/20 text-purple-600 dark:text-purple-400',
       'caller-agent': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
       'closer-agent': 'bg-green-500/20 text-green-600 dark:text-green-400',
+      'scrapper': 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400',
       'client': 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
     };
     return colors[role] || 'bg-slate-500/20 text-slate-600 dark:text-slate-400';

@@ -88,6 +88,7 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
       'manager': 'Manager',
       'caller-agent': 'Caller Agent',
       'closer-agent': 'Closer Agent',
+      'scrapper': 'Scrapper',
       'client': 'Client',
     };
     return labels[role] || role;

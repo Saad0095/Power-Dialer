@@ -24,6 +24,7 @@ import {
   startScrapeSession,
   cancelScrapeSession,
   getDailyScrapeLeads,
+  getScraperManagersAndAdmins,
 } from "../services/api";
 
 const DEFAULT_FORM = {
@@ -72,7 +73,7 @@ function DailyLeadsChart({ series }) {
               )}
               <div
                 title={`${d.label}: ${d.count} lead${d.count !== 1 ? "s" : ""}`}
-                className={`w-full rounded-t transition-all duration-500 min-h-[2px] ${
+                className={`w-full rounded-t transition-all duration-500 min-h-0.5 ${
                   isToday
                     ? "bg-violet-500 dark:bg-violet-400"
                     : "bg-violet-200 dark:bg-violet-800/60"
@@ -131,12 +132,14 @@ export default function ScraperPage() {
     try {
       const [campaignData, agentData] = await Promise.all([
         getCampaigns(),
-        getAllAgents(),
+        getScraperManagersAndAdmins(),
       ]);
       const normalizedCampaigns = Array.isArray(campaignData)
         ? campaignData
         : campaignData?.data || [];
       setCampaigns(normalizedCampaigns);
+      console.log(agentData);
+      
       setAgents(agentData || []);
     } catch (error) {
       console.error("Failed to load scraper reference data:", error);

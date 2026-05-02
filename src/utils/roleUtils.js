@@ -8,10 +8,16 @@ export const ROLES = {
   MANAGER: 'manager',
   CALLER_AGENT: 'caller-agent',
   CLOSER_AGENT: 'closer-agent',
+  SCRAPPER: 'scrapper',
   CLIENT: 'client',
 };
 
 export const AGENT_ROLES = [ROLES.CALLER_AGENT];
+export const ATTENDANCE_ROLES = [
+  ROLES.CALLER_AGENT,
+  ROLES.CLOSER_AGENT,
+  ROLES.SCRAPPER,
+];
 
 /**
  * Check if user is any type of agent (caller-agent or closer-agent)
@@ -38,6 +44,14 @@ export const isClient = (role) => {
   return role === ROLES.CLIENT;
 };
 
+export const isScrapper = (role) => {
+  return role === ROLES.SCRAPPER;
+};
+
+export const canUseAttendanceControls = (role) => {
+  return ATTENDANCE_ROLES.includes(role);
+};
+
 /**
  * Check if user is a manager or admin (same permissions)
  */
@@ -51,6 +65,7 @@ export const isManager = (role) => {
 export const getRoleHomeRoute = (role) => {
   if (isManager(role)) return '/manager';
   if (isCallerAgent(role)) return '/agent';
+  if (isScrapper(role)) return '/scrapper';
   if (isClient(role)) return '/client';
   return '/login';
 };

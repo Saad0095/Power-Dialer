@@ -121,6 +121,24 @@ function getSidebarItems(role) {
     ];
   }
 
+  if (role === "scrapper") {
+    return [
+      { id: "overview", label: "Maps Scraper", icon: MapPinned, path: "/scrapper" },
+      {
+        id: "tasks",
+        label: "My Tasks",
+        icon: ClipboardList,
+        path: "/scrapper/tasks",
+      },
+      // {
+      //   id: "scraper",
+      //   label: "Scrape Sessions",
+      //   icon: MapPinned,
+      //   path: "/scrapper/scraper",
+      // },
+    ];
+  }
+
   return [
     { id: "overview", label: "Dashboard", icon: LayoutGrid, path: "/agent" },
     {

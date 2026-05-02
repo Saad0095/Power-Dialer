@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { isManager as checkIsManager } from "../utils/roleUtils";
+import {
+  canUseAttendanceControls,
+  isManager as checkIsManager,
+} from "../utils/roleUtils";
 import AgentListModal from "./modals/AgentListModal.jsx";
 import api, {
   getPowerHourStatus,
@@ -60,7 +63,7 @@ export default function Navbar({
   const [powerHourEndsAt, setPowerHourEndsAt] = useState(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const isManager = checkIsManager(user?.role);
-  const isAgent = ["caller-agent", "closer-agent"].includes(user?.role);
+  const canManageBreak = canUseAttendanceControls(user?.role);
   const [isAgentBreakLoading, setIsAgentBreakLoading] = useState(false);
   const [breakTimer, setBreakTimer] = useState(0);
 
@@ -125,7 +128,7 @@ export default function Navbar({
 
   useEffect(() => {
     if (
-      !isAgent ||
+      !canManageBreak ||
       !user?.attendance?.onBreak ||
       !user?.attendance?.breakStartedAt
     ) {
@@ -152,7 +155,7 @@ export default function Navbar({
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [isAgent, user?.attendance]);
+  }, [canManageBreak, user?.attendance]);
 
   const handleToggleBreak = async () => {
     try {
@@ -258,7 +261,7 @@ export default function Navbar({
 
             {/* Actions & User Menu */}
             <div className="flex items-center gap-2 ml-auto">
-              {isAgent && user?.attendance?.isCheckedIn && (
+              {canManageBreak && user?.attendance?.isCheckedIn && (
                 <div className="mr-2">
                   {user.attendance.onBreak ? (
                     <div className="flex items-center gap-2">

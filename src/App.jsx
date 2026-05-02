@@ -98,6 +98,21 @@ function App() {
               {/* <Route path="call-logs" element={<CallLogsPage />} /> */}
             </Route>
 
+            <Route
+              path="/scrapper"
+              element={
+                <ProtectedRoute allowedRoles={[ROLES.SCRAPPER]}>
+                  <LeadsProvider campaignId="">
+                    <DashboardLayout />
+                  </LeadsProvider>
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ScraperPage />} />
+              <Route path="tasks" element={<MyTasksPage />} />
+              {/* <Route path="scraper" element={<ScraperPage />} /> */}
+            </Route>
+
             <Route path="/dashboard" element={<RoleHomeRedirect />} />
 
             <Route path="/" element={<RoleHomeRedirect />} />

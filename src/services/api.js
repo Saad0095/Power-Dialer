@@ -272,7 +272,12 @@ export const bulkClearCampaignAssignments = async (payload = {}) => {
 };
 
 // // GET all agents (if needed)
-// export const getAllAgents = async () => {
+
+// Only scrapper, managers, admin
+export const getScraperManagersAndAdmins = async () => {
+  const response = await api.get("/auth/scraper-managers-admins");
+  return response.data.data;
+};
 //   const res = await api.get("/users/agents");
 //   return res.data;
 // };

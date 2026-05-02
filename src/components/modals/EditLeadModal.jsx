@@ -45,6 +45,19 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Determine if caller-agent edits should be locked for past appointments
+  const isCallerAgent = user?.role === 'caller-agent';
+  const appointmentDateValue = lead?.appointmentDate || formData?.appointmentDate || null;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const appointmentLocked = Boolean(
+    isCallerAgent &&
+      (lead?.disposition === 'appointment' || formData?.disposition === 'appointment') &&
+      appointmentDateValue &&
+      new Date(appointmentDateValue) < startOfToday,
+  );
+  const canEdit = !appointmentLocked;
+
   useEffect(() => {
     if (lead) {
       const newFormData = {};
@@ -70,6 +83,10 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!canEdit) {
+      setError('Appointment date has passed — appointment edits are locked for agents.');
+      return;
+    }
     try {
       setIsLoading(true);
       const updateData = {};
@@ -128,6 +145,8 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
       : `Edit Lead - ${lead.businessName || 'N/A'}`;
 
   const renderField = (field) => {
+    const fieldDisabled = field.readOnly || (isCallerAgent && !canEdit);
+
     if (field.type === 'select') {
       return (
         <FormSelect
@@ -135,6 +154,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
           name={field.key}
           value={formData[field.key] || ''}
           onChange={handleChange}
+          disabled={fieldDisabled}
           options={field.options?.map(opt => ({ value: opt, label: opt })) ?? []}
         />
       );
@@ -147,6 +167,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
             name={field.key}
             checked={formData[field.key] || false}
             onChange={handleChange}
+            disabled={field.readOnly || (isCallerAgent && !canEdit)}
             className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-primary-500 cursor-pointer"
           />
           {field.label}
@@ -163,6 +184,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
             name={field.key}
             value={formData[field.key] || ''}
             onChange={handleChange}
+            disabled={field.readOnly || (isCallerAgent && !canEdit)}
             rows={3}
             className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary-500"
             placeholder={field.label}
@@ -177,6 +199,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
         type={field.type}
         value={formData[field.key] || ''}
         onChange={handleChange}
+        disabled={field.readOnly || (isCallerAgent && !canEdit)}
         placeholder={field.label}
       />
     );
@@ -199,7 +222,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
           </button>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !canEdit}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/30"
           >
             <Save className="w-4 h-4" />
@@ -215,6 +238,13 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
           <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 flex items-start gap-3">
             <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
             <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
+          </div>
+        )}
+
+        {!canEdit && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 flex items-start gap-3">
+            <Loader2 className="w-4 h-4 text-amber-600" />
+            <p className="text-sm text-amber-700">This appointment date has passed — agents cannot edit appointment leads after the appointment date.</p>
           </div>
         )}
 

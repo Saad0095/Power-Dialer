@@ -45,12 +45,6 @@ export default function ScrapeSessionsList({
   };
 
 
-
-  const managers = useMemo(() => {
-    const found = agents.filter((a) => (a?.role || "").toString().toLowerCase() === "manager");
-    return found.length ? found : agents;
-  }, [agents]);
-
   const [selectedIds, setSelectedIds] = useState(new Set());
   const selectAllRef = useRef(null);
 
@@ -212,7 +206,6 @@ export default function ScrapeSessionsList({
             />
           </div>
 
-            {/* Created By (Managers) Dropdown */}
             <div className="relative inline-block">
               <select
                 value={sessionFilters.creatorFilter}
@@ -220,7 +213,7 @@ export default function ScrapeSessionsList({
                 className="text-sm pr-8 pl-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600 appearance-none"
               >
                 <option value="all">All creators</option>
-                {managers.map((m) => (
+                {agents.map((m) => (
                   <option key={m._id || m.id} value={m._id || m.id}>{formatAgentLabel(m)}</option>
                 ))}
               </select>
