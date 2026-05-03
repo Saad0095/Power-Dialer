@@ -287,7 +287,7 @@ export default function Navbar({
                         className="flex items-center gap-2 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition text-sm font-bold shadow-md disabled:opacity-50"
                       >
                         <PlayCircle className="w-5 h-5" />
-                        {isAgentBreakLoading ? "..." : "End Break"}
+                        {isAgentBreakLoading ? "..." : "Pause Break"}
                       </button>
                     </div>
                   ) : (

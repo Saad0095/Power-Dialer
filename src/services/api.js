@@ -234,6 +234,11 @@ export const updateCampaign = async (id, updates) => {
   return response.data.data;
 };
 
+export const getAgentCampaignStats = async () => {
+  const response = await api.get("/campaigns/agent-stats");
+  return response.data.data;
+};
+
 // // GET campaigns
 // export const getCampaigns = async () => {
 //   const res = await api.get("/campaigns");

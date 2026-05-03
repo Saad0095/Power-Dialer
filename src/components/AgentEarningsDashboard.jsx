@@ -6,6 +6,7 @@ import {
   getQualificationBreakdown,
 } from "../services/api";
 import Leaderboard from "./Leaderboard";
+import AgentCampaignStats from "./AgentCampaignStats";
 
 const AgentEarningsDashboard = () => {
   const { user } = useAuth();
@@ -40,7 +41,10 @@ const AgentEarningsDashboard = () => {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Campaign Stats */}
+      {/* <AgentCampaignStats /> */}
+
       {/* Timeframe selector */}
       <div className="flex gap-2">
         {["all", "month", "week", "today"].map((frame) => (

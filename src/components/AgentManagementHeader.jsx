@@ -37,7 +37,7 @@ export default function AgentManagementHeader({ user, onCreate, search, setSearc
         </select>
         <button
           onClick={onCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
+          className="flex items-center gap-2 px-2 py-2 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition"
         >
           <span>+ Create User</span>
         </button>

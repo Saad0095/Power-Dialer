@@ -21,7 +21,8 @@ import {
   Layers,
   ArrowRight,
   Check,
-  Minus
+  Minus,
+  Layers3,
 } from "lucide-react";
 import api, {
   getCampaigns,
@@ -84,7 +85,11 @@ export default function CampaignsPage() {
       const res = await getAllAgents();
       const all = res.data || res;
       // Only show assignable agents
-      setAgents(all.filter(a => a.role === 'caller-agent' || a.role === 'closer-agent'));
+      setAgents(
+        all.filter(
+          (a) => a.role === "caller-agent" || a.role === "closer-agent",
+        ),
+      );
     } catch (err) {
       showNotification("Failed to load agents", "error");
     }
@@ -144,52 +149,93 @@ export default function CampaignsPage() {
   const filteredCampaigns = useMemo(() => {
     return campaigns
       .map((root) => {
-        const rootMatches = !searchTerm || root.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const filteredChildren = root.children.filter(child => {
-          const matchesSearch = !searchTerm || child.name.toLowerCase().includes(searchTerm.toLowerCase());
-          const matchesDialer = !dialerTypeFilter || child.dialerType === dialerTypeFilter;
-          const isAssigned = child.assignedAgent || (child.assignedAgents && child.assignedAgents.length > 0);
-          const matchesAssignment = !assignmentFilter || (assignmentFilter === 'assigned' ? isAssigned : !isAssigned);
-          
-          let matchesDate = true;
-          if (dateRange.start) matchesDate = matchesDate && new Date(child.createdAt) >= new Date(dateRange.start);
-          if (dateRange.end) matchesDate = matchesDate && new Date(child.createdAt) <= new Date(dateRange.end + "T23:59:59");
+        const rootMatches =
+          !searchTerm ||
+          root.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const filteredChildren = root.children.filter((child) => {
+          const matchesSearch =
+            !searchTerm ||
+            child.name.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesDialer =
+            !dialerTypeFilter || child.dialerType === dialerTypeFilter;
+          const isAssigned =
+            child.assignedAgent ||
+            (child.assignedAgents && child.assignedAgents.length > 0);
+          const matchesAssignment =
+            !assignmentFilter ||
+            (assignmentFilter === "assigned" ? isAssigned : !isAssigned);
 
-          return matchesSearch && matchesDialer && matchesAssignment && matchesDate;
+          let matchesDate = true;
+          if (dateRange.start)
+            matchesDate =
+              matchesDate &&
+              new Date(child.createdAt) >= new Date(dateRange.start);
+          if (dateRange.end)
+            matchesDate =
+              matchesDate &&
+              new Date(child.createdAt) <=
+                new Date(dateRange.end + "T23:59:59");
+
+          return (
+            matchesSearch && matchesDialer && matchesAssignment && matchesDate
+          );
         });
 
-        if (rootMatches && !dialerTypeFilter && !assignmentFilter && !dateRange.start && !dateRange.end) 
-           return { ...root, children: root.children };
-        if (filteredChildren.length > 0) return { ...root, children: filteredChildren };
+        if (
+          rootMatches &&
+          !dialerTypeFilter &&
+          !assignmentFilter &&
+          !dateRange.start &&
+          !dateRange.end
+        )
+          return { ...root, children: root.children };
+        if (filteredChildren.length > 0)
+          return { ...root, children: filteredChildren };
         return null;
       })
       .filter(Boolean)
-      .filter(root => {
-        const matchesPipeline = !pipelineTypeFilter || root.pipelineType === pipelineTypeFilter;
+      .filter((root) => {
+        const matchesPipeline =
+          !pipelineTypeFilter || root.pipelineType === pipelineTypeFilter;
         let matchesDate = true;
-        if (dateRange.start) matchesDate = matchesDate && new Date(root.createdAt) >= new Date(dateRange.start);
-        if (dateRange.end) matchesDate = matchesDate && new Date(root.createdAt) <= new Date(dateRange.end + "T23:59:59");
+        if (dateRange.start)
+          matchesDate =
+            matchesDate &&
+            new Date(root.createdAt) >= new Date(dateRange.start);
+        if (dateRange.end)
+          matchesDate =
+            matchesDate &&
+            new Date(root.createdAt) <= new Date(dateRange.end + "T23:59:59");
         return matchesPipeline && matchesDate;
       });
-  }, [campaigns, searchTerm, pipelineTypeFilter, dialerTypeFilter, assignmentFilter, dateRange]);
+  }, [
+    campaigns,
+    searchTerm,
+    pipelineTypeFilter,
+    dialerTypeFilter,
+    assignmentFilter,
+    dateRange,
+  ]);
 
   const toggleSelectCampaign = (id, e) => {
     if (e) e.stopPropagation();
     setSelectedCampaignIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const toggleSelectParent = (root, e) => {
     if (e) e.stopPropagation();
-    const childIds = root.children.map(c => c._id);
+    const childIds = root.children.map((c) => c._id);
     const allIds = [root._id, ...childIds];
-    const allSelected = allIds.every(id => selectedCampaignIds.includes(id));
+    const allSelected = allIds.every((id) => selectedCampaignIds.includes(id));
 
     if (allSelected) {
-      setSelectedCampaignIds(prev => prev.filter(id => !allIds.includes(id)));
+      setSelectedCampaignIds((prev) =>
+        prev.filter((id) => !allIds.includes(id)),
+      );
     } else {
-      setSelectedCampaignIds(prev => [...new Set([...prev, ...allIds])]);
+      setSelectedCampaignIds((prev) => [...new Set([...prev, ...allIds])]);
     }
   };
 
@@ -198,22 +244,35 @@ export default function CampaignsPage() {
     setIsBulkAssigning(true);
     try {
       // Filter out parents from bulk assignment to avoid "not a child" error
-      const childIdsOnly = (await Promise.all(selectedCampaignIds.map(async id => {
-         // Optimization: usually parents don't have a dialerType or have certain props
-         // For now, find them in our state
-         let found = null;
-         for(const root of campaigns) {
-           if(root._id === id) { found = root; break; }
-           for(const child of root.children) {
-             if(child._id === id) { found = child; break; }
-           }
-           if(found) break;
-         }
-         return (found && found.parentCampaign) ? id : null;
-      }))).filter(Boolean);
+      const childIdsOnly = (
+        await Promise.all(
+          selectedCampaignIds.map(async (id) => {
+            // Optimization: usually parents don't have a dialerType or have certain props
+            // For now, find them in our state
+            let found = null;
+            for (const root of campaigns) {
+              if (root._id === id) {
+                found = root;
+                break;
+              }
+              for (const child of root.children) {
+                if (child._id === id) {
+                  found = child;
+                  break;
+                }
+              }
+              if (found) break;
+            }
+            return found && found.parentCampaign ? id : null;
+          }),
+        )
+      ).filter(Boolean);
 
       if (childIdsOnly.length === 0) {
-        showNotification("Please select child campaigns to assign agents", "warning");
+        showNotification(
+          "Please select child campaigns to assign agents",
+          "warning",
+        );
         setIsBulkAssigning(false);
         return;
       }
@@ -227,7 +286,10 @@ export default function CampaignsPage() {
       setSelectedAgentId("");
       loadCampaigns();
     } catch (err) {
-      showNotification(err.response?.data?.error || "Failed to assign agent", "error");
+      showNotification(
+        err.response?.data?.error || "Failed to assign agent",
+        "error",
+      );
     } finally {
       setIsBulkAssigning(false);
     }
@@ -235,8 +297,13 @@ export default function CampaignsPage() {
 
   const handleClearSelected = async () => {
     if (!selectedCampaignIds.length) return;
-    if (!window.confirm(`Clear assignments for ${selectedCampaignIds.length} campaigns?`)) return;
-    
+    if (
+      !window.confirm(
+        `Clear assignments for ${selectedCampaignIds.length} campaigns?`,
+      )
+    )
+      return;
+
     try {
       await bulkClearCampaignAssignments({ campaignIds: selectedCampaignIds });
       showNotification("Assignments cleared", "success");
@@ -249,7 +316,12 @@ export default function CampaignsPage() {
 
   const handleDelete = async (id, e) => {
     if (e) e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this campaign? All children and leads will be removed.")) return;
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this campaign? All children and leads will be removed.",
+      )
+    )
+      return;
 
     try {
       setDeletingId(id);
@@ -267,7 +339,10 @@ export default function CampaignsPage() {
     if (e) e.stopPropagation();
     if (!window.confirm("Unassign all agents from this campaign?")) return;
     try {
-      await api.put(`/campaigns/${campaign._id}`, { assignedAgent: null, assignedAgents: [] });
+      await api.put(`/campaigns/${campaign._id}`, {
+        assignedAgent: null,
+        assignedAgents: [],
+      });
       showNotification("Agents unassigned", "success");
       loadCampaigns();
     } catch (error) {
@@ -280,10 +355,19 @@ export default function CampaignsPage() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Campaign Management</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Organize and assign your calling efforts</p>
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-slate-50 via-white to-blue-50/30 p-8 shadow-lg dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30">
+            <Layers3 className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              Campaign Management
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Organize and assign your calling efforts
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -345,7 +429,9 @@ export default function CampaignsPage() {
                 >
                   <option value="">Assign Agent...</option>
                   {agents.map((a) => (
-                    <option key={a._id} value={a._id}>{a.name}</option>
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
                   ))}
                 </select>
                 <button
@@ -366,49 +452,60 @@ export default function CampaignsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-700/50">
-             <div className="flex items-center gap-2">
-               <Filter className="w-4 h-4 text-slate-400" />
-               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Advanced:</span>
-             </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Advanced:
+              </span>
+            </div>
 
-             <select 
-               value={dialerTypeFilter} 
-               onChange={(e) => setDialerTypeFilter(e.target.value)}
-               className="text-[11px] font-bold border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary-500/20 outline-hidden transition text-slate-700 dark:text-slate-300"
-             >
-               <option value="">All Dialers</option>
-               <option value="auto">Auto</option>
-               <option value="parallel">Parallel</option>
-             </select>
+            <select
+              value={dialerTypeFilter}
+              onChange={(e) => setDialerTypeFilter(e.target.value)}
+              className="text-[11px] font-bold border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary-500/20 outline-hidden transition text-slate-700 dark:text-slate-300"
+            >
+              <option value="">All Dialers</option>
+              <option value="auto">Auto</option>
+              <option value="parallel">Parallel</option>
+            </select>
 
-             <select 
-               value={assignmentFilter} 
-               onChange={(e) => setAssignmentFilter(e.target.value)}
-               className="text-[11px] font-bold border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary-500/20 outline-hidden transition text-slate-700 dark:text-slate-300"
-             >
-               <option value="">All Assignments</option>
-               <option value="assigned">Assigned</option>
-               <option value="unassigned">Unassigned</option>
-             </select>
+            <select
+              value={assignmentFilter}
+              onChange={(e) => setAssignmentFilter(e.target.value)}
+              className="text-[11px] font-bold border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-primary-500/20 outline-hidden transition text-slate-700 dark:text-slate-300"
+            >
+              <option value="">All Assignments</option>
+              <option value="assigned">Assigned</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
 
-             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-2 ml-auto">
-               <input 
-                 type="date" 
-                 value={dateRange.start} 
-                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                 className="text-[11px] font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-700 dark:text-slate-300"
-               />
-               <span className="text-slate-400 text-[10px] font-bold">TO</span>
-               <input 
-                 type="date" 
-                 value={dateRange.end} 
-                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                 className="text-[11px] font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-700 dark:text-slate-300"
-               />
-               {(dateRange.start || dateRange.end) && (
-                 <button onClick={() => setDateRange({ start: "", end: "" })} className="ml-1 p-0.5 text-slate-400 hover:text-rose-500 transition"><X className="w-3 h-3" /></button>
-               )}
-             </div>
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-2 ml-auto">
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, start: e.target.value }))
+                }
+                className="text-[11px] font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-700 dark:text-slate-300"
+              />
+              <span className="text-slate-400 text-[10px] font-bold">TO</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                }
+                className="text-[11px] font-bold bg-transparent border-none focus:ring-0 p-0 text-slate-700 dark:text-slate-300"
+              />
+              {(dateRange.start || dateRange.end) && (
+                <button
+                  onClick={() => setDateRange({ start: "", end: "" })}
+                  className="ml-1 p-0.5 text-slate-400 hover:text-rose-500 transition"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -420,28 +517,57 @@ export default function CampaignsPage() {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                 <th className="px-4 py-3 w-10">
-                  <div 
+                  <div
                     onClick={() => {
-                      const allIds = filteredCampaigns.flatMap(r => [r._id, ...r.children.map(c => c._id)]);
-                      const allSelected = allIds.every(id => selectedCampaignIds.includes(id));
+                      const allIds = filteredCampaigns.flatMap((r) => [
+                        r._id,
+                        ...r.children.map((c) => c._id),
+                      ]);
+                      const allSelected = allIds.every((id) =>
+                        selectedCampaignIds.includes(id),
+                      );
                       setSelectedCampaignIds(allSelected ? [] : allIds);
                     }}
                     className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${
-                      selectedCampaignIds.length > 0 ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'
+                      selectedCampaignIds.length > 0
+                        ? "bg-primary-600 border-primary-600 text-white"
+                        : "border-slate-300 dark:border-slate-600"
                     }`}
                   >
-                    {selectedCampaignIds.length > 0 && (
-                      filteredCampaigns.flatMap(r => [r._id, ...r.children.map(c => c._id)]).every(id => selectedCampaignIds.includes(id)) 
-                        ? <Check className="w-3 h-3" /> 
-                        : <Minus className="w-3 h-3" />
-                    )}
+                    {selectedCampaignIds.length > 0 &&
+                      (filteredCampaigns
+                        .flatMap((r) => [
+                          r._id,
+                          ...r.children.map((c) => c._id),
+                        ])
+                        .every((id) => selectedCampaignIds.includes(id)) ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <Minus className="w-3 h-3" />
+                      ))}
                   </div>
                 </th>
-                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Campaign Name</th>
-                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Type</th>
-                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Dialer</th>
-                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">Assignment</th>
-                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300 text-right">Actions</th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Campaign Name
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Type
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Dialer
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Assignment
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Leads
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300">
+                  Dialed
+                </th>
+                <th className="px-4 py-3 font-bold text-slate-700 dark:text-slate-300 text-right">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -451,12 +577,16 @@ export default function CampaignsPage() {
 
                 return (
                   <Fragment key={root._id}>
-                    <tr className={`group transition-colors ${isSelected ? 'bg-primary-50/30 dark:bg-primary-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'}`}>
+                    <tr
+                      className={`group transition-colors ${isSelected ? "bg-primary-50/30 dark:bg-primary-900/10" : "hover:bg-slate-50 dark:hover:bg-slate-700/30"}`}
+                    >
                       <td className="px-4 py-3">
-                        <div 
+                        <div
                           onClick={(e) => toggleSelectParent(root, e)}
                           className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${
-                            isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600 group-hover:border-primary-400'
+                            isSelected
+                              ? "bg-primary-600 border-primary-600 text-white"
+                              : "border-slate-300 dark:border-slate-600 group-hover:border-primary-400"
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3" />}
@@ -465,113 +595,216 @@ export default function CampaignsPage() {
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setExpandedRootIds(prev => {
-                              const next = new Set(prev);
-                              if (next.has(root._id)) next.delete(root._id); else next.add(root._id);
-                              return next;
-                            })}
+                            onClick={() =>
+                              setExpandedRootIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(root._id)) next.delete(root._id);
+                                else next.add(root._id);
+                                return next;
+                              })
+                            }
                             className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"
                           >
-                            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            <ChevronRight
+                              className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                            />
                           </button>
                           <span>{root.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          root.pipelineType === 'caller' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            root.pipelineType === "caller"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              : "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                          }`}
+                        >
                           {root.pipelineType}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-400">—</td>
                       <td className="px-4 py-3 text-slate-400">—</td>
+                      <td className="px-4 py-3 text-slate-400">—</td>
+                      <td className="px-4 py-3 text-slate-400">—</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
-                          <button onClick={() => openUploadModal(root)} className="p-2 text-slate-400 hover:text-primary-600 transition" title="Upload Leads"><Upload className="w-4 h-4" /></button>
-                          <button onClick={() => handleEditClick(root)} className="p-2 text-slate-400 hover:text-amber-600 transition" title="Edit"><Edit2 className="w-4 h-4" /></button>
-                          <button onClick={(e) => handleDelete(root._id, e)} className="p-2 text-slate-400 hover:text-rose-600 transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                          <button
+                            onClick={() => openUploadModal(root)}
+                            className="p-2 text-slate-400 hover:text-primary-600 transition"
+                            title="Upload Leads"
+                          >
+                            <Upload className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditClick(root)}
+                            className="p-2 text-slate-400 hover:text-amber-600 transition"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(root._id, e)}
+                            className="p-2 text-slate-400 hover:text-rose-600 transition"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
 
-                    {isExpanded && root.children.map((child, idx) => {
-                      const isChildSelected = selectedCampaignIds.includes(child._id);
-                      const isLast = idx === root.children.length - 1;
+                    {isExpanded &&
+                      root.children.map((child, idx) => {
+                        const isChildSelected = selectedCampaignIds.includes(
+                          child._id,
+                        );
+                        const isLast = idx === root.children.length - 1;
 
-                      return (
-                        <tr key={child._id} className={`group transition-colors border-l-2 border-slate-200 dark:border-slate-700 ml-4 ${isChildSelected ? 'bg-primary-50/30 dark:bg-primary-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'}`}>
-                          <td className="px-4 py-2.5 pl-8 relative">
-                             {/* Connector line */}
-                             <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700"></div>
-                             <div className="absolute left-4 top-1/2 w-4 h-px bg-slate-200 dark:bg-slate-700"></div>
-                             
-                             <div 
-                              onClick={(e) => toggleSelectCampaign(child._id, e)}
-                              className={`w-3.5 h-3.5 rounded border flex items-center justify-center cursor-pointer transition-colors relative z-10 ${
-                                isChildSelected ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 group-hover:border-primary-400'
-                              }`}
-                            >
-                              {isChildSelected && <Check className="w-2.5 h-2.5" />}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 pl-4">
-                            <button
-                              onClick={() => navigate(`/manager/leads?campaignId=${child._id}`)}
-                              className="text-slate-700 dark:text-slate-200 hover:text-primary-600 font-medium transition"
-                            >
-                              {child.name}
-                            </button>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className="text-xs text-slate-500 font-medium capitalize">{child.pipelineType}</span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                              child.dialerType === 'auto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'
-                            }`}>
-                              {child.dialerType}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                              {child.dialerType === 'auto' ? (
-                                <>
+                        return (
+                          <tr
+                            key={child._id}
+                            className={`group transition-colors border-l-2 border-slate-200 dark:border-slate-700 ml-4 ${isChildSelected ? "bg-primary-50/30 dark:bg-primary-900/10" : "hover:bg-slate-50 dark:hover:bg-slate-700/30"}`}
+                          >
+                            <td className="px-4 py-2.5 pl-8 relative">
+                              {/* Connector line */}
+                              <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700"></div>
+                              <div className="absolute left-4 top-1/2 w-4 h-px bg-slate-200 dark:bg-slate-700"></div>
+
+                              <div
+                                onClick={(e) =>
+                                  toggleSelectCampaign(child._id, e)
+                                }
+                                className={`w-3.5 h-3.5 rounded border flex items-center justify-center cursor-pointer transition-colors relative z-10 ${
+                                  isChildSelected
+                                    ? "bg-primary-600 border-primary-600 text-white"
+                                    : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 group-hover:border-primary-400"
+                                }`}
+                              >
+                                {isChildSelected && (
+                                  <Check className="w-2.5 h-2.5" />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 pl-4">
+                              <button
+                                onClick={() =>
+                                  navigate(
+                                    `/manager/leads?campaignId=${child._id}`,
+                                  )
+                                }
+                                className="text-slate-700 dark:text-slate-200 hover:text-primary-600 font-medium transition"
+                              >
+                                {child.name}
+                              </button>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className="text-xs text-slate-500 font-medium capitalize">
+                                {child.pipelineType}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span
+                                className={`text-[10px] font-bold uppercase tracking-wider ${
+                                  child.dialerType === "auto"
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-orange-600 dark:text-orange-400"
+                                }`}
+                              >
+                                {child.dialerType}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                                {child.dialerType === "auto" ? (
+                                  <>
+                                    <UserIcon className="w-3.5 h-3.5" />
+                                    {child.assignedAgent?.name || "Unassigned"}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Users className="w-3.5 h-3.5" />
+                                    {child.assignedAgents?.length || 0} Agents
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                  {child.stats?.totalLeads || 0} Total
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  {child.stats?.pendingLeads || 0} Pending
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+                                  {child.stats?.dialedToday || 0}
+                                </span>
+                                {child.stats?.isCompleted && (
+                                  <span className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
+                                    Done
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
+                                <button
+                                  onClick={() =>
+                                    navigate(
+                                      `/manager/leads?campaignId=${child._id}`,
+                                    )
+                                  }
+                                  className="p-1.5 text-slate-400 hover:text-primary-600 transition"
+                                  title="View Leads"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleEditClick(child)}
+                                  className="p-1.5 text-slate-400 hover:text-amber-600 transition"
+                                  title="Assign/Edit"
+                                >
                                   <UserIcon className="w-3.5 h-3.5" />
-                                  {child.assignedAgent?.name || "Unassigned"}
-                                </>
-                              ) : (
-                                <>
-                                  <Users className="w-3.5 h-3.5" />
-                                  {child.assignedAgents?.length || 0} Agents
-                                </>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
-                               <button onClick={() => navigate(`/manager/leads?campaignId=${child._id}`)} className="p-1.5 text-slate-400 hover:text-primary-600 transition" title="View Leads"><ExternalLink className="w-3.5 h-3.5" /></button>
-                               <button onClick={() => handleEditClick(child)} className="p-1.5 text-slate-400 hover:text-amber-600 transition" title="Assign/Edit"><UserIcon className="w-3.5 h-3.5" /></button>
-                               <button onClick={(e) => handleRemoveAgents(child, e)} className="p-1.5 text-slate-400 hover:text-slate-600 transition" title="Unassign"><X className="w-3.5 h-3.5" /></button>
-                               <button onClick={() => handleDelete(child._id)} className="p-1.5 text-slate-400 hover:text-rose-600 transition"><Trash2 className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                                </button>
+                                <button
+                                  onClick={(e) => handleRemoveAgents(child, e)}
+                                  className="p-1.5 text-slate-400 hover:text-slate-600 transition"
+                                  title="Unassign"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(child._id)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
-        
+
         {filteredCampaigns.length === 0 && !isLoading && (
           <div className="p-20 text-center">
             <Layers className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No campaigns found</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              No campaigns found
+            </h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mx-auto">
-              Create your first campaign to start organizing your leads and agents.
+              Create your first campaign to start organizing your leads and
+              agents.
             </p>
           </div>
         )}
@@ -602,13 +835,18 @@ export default function CampaignsPage() {
                 <div className="p-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg">
                   <Upload className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Upload Leads: {uploadParentCampaign?.name}</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Upload Leads: {uploadParentCampaign?.name}
+                </h3>
               </div>
-              <button onClick={closeUploadModal} className="p-2 text-slate-400 hover:text-slate-600 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button
+                onClick={closeUploadModal}
+                className="p-2 text-slate-400 hover:text-slate-600 transition rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-6">
               <FileUpload
                 campaignId={uploadParentCampaign?._id}
@@ -616,10 +854,13 @@ export default function CampaignsPage() {
                 disableParentSelect={true}
                 onSuccess={(msg, responseData) => {
                   showNotification(msg || "Upload complete", "success");
-                  if (responseData?.failedRows?.length) setUploadFailedRows(responseData.failedRows);
+                  if (responseData?.failedRows?.length)
+                    setUploadFailedRows(responseData.failedRows);
                   else setUploadFailedRows([]);
                 }}
-                onError={(msg) => showNotification(msg || "Upload failed", "error")}
+                onError={(msg) =>
+                  showNotification(msg || "Upload failed", "error")
+                }
                 onUploadComplete={() => loadCampaigns()}
               />
 
@@ -630,21 +871,37 @@ export default function CampaignsPage() {
                       <AlertCircle className="w-4 h-4" />
                       {uploadFailedRows.length} Rows Skipped
                     </span>
-                    <button onClick={() => setUploadFailedRows([])} className="text-[10px] font-bold text-amber-600 hover:text-amber-800 uppercase tracking-widest">Dismiss</button>
+                    <button
+                      onClick={() => setUploadFailedRows([])}
+                      className="text-[10px] font-bold text-amber-600 hover:text-amber-800 uppercase tracking-widest"
+                    >
+                      Dismiss
+                    </button>
                   </div>
                   <div className="max-h-48 overflow-y-auto">
                     <table className="w-full text-[11px] text-left">
                       <thead className="bg-amber-50/50 dark:bg-slate-800/50 sticky top-0">
                         <tr>
-                          <th className="px-4 py-2 font-bold text-amber-900/50 dark:text-amber-500/50 uppercase tracking-wider">Row</th>
-                          <th className="px-4 py-2 font-bold text-amber-900/50 dark:text-amber-500/50 uppercase tracking-wider">Reason</th>
+                          <th className="px-4 py-2 font-bold text-amber-900/50 dark:text-amber-500/50 uppercase tracking-wider">
+                            Row
+                          </th>
+                          <th className="px-4 py-2 font-bold text-amber-900/50 dark:text-amber-500/50 uppercase tracking-wider">
+                            Reason
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-amber-100 dark:divide-amber-900/10">
                         {uploadFailedRows.map((fr, idx) => (
-                          <tr key={idx} className="hover:bg-white dark:hover:bg-slate-800/30 transition-colors">
-                            <td className="px-4 py-2 font-bold text-slate-500">{fr.row}</td>
-                            <td className="px-4 py-2 text-rose-500 font-medium">{fr.reason}</td>
+                          <tr
+                            key={idx}
+                            className="hover:bg-white dark:hover:bg-slate-800/30 transition-colors"
+                          >
+                            <td className="px-4 py-2 font-bold text-slate-500">
+                              {fr.row}
+                            </td>
+                            <td className="px-4 py-2 text-rose-500 font-medium">
+                              {fr.reason}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -653,7 +910,7 @@ export default function CampaignsPage() {
                 </div>
               )}
             </div>
-            
+
             <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 onClick={closeUploadModal}

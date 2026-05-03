@@ -325,7 +325,7 @@ const DialerControls = forwardRef(function DialerControls(
     // Uses the ref to ensure we don't use stale closures if the break state changed during the wait
     setTimeout(() => {
       handleNextCallRef.current();
-    }, 5000);
+    }, 1000);
   };
 
   return (
