@@ -282,7 +282,12 @@ export default function AgentAvailabilityPage() {
           const totalBreakMs = agent.attendance?.totalBreakMs || 0;
           let currentBreakMs = 0;
           if (agent.attendance?.onBreak && agent.attendance?.breakStartedAt) {
-            currentBreakMs = Math.max(0, Date.now() - new Date(agent.attendance.breakStartedAt).getTime());
+            const serverNow = agent.attendance.serverTime ? new Date(agent.attendance.serverTime).getTime() : Date.now();
+            const clientNow = Date.now();
+            const clockOffset = serverNow - clientNow;
+            const adjustedNow = Date.now() + clockOffset;
+            
+            currentBreakMs = Math.max(0, adjustedNow - new Date(agent.attendance.breakStartedAt).getTime());
           }
           const totalBreakMinutes = Math.floor((totalBreakMs + currentBreakMs) / 60000);
           const breakExceeded = totalBreakMinutes > 60;

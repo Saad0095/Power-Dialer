@@ -136,14 +136,20 @@ export default function Navbar({
       return;
     }
 
+    // Calculate clock offset if serverTime is provided
+    const serverNow = user.attendance.serverTime ? new Date(user.attendance.serverTime).getTime() : Date.now();
+    const clientNow = Date.now();
+    const clockOffset = serverNow - clientNow;
+
     const breakStart = new Date(user.attendance.breakStartedAt).getTime();
     const previousTotalBreakSeconds = Math.floor(
       (user.attendance.totalBreakMs || 0) / 1000,
     );
 
     const tick = () => {
+      const adjustedNow = Date.now() + clockOffset;
       const currentBreakElapsedSeconds = Math.floor(
-        (Date.now() - breakStart) / 1000,
+        (adjustedNow - breakStart) / 1000,
       );
       const totalElapsedSeconds =
         previousTotalBreakSeconds + currentBreakElapsedSeconds;

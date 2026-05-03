@@ -1,4 +1,4 @@
-import { Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import {
   uploadLeads,
   uploadMultipleLeads,
@@ -10,18 +10,17 @@ import { LeadsContext } from "../context/LeadsContext";
 
 export default function FileUpload({
   campaignId,
-  isLoading,
+  isLoading: externalLoading,
   onSuccess,
   onError,
   onLeadsChange,
   onUploadComplete,
-  // when true the component will behave as if "Upload to parent" is selected
   forceParentUpload = false,
-  // when true the parent selector and toggle will be hidden (parent is locked)
   disableParentSelect = false,
 }) {
   const [fileError, setFileError] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const [campaign, setCampaign] = useState(null);
   const [isParentUpload, setIsParentUpload] = useState(false);
   const [parentOptions, setParentOptions] = useState([]);
@@ -32,7 +31,6 @@ export default function FileUpload({
   const summaryStorageKey = (parentId) =>
     `importSummary:${parentId || "global"}`;
 
-  // restore persisted summary for this parent on mount / when selectedParent changes
   useEffect(() => {
     const parentIdToUse = selectedParent || campaignId || "global";
     try {
@@ -41,22 +39,8 @@ export default function FileUpload({
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) setImportSummary(parsed);
       }
-    } catch (err) {
-      // ignore parse errors
-    }
+    } catch (err) {}
   }, [selectedParent, campaignId]);
-  const navigate =
-    typeof window !== "undefined" && window.location ? null : null;
-
-  const handleOpenChildCampaign = (campaignId) => {
-    try {
-      // navigate via location to preserve simple behavior
-      if (campaignId)
-        window.location.href = `/manager/leads?campaignId=${campaignId}`;
-    } catch (err) {
-      console.error("Failed to open campaign leads", err);
-    }
-  };
 
   useEffect(() => {
     async function fetchCampaign() {
@@ -64,7 +48,6 @@ export default function FileUpload({
         setCampaign(null);
         return;
       }
-
       try {
         const data = await getCampaignById(campaignId);
         setCampaign(data || null);
@@ -72,568 +55,273 @@ export default function FileUpload({
         setCampaign(null);
       }
     }
-
     fetchCampaign();
-    // load parent/root campaigns for multi-upload option
+
     (async () => {
       try {
         const all = await getCampaigns();
-        // `getCampaigns` returns nested roots; we want top-level campaigns (no parent)
         const roots = Array.isArray(all) ? all : [];
         setParentOptions(roots);
       } catch (err) {
         setParentOptions([]);
       }
     })();
-    // If caller requested forced parent mode, enable it and select campaignId as parent
+
     if (forceParentUpload && campaignId) {
       setIsParentUpload(true);
       setSelectedParent(campaignId);
     }
   }, [campaignId]);
 
-  // Validate file before upload
   const validateFile = (file) => {
-    setFileError("");
-
-    // Check file exists
     if (!file) {
       setFileError("No file selected");
       return false;
     }
-
-    // Check file extension
     const fileName = file.name.toLowerCase();
     const validExtensions = [".csv", ".xlsx", ".xls"];
-    const hasValidExtension = validExtensions.some((ext) =>
-      fileName.endsWith(ext),
-    );
-
-    if (!hasValidExtension) {
-      setFileError(
-        "Invalid file type. Only CSV and Excel files (.csv, .xlsx, .xls) are allowed.",
-      );
+    if (!validExtensions.some((ext) => fileName.endsWith(ext))) {
+      setFileError("Invalid file type. Only CSV and Excel files are allowed.");
       return false;
     }
-
-    // Check file size (5MB = 5242880 bytes)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      setFileError(
-        `File size (${sizeMB}MB) exceeds maximum limit of 5MB. Please reduce the file size.`,
-      );
+    if (file.size > 10 * 1024 * 1024) { // Increased to 10MB
+      setFileError("File size exceeds 10MB limit.");
       return false;
     }
-
-    // Check MIME type as secondary validation
-    const validMimeTypes = [
-      "text/csv",
-      "application/csv",
-      "text/plain",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
-    if (!validMimeTypes.includes(file.type) && file.type !== "") {
-      console.warn(`Unusual MIME type: ${file.type}, but proceeding...`);
-    }
-
     return true;
   };
 
   const handleFileUpload = async (e) => {
-    const selectedFiles = e.target.files;
+    const selectedFiles = Array.from(e.target.files || []);
+    if (!selectedFiles.length) return;
 
-    if (!selectedFiles || selectedFiles.length === 0) {
-      e.target.value = "";
-      return;
-    }
+    const isParentCampaign = forceParentUpload || isParentUpload || (campaign && !campaign.parentCampaign);
 
-    // Determine multi-upload mode: either explicit parent-upload toggle OR selected campaign is a parent
-    // also honor forceParentUpload prop
-    const isParentCampaign =
-      forceParentUpload ||
-      isParentUpload ||
-      (campaign && !campaign.parentCampaign);
-
-    // Validate each file
-    for (const f of Array.from(selectedFiles)) {
+    for (const f of selectedFiles) {
       if (!validateFile(f)) {
         e.target.value = "";
         return;
       }
     }
 
-    // require a campaign id: when parent-upload mode is enabled, require selectedParent; otherwise require campaignId
     if (!campaignId && !selectedParent) {
       onError("Please select a campaign first");
-      setFileError("Please select a campaign first");
-      e.target.value = ""; // Reset input
+      e.target.value = "";
       return;
     }
 
+    setIsUploading(true);
+    setUploadProgress(0);
+    setFileError("");
+    setImportSummary([]);
+    
+    const parentIdToUse = selectedParent || campaignId;
     try {
-      setUploadProgress(0);
-      setFileError("");
+      sessionStorage.removeItem(summaryStorageKey(parentIdToUse));
+    } catch (err) {}
 
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + Math.random() * 30;
-        });
-      }, 200);
-
-      let response;
-
-      // clear previous summary (and persisted) before new upload
-      const parentIdToUse = selectedParent || campaignId || "global";
-      setImportSummary([]);
-      try {
-        sessionStorage.removeItem(summaryStorageKey(parentIdToUse));
-      } catch (err) {}
-
+    try {
       if (isParentCampaign) {
-        // Upload multiple files to parent -> server creates child campaigns
-        const parentIdToUse = selectedParent || campaignId;
-        response = await uploadMultipleLeads(selectedFiles, parentIdToUse);
-        // uploadMultipleLeads returns the parsed body (e.g. { success, message, data: [...] })
-        // normalize to an array of result objects
-        let results = [];
-        if (Array.isArray(response)) results = response;
-        else if (Array.isArray(response?.data)) results = response.data;
-        else if (Array.isArray(response?.results)) results = response.results;
-        else if (Array.isArray(response?.data?.data))
-          results = response.data.data;
-        else results = [];
-        setImportSummary(results);
-        try {
-          sessionStorage.setItem(
-            summaryStorageKey(parentIdToUse),
-            JSON.stringify(results),
-          );
-        } catch (err) {
-          // ignore storage errors
+        // Sequential upload to prevent CORS/Timeout issues on Hostinger VPS
+        const allResults = [];
+        const totalFiles = selectedFiles.length;
+        
+        for (let i = 0; i < totalFiles; i++) {
+          const file = selectedFiles[i];
+          setUploadProgress(((i) / totalFiles) * 100);
+          
+          try {
+            // Upload one file at a time
+            const response = await uploadMultipleLeads([file], parentIdToUse);
+            let results = [];
+            if (Array.isArray(response)) results = response;
+            else if (Array.isArray(response?.data)) results = response.data;
+            else if (Array.isArray(response?.results)) results = response.results;
+            else if (Array.isArray(response?.data?.data)) results = response.data.data;
+            
+            allResults.push(...results);
+          } catch (err) {
+            allResults.push({
+              file: file.name,
+              imported: 0,
+              reason: err.response?.data?.error || "Connection error or timeout"
+            });
+          }
+          
+          setUploadProgress(((i + 1) / totalFiles) * 100);
         }
+
+        setImportSummary(allResults);
+        try {
+          sessionStorage.setItem(summaryStorageKey(parentIdToUse), JSON.stringify(allResults));
+        } catch (err) {}
+        onSuccess("Files processed - see summary below", null);
       } else {
-        // Existing single-file flow: only first file used
         const file = selectedFiles[0];
-        response = await uploadLeads(
+        const response = await uploadLeads(
           file,
           campaignId,
-          campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined,
+          campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined
         );
-      }
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      // show success or summary message
-      if (isParentCampaign) {
-        onSuccess("Files imported — see summary below", null);
-      } else {
-        // Pass back response.data so callers can read failedRows
         const responseData = response?.data ?? response ?? null;
         onSuccess(responseData?.message || "Upload complete", responseData);
       }
 
-      // Refresh the parent count and the table data after a successful upload
       const refreshedCount = await onUploadComplete?.();
+      if (typeof refreshedCount === "number" && onLeadsChange) onLeadsChange(refreshedCount);
+      if (leadsCtx?.loadLeads) await leadsCtx.loadLeads();
 
-      if (typeof refreshedCount === "number" && onLeadsChange) {
-        onLeadsChange(refreshedCount);
-      }
-
-      if (leadsCtx?.loadLeads) {
-        await leadsCtx.loadLeads();
-      }
-
-      // Reset after 1.5 seconds
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || "Failed to upload leads.";
+      onError(errorMsg);
+      setFileError(errorMsg);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(100);
       setTimeout(() => {
         setUploadProgress(0);
         e.target.value = "";
       }, 1500);
-    } catch (error) {
-      setUploadProgress(0);
-      const errorMsg =
-        error.response?.data?.error ||
-        "Failed to upload leads. Please check the file format and try again.";
-      onError(errorMsg);
-      setFileError(errorMsg);
-      console.error(error);
     }
   };
 
+  const handleOpenChildCampaign = (campaignId) => {
+    if (campaignId) window.location.href = `/manager/leads?campaignId=${campaignId}`;
+  };
+
   return (
-    <div className="bg-linear-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-2xl dark:shadow-slate-900/30 p-6 border border-slate-200 dark:border-slate-700">
-      <h2 className="text-xl font-bold mb-4 text-primary-500">Upload Leads</h2>
-      {/* File Error Alert */}
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Upload Leads</h2>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Importer v2.1</p>
+        </div>
+        <div className={`p-2 rounded-lg ${isUploading ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-slate-50 dark:bg-slate-900'}`}>
+          {isUploading ? <Loader className="w-5 h-5 text-primary-500 animate-spin" /> : <Upload className="w-5 h-5 text-slate-400" />}
+        </div>
+      </div>
+
       {fileError && (
-        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-          <p className="text-red-400 text-sm">{fileError}</p>
+        <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+          <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+          <p className="text-rose-600 dark:text-rose-400 text-xs font-bold leading-relaxed">{fileError}</p>
         </div>
       )}
 
-      {/* Agent Select */}
-      <div className="mb-4">
-        {campaign?.dialerType === "auto" ? (
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
-            Auto campaigns can be uploaded without an assigned agent. If one is
-            assigned later, the leads stay available for dialing.
-          </div>
-        ) : campaign?.dialerType === "parallel" ? (
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
-            Parallel caller campaigns assign leads at dial-time. No agent
-            selection is needed here.
-          </div>
-        ) : null}
-      </div>
-
-      <div className="border-2 border-dashed border-primary-500 rounded-lg p-8 text-center bg-slate-100 dark:bg-slate-900/50 hover:bg-slate-200 dark:hover:bg-slate-900 transition cursor-pointer relative group">
+      <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-10 text-center bg-slate-50 dark:bg-slate-900/50 hover:border-primary-500 dark:hover:border-primary-500 transition-all cursor-pointer relative group">
         <input
           type="file"
           accept=".csv,.xlsx,.xls"
           onChange={handleFileUpload}
-          disabled={
-            (!campaignId && !selectedParent) || isLoading || uploadProgress > 0
-          }
+          disabled={(!campaignId && !selectedParent) || isUploading}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
           multiple={isParentUpload || (campaign && !campaign.parentCampaign)}
         />
-        <Upload className="w-12 h-12 text-primary-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-        <p className="text-slate-900 dark:text-slate-100 font-semibold">
-          Drag and drop your CSV or Excel file
-        </p>
-        <p className="text-slate-600 dark:text-slate-400 text-sm">
-          or click to select (.csv, .xlsx, .xls)
-        </p>
-        {isLoading || uploadProgress > 0 ? (
-          <div className="mt-4 space-y-2">
-            <p className="text-primary-500 text-xs font-semibold">
-              {uploadProgress >= 100 ? "Upload Complete!" : "Uploading..."}
-            </p>
-            <div className="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform border border-slate-100 dark:border-slate-700">
+          <Upload className="w-8 h-8 text-primary-600" />
+        </div>
+        <p className="text-slate-900 dark:text-slate-100 font-black text-sm uppercase tracking-wide">Drop your files here</p>
+        <p className="text-slate-500 dark:text-slate-400 text-[11px] font-bold mt-1 uppercase tracking-widest">CSV, XLSX, XLS (Max 10MB)</p>
+        
+        {isUploading && (
+          <div className="mt-6 space-y-3">
+            <div className="flex justify-between items-end">
+              <span className="text-[10px] font-black text-primary-600 uppercase">Processing Queue</span>
+              <span className="text-[10px] font-black text-primary-600">{Math.round(uploadProgress)}%</span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
               <div
-                className="bg-linear-to-r from-primary-500 to-primary-400 h-full transition-all duration-300"
+                className="bg-primary-600 h-full transition-all duration-300"
                 style={{ width: `${Math.min(uploadProgress, 100)}%` }}
               />
             </div>
-            <p className="text-slate-600 dark:text-slate-400 text-xs">
-              {Math.round(uploadProgress)}%
-            </p>
           </div>
-        ) : null}
+        )}
       </div>
 
-      {!campaignId && (
-        <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-          <p className="text-yellow-400 text-sm">Select a campaign first</p>
-        </div>
-      )}
-      {/* Parent upload option */}
-      <div className="mt-4">
+      <div className="mt-6 space-y-4">
         {!disableParentSelect && (
-          <>
-            <label className="inline-flex items-center gap-2">
+          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isParentUpload ? 'bg-primary-600 border-primary-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                {isParentUpload && <CheckCircle className="w-3 h-3" />}
+              </div>
               <input
                 type="checkbox"
                 checked={isParentUpload}
                 onChange={(ev) => setIsParentUpload(ev.target.checked)}
-                className="form-checkbox"
+                className="hidden"
               />
-              <span className="text-sm text-slate-700 dark:text-slate-300">
-                Upload to parent campaign (create child campaigns per file)
-              </span>
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Upload to parent campaign</span>
             </label>
 
             {isParentUpload && (
-              <div className="mt-2">
-                <label className="block text-sm text-slate-600 dark:text-slate-400">
-                  Select parent campaign
-                </label>
+              <div className="mt-4 animate-in fade-in slide-in-from-top-2">
                 <select
                   value={selectedParent || ""}
                   onChange={(e) => setSelectedParent(e.target.value || null)}
-                  className="mt-1 block w-full rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm p-2"
+                  className="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold p-2.5 focus:ring-2 focus:ring-primary-500/20"
                 >
-                  <option value="">-- choose parent campaign --</option>
+                  <option value="">-- select parent campaign --</option>
                   {parentOptions.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name}
-                    </option>
+                    <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
                 </select>
+                <p className="mt-2 text-[10px] text-slate-400 font-medium leading-relaxed">
+                  Each file (or sheet in Excel) will create a new child campaign under the selected parent.
+                </p>
               </div>
             )}
-          </>
+          </div>
+        )}
+
+        {importSummary.length > 0 && (
+          <div className="mt-6 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Processing Results</h3>
+              <button
+                onClick={() => {
+                  setImportSummary([]);
+                  try { sessionStorage.removeItem(summaryStorageKey(selectedParent || campaignId || "global")); } catch (err) {}
+                }}
+                className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-tighter"
+              >
+                Clear History
+              </button>
+            </div>
+            
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 max-h-60 overflow-y-auto scrollbar-theme">
+              {importSummary.map((item, idx) => (
+                <div key={idx} className="p-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{item.campaignName || item.file}</p>
+                    {item.reason && <p className="text-[10px] font-bold text-rose-500">{item.reason}</p>}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[10px] font-black text-slate-500 whitespace-nowrap">
+                      {typeof item.imported === "number" ? `${item.imported} LEADS` : ""}
+                    </span>
+                    {item.campaignId && (
+                      <button
+                        onClick={() => handleOpenChildCampaign(item.campaignId)}
+                        className="p-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition shadow-lg shadow-primary-500/20"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-      {importSummary && importSummary.length > 0 && (
-        <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
-          <h3 className="text-sm font-semibold mb-2 text-slate-900 dark:text-white">
-            Import Summary
-          </h3>
-          <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-2">
-            {importSummary.map((item, idx) => (
-              <li
-                key={item.campaignId || item.file || idx}
-                className="flex items-center justify-between"
-              >
-                <div>
-                  <strong className="block">
-                    {item.campaignName || item.file || "Unnamed"}
-                  </strong>
-                  {item.reason ? (
-                    <span className="text-rose-600 text-xs">{item.reason}</span>
-                  ) : null}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500 text-sm">
-                    {typeof item.imported === "number"
-                      ? `${item.imported} leads`
-                      : ""}
-                  </span>
-                  {item.campaignId ? (
-                    <button
-                      onClick={() => handleOpenChildCampaign(item.campaignId)}
-                      className="text-xs px-2 py-1 bg-primary-600 hover:bg-primary-700 text-white rounded"
-                    >
-                      Open Leads
-                    </button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 text-right">
-            <button
-              onClick={() => {
-                const parentIdToUse = selectedParent || campaignId || "global";
-                setImportSummary([]);
-                try {
-                  sessionStorage.removeItem(summaryStorageKey(parentIdToUse));
-                } catch (err) {}
-              }}
-              className="text-xs px-3 py-1 bg-red-600 hover:bg-red-800 rounded"
-            >
-              Clear Summary
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-// import { Upload, AlertCircle, CheckCircle } from "lucide-react";
-// import { uploadLeads, getCampaignById } from "../services/api";
-// import { useState, useContext, useEffect } from "react";
-// import { LeadsContext } from "../context/LeadsContext";
-
-// export default function FileUpload({
-//   campaignId,
-//   isLoading,
-//   onSuccess,
-//   onError,
-//   onLeadsChange,
-//   onUploadComplete,
-// }) {
-//   const [fileError, setFileError] = useState("");
-//   const [uploadProgress, setUploadProgress] = useState(0);
-//   const [campaign, setCampaign] = useState(null);
-//   const leadsCtx = useContext(LeadsContext);
-
-//   useEffect(() => {
-//     async function fetchCampaign() {
-//       if (!campaignId) {
-//         setCampaign(null);
-//         return;
-//       }
-
-//       try {
-//         const data = await getCampaignById(campaignId);
-//         setCampaign(data || null);
-//       } catch (error) {
-//         setCampaign(null);
-//       }
-//     }
-
-//     fetchCampaign();
-//   }, [campaignId]);
-
-//   // Validate file before upload
-//   const validateFile = (file) => {
-//     setFileError("");
-
-//     // Check file exists
-//     if (!file) {
-//       setFileError("No file selected");
-//       return false;
-//     }
-
-//     // Check file extension
-//     const fileName = file.name.toLowerCase();
-//     if (!fileName.endsWith(".csv")) {
-//       setFileError("Invalid file type. Only CSV files are allowed.");
-//       return false;
-//     }
-
-//     // Check file size (5MB = 5242880 bytes)
-//     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-//     if (file.size > maxSize) {
-//       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-//       setFileError(
-//         `File size (${sizeMB}MB) exceeds maximum limit of 5MB. Please reduce the file size.`
-//       );
-//       return false;
-//     }
-
-//     // Check MIME type as secondary validation
-//     const validMimeTypes = [
-//       "text/csv",
-//       "application/csv",
-//       "text/plain",
-//       "application/vnd.ms-excel",
-//     ];
-//     if (!validMimeTypes.includes(file.type) && file.type !== "") {
-//       console.warn(`Unusual MIME type: ${file.type}, but proceeding...`);
-//     }
-
-//     return true;
-//   };
-
-//   const handleFileUpload = async (e) => {
-//     const file = e.target.files[0];
-
-//     if (!validateFile(file)) {
-//       e.target.value = ""; // Reset input
-//       return;
-//     }
-
-//     if (!campaignId) {
-//       onError("Please select a campaign first");
-//       setFileError("Please select a campaign first");
-//       e.target.value = ""; // Reset input
-//       return;
-//     }
-
-//     try {
-//       setUploadProgress(0);
-//       setFileError("");
-
-//       // Simulate progress for better UX
-//       const progressInterval = setInterval(() => {
-//         setUploadProgress((prev) => {
-//           if (prev >= 90) {
-//             clearInterval(progressInterval);
-//             return prev;
-//           }
-//           return prev + Math.random() * 30;
-//         });
-//       }, 200);
-
-//       const response = await uploadLeads(file, campaignId, campaign?.assignedAgent?._id || campaign?.assignedAgent || undefined);
-
-//       clearInterval(progressInterval);
-//       setUploadProgress(100);
-
-//       onSuccess(`${file.name} uploaded successfully`);
-
-//       // Refresh the parent count and the table data after a successful upload
-//       const refreshedCount = await onUploadComplete?.();
-
-//       if (typeof refreshedCount === 'number' && onLeadsChange) {
-//         onLeadsChange(refreshedCount);
-//       }
-
-//         if (leadsCtx?.loadLeads) {
-//         await leadsCtx.loadLeads();
-//       }
-
-//       // Reset after 1.5 seconds
-//       setTimeout(() => {
-//         setUploadProgress(0);
-//         e.target.value = "";
-//       }, 1500);
-//     } catch (error) {
-//       setUploadProgress(0);
-//       const errorMsg =
-//         error.response?.data?.error ||
-//         "Failed to upload leads. Please check the file format and try again.";
-//       onError(errorMsg);
-//       setFileError(errorMsg);
-//       console.error(error);
-//     }
-//   };
-
-//   return (
-//     <div className="bg-linear-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-2xl dark:shadow-slate-900/30 p-6 border border-slate-200 dark:border-slate-700">
-//       <h2 className="text-xl font-bold mb-4 text-primary-500">Upload Leads</h2>
-//       {/* File Error Alert */}
-//       {fileError && (
-//         <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded flex items-start gap-2">
-//           <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-//           <p className="text-red-400 text-sm">{fileError}</p>
-//         </div>
-//       )}
-
-//       {/* Agent Select */}
-//       <div className="mb-4">
-//         {campaign?.dialerType === "auto" ? (
-//           <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
-//             Auto campaigns can be uploaded without an assigned agent. If one is assigned later, the leads stay available for dialing.
-//           </div>
-//         ) : (
-//           <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
-//             Parallel caller campaigns assign leads at dial-time. No agent selection is needed here.
-//           </div>
-//         )}
-//       </div>
-
-//       <div className="border-2 border-dashed border-primary-500 rounded-lg p-8 text-center bg-slate-100 dark:bg-slate-900/50 hover:bg-slate-200 dark:hover:bg-slate-900 transition cursor-pointer relative group">
-//         <input
-//           type="file"
-//           accept=".csv, .xlsx"
-//           onChange={handleFileUpload}
-//           disabled={!campaignId || isLoading || uploadProgress > 0}
-//           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-//         />
-//         <Upload className="w-12 h-12 text-primary-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-//         <p className="text-slate-900 dark:text-slate-100 font-semibold">
-//           Drag and drop your CSV file
-//         </p>
-//         <p className="text-slate-600 dark:text-slate-400 text-sm">or click to select</p>
-//         {isLoading || uploadProgress > 0 ? (
-//           <div className="mt-4 space-y-2">
-//             <p className="text-primary-500 text-xs font-semibold">
-//               {uploadProgress >= 100 ? "Upload Complete!" : "Uploading..."}
-//             </p>
-//             <div className="w-full bg-slate-300 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-//               <div
-//                 className="bg-linear-to-r from-primary-500 to-primary-400 h-full transition-all duration-300"
-//                 style={{ width: `${Math.min(uploadProgress, 100)}%` }}
-//               />
-//             </div>
-//             <p className="text-slate-600 dark:text-slate-400 text-xs">
-//               {Math.round(uploadProgress)}%
-//             </p>
-//           </div>
-//         ) : null}
-//       </div>
-
-//       {!campaignId && (
-//         <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded flex items-start gap-2">
-//           <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-//           <p className="text-yellow-400 text-sm">
-//             Select a campaign first
-//           </p>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
+function ExternalLink({ className }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  );
+}

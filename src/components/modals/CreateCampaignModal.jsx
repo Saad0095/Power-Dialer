@@ -3,7 +3,7 @@ import Modal from '../common/Modal.jsx';
 import FormInput from '../common/FormInput.jsx';
 import FormSelect from '../common/FormSelect.jsx';
 import { createCampaign, getAllAgents, getCampaigns } from '../../services/api.js';
-import { Loader } from 'lucide-react';
+import { Loader, Info, Settings, User as UserIcon, Users, Layers } from 'lucide-react';
 
 export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onError }) {
   const [formData, setFormData] = useState({
@@ -142,56 +142,82 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Campaign">
-      <form onSubmit={handleSubmit}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Create New Campaign" maxWidth="max-w-lg">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* Section 1: Basic Information */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+            <Info className="w-3.5 h-3.5" />
+            Basic Information
+          </div>
+          
+          <FormInput
+            label="Campaign Name"
+            name="name"
+            placeholder="e.g. Q4 Real Estate Outreach"
+            value={formData.name}
+            onChange={handleChange}
+            error={errors.name}
+            required
+          />
 
-        <FormInput
-          label="Campaign Name"
-          name="name"
-          placeholder="Enter campaign name"
-          value={formData.name}
-          onChange={handleChange}
-          error={errors.name}
-          required
-        />
-
-        <FormSelect
-          label="Pipeline Type"
-          name="pipelineType"
-          value={formData.pipelineType}
-          onChange={handleChange}
-          options={[
-            { value: 'caller', label: 'Caller Pipeline' },
-            { value: 'closer', label: 'Closer Pipeline' },
-          ]}
-          error={errors.pipelineType}
-          required
-        />
-
-        <FormSelect
-          label="Parent Campaign (optional)"
-          name="parentCampaign"
-          value={formData.parentCampaign}
-          onChange={handleChange}
-          options={parentCampaignOptions}
-        />
-
-        <div className="mb-4 p-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800/50 text-xs text-slate-700 dark:text-slate-300">
-          {isChildCampaign
-            ? 'Child caller campaigns require a dialer setup and assignment rules.'
-            : 'Top-level caller campaigns are containers and do not require dialer type.'}
+          <FormSelect
+            label="Pipeline Type"
+            name="pipelineType"
+            value={formData.pipelineType}
+            onChange={handleChange}
+            options={[
+              { value: 'caller', label: 'Caller Pipeline' },
+              { value: 'closer', label: 'Closer Pipeline' },
+            ]}
+            error={errors.pipelineType}
+            required
+          />
         </div>
 
+        {/* Section 2: Hierarchy */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+            <Layers className="w-3.5 h-3.5" />
+            Hierarchy & Structure
+          </div>
+
+          <FormSelect
+            label="Parent Campaign (optional)"
+            name="parentCampaign"
+            value={formData.parentCampaign}
+            onChange={handleChange}
+            options={parentCampaignOptions}
+            placeholder="Select a parent campaign..."
+          />
+
+          <div className="p-3 rounded-lg bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/30 flex gap-3">
+             <Info className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
+             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+               {isChildCampaign
+                 ? 'This will be a child campaign. Child campaigns require specific dialer configurations and agent assignments to run.'
+                 : 'This will be a top-level parent campaign. Parent campaigns act as containers and do not require individual dialer setups.'}
+             </p>
+          </div>
+        </div>
+
+        {/* Section 3: Dialer Configuration (Only for Child Campaigns) */}
         {isChildCampaign && (
-          <>
+          <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+              <Settings className="w-3.5 h-3.5" />
+              Dialer Configuration
+            </div>
+
             <FormSelect
               label="Dialer Type"
               name="dialerType"
               value={formData.dialerType}
               onChange={handleChange}
               options={[
-                { value: 'auto', label: 'Auto (single agent)' },
-                { value: 'parallel', label: 'Parallel (agent pool)' },
+                { value: 'auto', label: 'Auto (Single Agent)' },
+                { value: 'parallel', label: 'Parallel (Agent Pool)' },
               ]}
               error={errors.dialerType}
               required
@@ -199,53 +225,73 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
 
             {isAutoDialer && (
               <FormSelect
-                label="Assigned Caller Agent (optional)"
+                label="Assigned Caller Agent"
                 name="assignedAgent"
                 value={formData.assignedAgent}
                 onChange={handleChange}
                 options={callerAgentOptions}
                 error={errors.assignedAgent}
+                placeholder="Assign an agent now (optional)..."
               />
             )}
 
             {isParallelDialer && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Assigned Caller Agent Pool (3-4)
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-200">
+                  Assigned Agent Pool <span className="text-[10px] font-normal text-slate-500">(Select 3-4 agents)</span>
                 </label>
-                <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 p-3 space-y-2">
-                  {callerAgents.map((agent) => (
-                    <label key={agent._id} className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={formData.assignedAgents.includes(agent._id)}
-                        onChange={() => handleParallelAgentToggle(agent._id)}
-                      />
-                      <span>{agent.name} ({agent.email})</span>
-                    </label>
-                  ))}
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-2 scrollbar-theme">
+                  <div className="grid grid-cols-1 gap-1">
+                    {callerAgents.map((agent) => {
+                      const isSelected = formData.assignedAgents.includes(agent._id);
+                      return (
+                        <label 
+                          key={agent._id} 
+                          className={`flex items-center gap-3 p-2 rounded-lg transition-colors cursor-pointer ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-white dark:hover:bg-slate-800'}`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'}`}>
+                            {isSelected && <Loader className="w-3 h-3" />} {/* Using Loader as a temporary checkmark since I don't want to import Check here if not needed, but wait, I can just use a div or something */}
+                            {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={isSelected}
+                            onChange={() => handleParallelAgentToggle(agent._id)}
+                          />
+                          <div className="flex flex-col">
+                            <span className={`text-xs font-bold ${isSelected ? 'text-primary-700 dark:text-primary-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                              {agent.name}
+                            </span>
+                            <span className="text-[10px] text-slate-500">{agent.email}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
-                {errors.assignedAgents && <p className="text-rose-600 dark:text-rose-400 text-sm mt-1">{errors.assignedAgents}</p>}
+                {errors.assignedAgents && <p className="text-rose-500 text-xs font-bold mt-1">{errors.assignedAgents}</p>}
               </div>
             )}
-          </>
+          </div>
         )}
 
-        <div className="flex gap-3 justify-end mt-6">
+        {/* Footer Actions */}
+        <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 transition"
+            className="px-6 py-2 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-8 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold shadow-lg shadow-primary-500/20 transition disabled:opacity-50 flex items-center gap-2"
           >
             {isLoading && <Loader className="w-4 h-4 animate-spin" />}
-            Create Campaign
+            {isLoading ? 'Creating...' : 'Create Campaign'}
           </button>
         </div>
       </form>

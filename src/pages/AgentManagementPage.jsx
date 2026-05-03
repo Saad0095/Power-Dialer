@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getAllAgents, updateUser } from '../services/api';
+import api, { getAllAgents, updateUser } from '../services/api';
 import UserCreationModal from '../components/modals/UserCreationModal';
 import AgentManagementHeader from '../components/AgentManagementHeader';
 import AgentTable from '../components/AgentTable';
@@ -172,23 +172,14 @@ export default function AgentManagementPage() {
   const handleDeleteUser = async (user) => {
     if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
       try {
-        const response = await fetch(`/api/auth/agents/${user._id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to delete user');
-        }
+        await api.delete(`/auth/agents/${user._id}`);
 
         setUsers(users.filter(u => u._id !== user._id));
         setSuccessMessage('User deleted successfully');
         setTimeout(() => setSuccessMessage(''), 5000);
       } catch (error) {
         console.error('Failed to delete user:', error);
-        setEditError('Failed to delete user');
+        setEditError(error.response?.data?.error || 'Failed to delete user');
       }
     }
   };
