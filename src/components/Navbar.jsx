@@ -209,7 +209,7 @@ export default function Navbar({
               {powerHourActive && (
                 <div
                   className="
-      px-3 py-2 rounded-lg text-sm font-semibold mr-2
+    px-3 py-2 rounded-lg text-sm font-semibold mr-2
       bg-gradient-to-r from-amber-500/20 to-orange-500/20
       text-amber-700 dark:text-amber-300
       border border-amber-400/30

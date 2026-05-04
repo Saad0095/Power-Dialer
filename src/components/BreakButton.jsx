@@ -54,6 +54,35 @@ export default function BreakButton({ user, onShowNotification }) {
     return `${prefix}${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
+  // Block page refresh/navigation while on break.
+  useEffect(() => {
+    if (!user?.attendance?.onBreak) return undefined;
+
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      // Some browsers require returnValue to be set.
+      e.returnValue = "";
+      return "";
+    };
+
+    const onKeydown = (e) => {
+      // Prevent F5, Ctrl+R / Cmd+R
+      if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && (e.key === "r" || e.key === "R"))) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    // capture phase to intercept before other handlers
+    window.addEventListener("keydown", onKeydown, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("keydown", onKeydown, true);
+    };
+  }, [user?.attendance?.onBreak]);
+
   const handleToggleBreak = async () => {
     try {
       setIsAgentBreakLoading(true);
@@ -110,9 +139,16 @@ export default function BreakButton({ user, onShowNotification }) {
   );
 
   return createPortal(
-    <div className="fixed top-6 right-4 md:right-20 lg:right-[400px] z-[99999]">
-      {content}
-    </div>,
+    <>
+      {/* Full-screen blocking overlay while on break */}
+      {user?.attendance?.onBreak && (
+        <div className="fixed inset-0 z-[99998] bg-black/30" />
+      )}
+
+      <div className="fixed top-6 right-1/2 z-[100000] pointer-events-auto">
+        <div>{content}</div>
+      </div>
+    </>,
     document.body,
   );
 }

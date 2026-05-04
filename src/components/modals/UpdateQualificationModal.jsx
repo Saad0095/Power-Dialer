@@ -109,6 +109,7 @@ export default function UpdateQualificationModal({
       onClose={onClose}
       title={`Update Qualification - ${lead?.businessName || "N/A"}`}
       maxWidth="max-w-md"
+      breakSafe={true}
     >
       <form onSubmit={handleSubmit}>
         {/* Lead info */}
