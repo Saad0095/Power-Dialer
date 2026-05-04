@@ -302,7 +302,7 @@ export default function ScrapeSessionsList({
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         {new Date(session.createdAt).toLocaleString()}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">By {session?.createdBy.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">By {formatAgentLabel(session?.createdBy)}</p>
                     </div>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[session.status] || STATUS_STYLES.running}`}>
                       {session.status}
