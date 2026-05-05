@@ -71,8 +71,21 @@ function RootCampaignRow({
       </td>
       <td className="px-4 py-3 text-slate-400">-</td>
       <td className="px-4 py-3 text-slate-400">-</td>
-      <td className="px-4 py-3 text-slate-400">-</td>
-      <td className="px-4 py-3 text-slate-400">-</td>
+      <td className="px-4 py-3">
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+            {root.stats?.totalLeads || 0} Total
+          </span>
+          <span className="text-[10px] text-slate-500">
+            {root.stats?.pendingLeads || 0} Pending
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+          {root.stats?.dialedToday || 0}
+        </span>
+      </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
           <button
