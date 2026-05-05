@@ -466,8 +466,8 @@ export const stopPowerHour = async () => {
 
 // ==================== Dialer ====================
 
-export const startDialing = async (campaignId, agentId = null) => {
-  const payload = { campaignId };
+export const startDialing = async (campaignId, agentId = null, isManual = false) => {
+  const payload = { campaignId, isManual };
   if (agentId) payload.agentId = agentId;
   const response = await api.post("/dialer/start", payload);
   return response.data;
@@ -487,6 +487,20 @@ export const stopDialing = async (campaignId, agentId = null) => {
 
 export const stopAgentAutoDialing = async (campaignId, agentId) => {
   const response = await api.post("/dialer/stop", { campaignId, agentId });
+  return response.data;
+};
+
+export const pauseDialing = async (campaignId, agentId = null, isManual = false) => {
+  const payload = { campaignId, isManual };
+  if (agentId) payload.agentId = agentId;
+  const response = await api.post("/dialer/pause", payload);
+  return response.data;
+};
+
+export const resumeDialing = async (campaignId, agentId = null, isManual = false) => {
+  const payload = { campaignId, isManual };
+  if (agentId) payload.agentId = agentId;
+  const response = await api.post("/dialer/resume", payload);
   return response.data;
 };
 

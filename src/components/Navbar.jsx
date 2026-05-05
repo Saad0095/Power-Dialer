@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { isManager as checkIsManager } from "../utils/roleUtils";
 import BreakButton from "./BreakButton";
+import DialingPauseButton from "./DialingPauseButton.jsx";
 import AgentListModal from "./modals/AgentListModal.jsx";
 import api, {
   getPowerHourStatus,
@@ -204,8 +205,6 @@ export default function Navbar({
 
             {/* Actions & User Menu */}
             <div className="flex items-center gap-2 ml-auto">
-              <BreakButton user={user} onShowNotification={onShowNotification} />
-
               {powerHourActive && (
                 <div
                   className="
@@ -309,6 +308,10 @@ export default function Navbar({
           </div>
         </div>
       </nav>
+ 
+      {/* Floating Global Buttons (via Portals) */}
+      <DialingPauseButton user={user} onShowNotification={onShowNotification} />
+      <BreakButton user={user} onShowNotification={onShowNotification} />
     </>
   );
 }

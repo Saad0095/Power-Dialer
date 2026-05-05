@@ -247,6 +247,13 @@ const DialerControls = forwardRef(function DialerControls(
       const index = fetchedLeads.findIndex((l) => l.dialerStatus === "pending");
 
       if (index !== -1) {
+        // Notify backend that we are dialing (Manual/Zoom mode)
+        try {
+           await startDialing(campaignId, agentId || null, true); // true for isManual
+        } catch (err) {
+           console.error("Failed to notify backend of manual dialing start", err);
+        }
+
         setAutoDialState({
           active: true,
           currentIndex: index,
@@ -265,10 +272,16 @@ const DialerControls = forwardRef(function DialerControls(
     onError("No pending leads found in campaign");
   };
 
-  const handleStopAutoDialer = () => {
+  const handleStopAutoDialer = async () => {
     const activeLead = leads[autoDialState.currentIndex];
     if (activeLead && leadsContext?.updateLead) {
       leadsContext.updateLead({ ...activeLead, isAutoDialingCurrent: false });
+    }
+
+    try {
+      await stopDialing(campaignId, agentId || null);
+    } catch (err) {
+      console.error("Failed to notify backend of manual dialing stop", err);
     }
 
     setIsDialing(false);
@@ -310,6 +323,13 @@ const DialerControls = forwardRef(function DialerControls(
     }
     prevIsOnBreak.current = isOnBreak;
   }, [isOnBreak]);
+
+  // Sync internal autoDialState with global isDialing prop
+  useEffect(() => {
+    if (!isDialing && autoDialState.active) {
+      setAutoDialState({ active: false, currentIndex: 0, status: "idle" });
+    }
+  }, [isDialing]);
 
   const [showDispositionModal, setShowDispositionModal] = useState(false);
   const [activeDialerLead, setActiveDialerLead] = useState(null);
