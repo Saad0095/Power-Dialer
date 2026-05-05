@@ -28,7 +28,25 @@ export default function DashboardLayout() {
   } = useTwilioDevice(isAgent(user?.role));
 
   // Keep websocket connected globally across dashboard pages.
-  useWebSocket();
+  const { websocketService } = useWebSocket();
+
+  // Listen for global celebratory events
+  useEffect(() => {
+    if (!websocketService) return;
+
+    const handleCelebration = (payload) => {
+      if (!payload || !payload.message) return;
+      showNotification?.(payload.message, 'success');
+      
+      // Trigger local confetti
+      window.dispatchEvent(new Event('lead:appointment-success'));
+    };
+
+    websocketService.on('notification:appointment-created', handleCelebration);
+    return () => {
+      websocketService.off('notification:appointment-created', handleCelebration);
+    };
+  }, [websocketService, showNotification]);
 
   const [autoLeadId, setAutoLeadId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
