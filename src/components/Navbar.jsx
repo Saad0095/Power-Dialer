@@ -12,6 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { isManager as checkIsManager } from "../utils/roleUtils";
 import BreakButton from "./BreakButton";
 import AgentListModal from "./modals/AgentListModal.jsx";
+import NotificationDropdown from "./common/NotificationDropdown.jsx";
 import api, {
   getPowerHourStatus,
   startPowerHour,
@@ -272,6 +273,9 @@ export default function Navbar({
                   )}
                 </>
               )}
+
+              {/* Notifications */}
+              <NotificationDropdown />
 
               {/* Theme Toggle */}
               <button

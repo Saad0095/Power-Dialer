@@ -46,10 +46,18 @@ class WebSocketService {
         try {
           const rawUser = localStorage.getItem('user');
           const user = rawUser ? JSON.parse(rawUser) : null;
-          const agentId = user?._id || user?.id;
-          if (user?.role === 'caller-agent' && agentId) {
-            this.socket.emit('agent:register', agentId);
-            console.log(`✅ Agent registered on socket: ${agentId}`);
+          const userId = user?._id || user?.id;
+          
+          if (userId) {
+            // Register for generic user events (notifications, etc)
+            this.socket.emit('user:register', userId);
+            console.log(`✅ User registered on socket: ${userId}`);
+            
+            // Legacy agent registration for specific dialer features
+            if (user?.role === 'caller-agent') {
+              this.socket.emit('agent:register', userId);
+              console.log(`✅ Agent registered on socket: ${userId}`);
+            }
           }
         } catch (e) {
           // Ignore malformed localStorage user

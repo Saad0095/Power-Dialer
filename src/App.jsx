@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { LeadsProvider } from "./context/LeadsContext";
 import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { getRoleHomeRoute, ROLES } from "./utils/roleUtils";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./pages/DashboardLayout";
@@ -23,6 +24,7 @@ import EarningsHistoryPage from "./pages/EarningsHistoryPage";
 import ManageClientOffers from "./pages/ManageClientOffers";
 import MyOffersPage from "./pages/MyOffersPage";
 import OfferDetailPage from "./pages/OfferDetailPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import React from "react";
 import MobileBlockWrapper from "./components/MobileBlockWrapper";
 import CelebrationListener from "./components/CelebrationListener";
@@ -32,10 +34,11 @@ function App() {
   return (
     <MobileBlockWrapper>
       <AuthProvider>
-        <CelebrationListener />
-        <Router>
-          <ScrollToTop />
-          <Routes>
+        <NotificationProvider>
+          <CelebrationListener />
+          <Router>
+            <ScrollToTop />
+            <Routes>
             <Route path="/login" element={<LoginPage />} />
 
             <Route
@@ -62,6 +65,7 @@ function App() {
               <Route path="earnings" element={<EarningsHistoryPage />} />
               <Route path="direct-dialer" element={<DirectDialerPage />} />
               <Route path="client-leads" element={<ManageClientOffers />} />
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
             <Route
@@ -75,6 +79,7 @@ function App() {
               <Route index element={<MyOffersPage />} />
               <Route path="offers" element={<MyOffersPage />} />
               <Route path="offers/:offerId" element={<OfferDetailPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
             </Route>
 
             <Route
@@ -95,6 +100,7 @@ function App() {
               <Route path="auto-dialer" element={<AutoDialerPage />} />
               <Route path="direct-dialer" element={<DirectDialerPage />} />
               <Route path="earnings" element={<EarningsHistoryPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               {/* <Route path="call-logs" element={<CallLogsPage />} /> */}
             </Route>
 
@@ -110,6 +116,7 @@ function App() {
             >
               <Route index element={<ScraperPage />} />
               <Route path="tasks" element={<MyTasksPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               {/* <Route path="scraper" element={<ScraperPage />} /> */}
             </Route>
 
@@ -120,6 +127,7 @@ function App() {
             <Route path="*" element={<RoleHomeRedirect />} />
           </Routes>
         </Router>
+        </NotificationProvider>
       </AuthProvider>
     </MobileBlockWrapper>
   );

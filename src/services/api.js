@@ -974,4 +974,28 @@ export const rejectClientOffer = async (offerId) => {
   return response.data.data;
 };
 
+// ==================== Notifications ====================
+
+export const getRecentNotifications = async (limit = 5) => {
+  const response = await api.get(`/notifications/recent?limit=${limit}`);
+  return response.data;
+};
+
+export const getNotifications = async (page = 1, limit = 20, unreadOnly = false) => {
+  const params = new URLSearchParams({ page, limit });
+  if (unreadOnly) params.append('unreadOnly', 'true');
+  const response = await api.get(`/notifications?${params.toString()}`);
+  return response.data;
+};
+
+export const markNotificationAsRead = async (id) => {
+  const response = await api.patch(`/notifications/${id}/read`);
+  return response.data;
+};
+
+export const markAllNotificationsAsRead = async () => {
+  const response = await api.patch('/notifications/read-all');
+  return response.data;
+};
+
 export default api;
