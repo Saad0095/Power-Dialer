@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { getCampaigns } from "../services/api";
+import websocketService from "../services/websocket";
 import LoadingSpinner from "./LoadingSpinner";
 
 export default function SmartCampaignSelector({
@@ -31,6 +32,16 @@ export default function SmartCampaignSelector({
         document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [open]);
+
+  // Listen for real-time campaign updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      setHasLoaded(false); // Trigger re-fetch on next open
+    };
+
+    websocketService.on("campaigns:updated", handleUpdate);
+    return () => websocketService.off("campaigns:updated", handleUpdate);
+  }, []);
 
   // 🔥 Load campaigns ONLY when dropdown opens
   useEffect(() => {
@@ -102,9 +113,8 @@ export default function SmartCampaignSelector({
 
       for (const c of r.children || []) {
         if (c._id === value) {
-          return `${parentLabel} → ${c.name}${
-            c.pipelineType ? ` [${c.pipelineType}]` : ""
-          }`;
+          return `${parentLabel} → ${c.name}${c.pipelineType ? ` [${c.pipelineType}]` : ""
+            }`;
         }
       }
     }
@@ -116,6 +126,8 @@ export default function SmartCampaignSelector({
     setOpen(false);
     setSearch("");
   };
+
+  console.log(filtered);
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -135,7 +147,7 @@ export default function SmartCampaignSelector({
       {/* Dropdown */}
       {open && (
         <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-96 overflow-hidden flex flex-col">
-          
+
           {/* Search */}
           <div className="p-3 border-b border-slate-200 dark:border-slate-700">
             <div className="relative">
