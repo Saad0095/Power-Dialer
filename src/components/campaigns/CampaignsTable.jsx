@@ -11,6 +11,7 @@ import {
   User as UserIcon,
   Users,
   X,
+  RotateCcw,
 } from "lucide-react";
 
 function RootCampaignRow({
@@ -124,6 +125,7 @@ function ChildCampaignRow({
   onRemoveAgents,
   onDelete,
   onViewHistory,
+  onRecycleVoicemails,
 }) {
   return (
     <tr
@@ -234,6 +236,13 @@ function ChildCampaignRow({
             <ExternalLink className="h-3.5 w-3.5" />
           </button>
           <button
+            onClick={onRecycleVoicemails}
+            className="p-1.5 text-slate-400 transition hover:text-emerald-600"
+            title="Recycle Voicemails"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+          <button
             onClick={onEdit}
             className="p-1.5 text-slate-400 transition hover:text-amber-600"
             title="Assign/Edit"
@@ -274,6 +283,7 @@ export default function CampaignsTable({
   onViewLeads,
   onRemoveAgents,
   onViewHistory,
+  onRecycleVoicemails,
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -342,6 +352,10 @@ export default function CampaignsTable({
                         }
                         onDelete={() => onDelete(child._id)}
                         onViewHistory={onViewHistory}
+                        onRecycleVoicemails={(event) => {
+                          event.stopPropagation();
+                          onRecycleVoicemails(child._id);
+                        }}
                       />
                     ))}
                 </Fragment>
