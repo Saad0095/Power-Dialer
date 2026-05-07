@@ -16,6 +16,7 @@ import CampaignsTable from "../components/campaigns/CampaignsTable";
 import CampaignUploadModal from "../components/campaigns/CampaignUploadModal";
 import CreateCampaignModal from "../components/modals/CreateCampaignModal";
 import EditCampaignModal from "../components/modals/EditCampaignModal";
+import HistoricalAgentsModal from "../components/modals/HistoricalAgentsModal";
 import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -32,6 +33,8 @@ export default function CampaignsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyCampaign, setHistoryCampaign] = useState(null);
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [agents, setAgents] = useState([]);
   const [expandedRootIds, setExpandedRootIds] = useState(new Set());
@@ -269,6 +272,11 @@ export default function CampaignsPage() {
     setSelectedCampaignIds(areAllVisibleSelected ? [] : visibleCampaignIds);
   };
 
+  const handleViewHistory = (campaign) => {
+    setHistoryCampaign(campaign);
+    setShowHistoryModal(true);
+  };
+
   const goToCampaignLeads = (campaignId) => {
     navigate(`/manager/leads?campaignId=${campaignId}`);
   };
@@ -417,6 +425,7 @@ export default function CampaignsPage() {
         onDelete={handleDelete}
         onViewLeads={goToCampaignLeads}
         onRemoveAgents={handleRemoveAgents}
+        onViewHistory={handleViewHistory}
       />
 
       <CreateCampaignModal
@@ -453,6 +462,14 @@ export default function CampaignsPage() {
           showNotification(message || "Upload failed", "error")
         }
         onUploadComplete={loadCampaigns}
+      />
+      <HistoricalAgentsModal
+        isOpen={showHistoryModal}
+        campaign={historyCampaign}
+        onClose={() => {
+          setShowHistoryModal(false);
+          setHistoryCampaign(null);
+        }}
       />
     </div>
   );

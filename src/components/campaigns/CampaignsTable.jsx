@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Edit2,
   ExternalLink,
+  History,
   Layers,
   Trash2,
   Upload,
@@ -70,8 +71,21 @@ function RootCampaignRow({
       </td>
       <td className="px-4 py-3 text-slate-400">-</td>
       <td className="px-4 py-3 text-slate-400">-</td>
-      <td className="px-4 py-3 text-slate-400">-</td>
-      <td className="px-4 py-3 text-slate-400">-</td>
+      <td className="px-4 py-3">
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+            {root.stats?.totalLeads || 0} Total
+          </span>
+          <span className="text-[10px] text-slate-500">
+            {root.stats?.pendingLeads || 0} Pending
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+          {root.stats?.dialedToday || 0}
+        </span>
+      </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
           <button
@@ -109,6 +123,7 @@ function ChildCampaignRow({
   onEdit,
   onRemoveAgents,
   onDelete,
+  onViewHistory,
 }) {
   return (
     <tr
@@ -157,17 +172,33 @@ function ChildCampaignRow({
         </span>
       </td>
       <td className="px-4 py-2.5">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-          {child.dialerType === "auto" ? (
-            <>
-              <UserIcon className="h-3.5 w-3.5" />
-              {child.assignedAgent?.name || "Unassigned"}
-            </>
-          ) : (
-            <>
-              <Users className="h-3.5 w-3.5" />
-              {child.assignedAgents?.length || 0} Agents
-            </>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+            {child.dialerType === "auto" ? (
+              <>
+                <UserIcon className="h-3.5 w-3.5" />
+                {child.assignedAgent?.name || "Unassigned"}
+              </>
+            ) : (
+              <>
+                <Users className="h-3.5 w-3.5" />
+                {child.assignedAgents?.length || 0} Agents
+              </>
+            )}
+          </div>
+          
+          {child.historicalAgents?.length > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewHistory(child);
+              }}
+              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-primary-600 transition-colors"
+              title="View Historical Agents"
+            >
+              <History className="h-3 w-3" />
+              History ({child.historicalAgents.length})
+            </button>
           )}
         </div>
       </td>
@@ -242,6 +273,7 @@ export default function CampaignsTable({
   onDelete,
   onViewLeads,
   onRemoveAgents,
+  onViewHistory,
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -309,6 +341,7 @@ export default function CampaignsTable({
                           onRemoveAgents(child, event)
                         }
                         onDelete={() => onDelete(child._id)}
+                        onViewHistory={onViewHistory}
                       />
                     ))}
                 </Fragment>

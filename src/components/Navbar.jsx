@@ -13,6 +13,7 @@ import { isManager as checkIsManager } from "../utils/roleUtils";
 import BreakButton from "./BreakButton";
 import DialingPauseButton from "./DialingPauseButton.jsx";
 import AgentListModal from "./modals/AgentListModal.jsx";
+import NotificationDropdown from "./common/NotificationDropdown.jsx";
 import api, {
   getPowerHourStatus,
   startPowerHour,
@@ -58,7 +59,7 @@ export default function Navbar({
   const [powerHourEndsAt, setPowerHourEndsAt] = useState(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const isManager = checkIsManager(user?.role);
-  
+
 
   useEffect(() => {
     const loadPowerHourStatus = async () => {
@@ -119,7 +120,7 @@ export default function Navbar({
     return () => clearInterval(timerId);
   }, [powerHourActive, powerHourEndsAt]);
 
-  
+
 
   const handleLogout = () => {
     onLogout();
@@ -170,11 +171,11 @@ export default function Navbar({
     }
   };
 
-  
+
 
   return (
     <>
-      <nav className="dark:bg-linear-to-r dark:from-slate-900 dark:to-slate-800 bg-linear-to-r from-slate-50 to-slate-100 dark:border-b dark:border-slate-700 border-b border-slate-200 sticky top-0 z-40 shadow-md dark:shadow-slate-800">
+      <nav className="dark:bg-linear-to-r dark:from-slate-900 dark:to-slate-800 bg-linear-to-r from-slate-50 to-slate-100 dark:border-b dark:border-slate-700 border-b border-slate-200 sticky top-0 z-40 shadow-md dark:shadow-slate-800 z-[900]">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <button
@@ -271,6 +272,9 @@ export default function Navbar({
                   )}
                 </>
               )}
+
+              {/* Notifications */}
+              <NotificationDropdown />
 
               {/* Theme Toggle */}
               <button
