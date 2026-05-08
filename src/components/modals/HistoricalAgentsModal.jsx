@@ -2,38 +2,46 @@ import Modal from '../common/Modal.jsx';
 import { History, User as UserIcon } from 'lucide-react';
 
 export default function HistoricalAgentsModal({ isOpen, onClose, campaign }) {
-  const agents = campaign?.historicalAgents || [];
+  const history = campaign?.agentHistory || [];
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Assignment History: ${campaign?.name}`}
+      title={`Dialing Summary: ${campaign?.name}`}
       maxWidth="max-w-md"
     >
       <div className="space-y-4">
         <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 flex gap-3">
           <History className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
           <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-            This list shows all agents who have previously dialed leads in this campaign. These agents are currently unassigned but have historical activity.
+            This list shows all agents who have previously dialed leads in this campaign along with the number of leads they dialed.
           </p>
         </div>
 
-        {agents.length > 0 ? (
+        {history.length > 0 ? (
           <div className="max-h-[400px] overflow-y-auto pr-2 scrollbar-theme">
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {agents.map((agent) => (
-                <div key={agent._id} className="flex items-center gap-3 py-3 px-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-200 dark:border-slate-700">
-                    <UserIcon className="h-4 w-4" />
+              {history.map((entry) => (
+                <div key={entry.agent._id} className="flex items-center justify-between py-3 px-1 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-200 dark:border-slate-700">
+                      <UserIcon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {entry.agent.name}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tight">
+                        Historical Agent
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                      {agent.name}
-                    </h4>
-                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-tight">
-                      Historical Agent
-                    </p>
+                  <div className="flex flex-col items-end pr-2">
+                    <span className="text-lg font-black text-primary-600 dark:text-primary-400">
+                      {entry.count}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">Dialed</span>
                   </div>
                 </div>
               ))}

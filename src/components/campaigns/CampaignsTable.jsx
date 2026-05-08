@@ -23,6 +23,7 @@ function RootCampaignRow({
   onUpload,
   onEdit,
   onDelete,
+  onViewHistory,
 }) {
   return (
     <tr
@@ -73,19 +74,27 @@ function RootCampaignRow({
       <td className="px-4 py-3 text-slate-400">-</td>
       <td className="px-4 py-3 text-slate-400">-</td>
       <td className="px-4 py-3">
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-0.5">
           <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
             {root.stats?.totalLeads || 0} Total
           </span>
           <span className="text-[10px] text-slate-500">
             {root.stats?.pendingLeads || 0} Pending
           </span>
+          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+            {root.stats?.allTimeDialed || 0} Dialed All-Time
+          </span>
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm font-black text-primary-600 dark:text-primary-400">
-          {root.stats?.dialedToday || 0}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+            {root.stats?.dialedToday || 0}
+          </span>
+          <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">
+            Today
+          </span>
+        </div>
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
@@ -189,41 +198,49 @@ function ChildCampaignRow({
             )}
           </div>
           
-          {child.historicalAgents?.length > 0 && (
+          {child.agentHistory?.length > 0 && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onViewHistory(child);
               }}
               className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-primary-600 transition-colors"
-              title="View Historical Agents"
+              title="View Dialing Summary"
             >
               <History className="h-3 w-3" />
-              History ({child.historicalAgents.length})
+              Summary ({child.agentHistory.length})
             </button>
           )}
         </div>
       </td>
       <td className="px-4 py-2.5">
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-0.5">
           <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
             {child.stats?.totalLeads || 0} Total
           </span>
           <span className="text-[10px] text-slate-500">
             {child.stats?.pendingLeads || 0} Pending
           </span>
+          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+            {child.stats?.allTimeDialed || 0} Dialed All-Time
+          </span>
         </div>
       </td>
       <td className="px-4 py-2.5">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-black text-primary-600 dark:text-primary-400">
-            {child.stats?.dialedToday || 0}
-          </span>
-          {child.stats?.isCompleted && (
-            <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
-              Done
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+              {child.stats?.dialedToday || 0}
             </span>
-          )}
+            {child.stats?.isCompleted && (
+              <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+                Done
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">
+            Today
+          </span>
         </div>
       </td>
       <td className="px-4 py-2.5">
@@ -334,6 +351,7 @@ export default function CampaignsTable({
                     onUpload={() => onUpload(root)}
                     onEdit={() => onEdit(root)}
                     onDelete={(event) => onDelete(root._id, event)}
+                    onViewHistory={() => onViewHistory(root)}
                   />
 
                   {isExpanded &&
