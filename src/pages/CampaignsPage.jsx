@@ -5,6 +5,7 @@ import api, {
   bulkClearCampaignAssignments,
   getAllAgents,
   getCampaigns,
+  recycleVoicemails,
 } from "../services/api";
 import {
   isManager as checkIsManager,
@@ -378,6 +379,30 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleRecycleVoicemails = async (campaignId) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to recycle voicemails? All completed/failed leads with a voicemail disposition will be added back to the dialing queue.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const res = await recycleVoicemails(campaignId);
+      showNotification(res.message || "Voicemails recycled successfully", "success");
+      loadCampaigns();
+    } catch (error) {
+      showNotification(
+        error.response?.data?.error || "Failed to recycle voicemails",
+        "error",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading && campaigns.length === 0) {
     return <LoadingSpinner />;
   }
@@ -426,6 +451,7 @@ export default function CampaignsPage() {
         onViewLeads={goToCampaignLeads}
         onRemoveAgents={handleRemoveAgents}
         onViewHistory={handleViewHistory}
+        onRecycleVoicemails={handleRecycleVoicemails}
       />
 
       <CreateCampaignModal

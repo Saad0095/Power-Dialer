@@ -291,6 +291,11 @@ export const deleteCampaign = async (id) => {
   await api.delete(`/campaigns/${id}`);
 };
 
+export const recycleVoicemails = async (id) => {
+  const response = await api.post(`/campaigns/${id}/recycle-voicemails`);
+  return response.data;
+};
+
 // ==================== Leads ====================
 
 export const uploadLeads = async (file, campaignId, agentId) => {
