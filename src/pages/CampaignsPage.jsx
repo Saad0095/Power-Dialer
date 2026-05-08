@@ -411,6 +411,7 @@ export default function CampaignsPage() {
     <div className="animate-in fade-in space-y-6 duration-500">
       <CampaignsPageHeader
         onCreateCampaign={() => setShowCreateModal(true)}
+        onRefresh={loadCampaigns}
       />
 
       <CampaignsFiltersPanel
