@@ -13,7 +13,19 @@ import { updateAgentAvailability } from "../services/api";
 export default function AutoDialerPage() {
   const { showNotification } = useOutletContext();
   const { user } = useAuth();
-  const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState(
+    user?.autoDialCampaignId || user?.attendance?.dialingPauseCampaignId || null
+  );
+
+  useEffect(() => {
+    // Auto-select campaign if navigating in with an active dialer state but nothing selected locally
+    if (!selectedCampaignId) {
+      const activeOrPausedCampaignId = user?.autoDialCampaignId || user?.attendance?.dialingPauseCampaignId;
+      if (activeOrPausedCampaignId) {
+        setSelectedCampaignId(activeOrPausedCampaignId);
+      }
+    }
+  }, [user?.autoDialCampaignId, user?.attendance?.dialingPauseCampaignId, selectedCampaignId]);
 
   const { isDialing, setIsDialing } = useDialer(
     selectedCampaignId,
@@ -25,6 +37,7 @@ export default function AutoDialerPage() {
   const [isOnBreak, setIsOnBreak] = useState(
     user?.attendance?.onBreak || false
   );
+  const isOnDialingPause = user?.attendance?.onDialingPause || false;
 
   useEffect(() => {
     if (user?.attendance) {
@@ -77,6 +90,7 @@ export default function AutoDialerPage() {
                 mode="agent"
                 agentId={user?._id}
                 isOnBreak={isOnBreak}
+                isOnDialingPause={isOnDialingPause}
               />
             </div>
 

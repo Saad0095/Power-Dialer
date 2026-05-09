@@ -14,6 +14,7 @@ import {
 } from "../services/api";
 import { LeadsContext } from "../context/LeadsContext";
 import EditLeadModal from "./modals/EditLeadModal";
+import { useAuth } from "../hooks/useAuth";
 
 const DialerControls = forwardRef(function DialerControls(
   {
@@ -27,11 +28,13 @@ const DialerControls = forwardRef(function DialerControls(
     mode = "power",
     agentId = null,
     isOnBreak = false,
+    isOnDialingPause = false,
     onCallTriggered,
   },
   ref,
 ) {
   const isAgentMode = mode === "agent";
+  const { hydrateAuth } = useAuth();
   const leadsContext = useContext(LeadsContext);
   const leads = leadsContext ? leadsContext.leads : [];
   const pagination = leadsContext ? leadsContext.pagination : null;
@@ -123,6 +126,10 @@ const DialerControls = forwardRef(function DialerControls(
     }
 
     if (!pagination || typeof changePage !== "function") {
+      try {
+        await stopDialing(campaignId, agentId || null);
+        await hydrateAuth();
+      } catch(e) {}
       setIsDialing(false);
       setAutoDialState({ active: false, currentIndex: 0, status: "idle" });
       onSuccess("Auto Dialer completed all pending leads.");
@@ -160,6 +167,10 @@ const DialerControls = forwardRef(function DialerControls(
       currentPageToFetch += 1;
     }
 
+    try {
+      await stopDialing(campaignId, agentId || null);
+      await hydrateAuth();
+    } catch(e) {}
     setIsDialing(false);
     setAutoDialState({ active: false, currentIndex: 0, status: "idle" });
     onSuccess("Auto Dialer completed all pending leads across all pages.");
@@ -250,6 +261,7 @@ const DialerControls = forwardRef(function DialerControls(
         // Notify backend that we are dialing (Manual/Zoom mode)
         try {
            await startDialing(campaignId, agentId || null, true); // true for isManual
+           await hydrateAuth(); // refresh user.isAutoDialing for the pause button
         } catch (err) {
            console.error("Failed to notify backend of manual dialing start", err);
         }
@@ -268,6 +280,10 @@ const DialerControls = forwardRef(function DialerControls(
       page++;
     }
 
+    try {
+      await stopDialing(campaignId, agentId || null);
+      await hydrateAuth();
+    } catch(e) {}
     setIsDialing(false);
     onError("No pending leads found in campaign");
   };
@@ -280,6 +296,7 @@ const DialerControls = forwardRef(function DialerControls(
 
     try {
       await stopDialing(campaignId, agentId || null);
+      await hydrateAuth(); // refresh user.isAutoDialing
     } catch (err) {
       console.error("Failed to notify backend of manual dialing stop", err);
     }
@@ -297,8 +314,8 @@ const DialerControls = forwardRef(function DialerControls(
   };
 
   const handleNextCall = async () => {
-    // If the dialer is stopped or paused (e.g. by Break), don't automatically advance
-    if (!autoDialState.active || isOnBreak) return;
+    // If the dialer is stopped or paused (e.g. by Break or Dialing Pause), don't automatically advance
+    if (!autoDialState.active || isOnBreak || isOnDialingPause) return;
 
     const nextState = advanceNextCall(autoDialState);
     if (nextState) {
@@ -324,12 +341,39 @@ const DialerControls = forwardRef(function DialerControls(
     prevIsOnBreak.current = isOnBreak;
   }, [isOnBreak]);
 
-  // Sync internal autoDialState with global isDialing prop
+  // Sync internal autoDialState with global isDialing prop and isOnDialingPause
   useEffect(() => {
-    if (!isDialing && autoDialState.active) {
+    if ((!isDialing || isOnDialingPause) && autoDialState.active) {
       setAutoDialState({ active: false, currentIndex: 0, status: "idle" });
     }
-  }, [isDialing]);
+  }, [isDialing, isOnDialingPause]);
+
+  // Cleanup: Pause dialer if the agent navigates away while dialing
+  useEffect(() => {
+    return () => {
+      // We can't access latest state in cleanup without refs, so we use a ref to track if we're active
+    };
+  }, []);
+
+  const activeStateRef = useRef(autoDialState.active);
+  useEffect(() => {
+    activeStateRef.current = autoDialState.active;
+  }, [autoDialState.active]);
+
+  const pauseRef = useRef(isOnDialingPause);
+  useEffect(() => {
+    pauseRef.current = isOnDialingPause;
+  }, [isOnDialingPause]);
+
+  useEffect(() => {
+    return () => {
+      if (activeStateRef.current && !pauseRef.current) {
+        import("../services/api").then(({ pauseDialing }) => {
+          pauseDialing(campaignId, agentId || null, true).catch(() => {});
+        });
+      }
+    };
+  }, [campaignId, agentId]);
 
   const [showDispositionModal, setShowDispositionModal] = useState(false);
   const [activeDialerLead, setActiveDialerLead] = useState(null);
@@ -347,6 +391,17 @@ const DialerControls = forwardRef(function DialerControls(
       handleNextCallRef.current();
     }, 1000);
   };
+
+  const hasAttemptedAutoStart = useRef(false);
+  useEffect(() => {
+    if (isDialing && isAgentMode && !autoDialState.active && leads.length > 0 && !hasAttemptedAutoStart.current) {
+      hasAttemptedAutoStart.current = true;
+      handleStartAutoDialer();
+    }
+    if (!isDialing) {
+      hasAttemptedAutoStart.current = false;
+    }
+  }, [isDialing, isAgentMode, autoDialState.active, leads.length]);
 
   return (
     <div className="bg-linear-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-2xl dark:shadow-slate-900/30 p-6 border border-slate-200 dark:border-slate-700">

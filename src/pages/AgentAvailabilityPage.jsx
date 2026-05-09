@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
-import { User, Clock, Phone, CheckCircle, XCircle, RefreshCw, Users, AlertCircle, Search } from 'lucide-react';
+import { User, Clock, Phone, CheckCircle, XCircle, RefreshCw, Users, AlertCircle, Search, Pause } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { isManager as checkIsManager, getRoleHomeRoute } from '../utils/roleUtils';
 import {
@@ -158,6 +158,10 @@ export default function AgentAvailabilityPage() {
       return 'bg-slate-900/50 border-slate-500/50 text-slate-300';
     }
 
+    if (agent.attendance?.onDialingPause) {
+        return 'bg-indigo-900/50 border-indigo-500/50 text-indigo-300';
+    }
+
     return agent.isAvailable && !agent.attendance.onBreak && !agent.activeLead
       ? 'bg-emerald-900/50 border-emerald-500/50 text-emerald-300'
       : 'bg-rose-900/50 border-rose-500/50 text-rose-300';
@@ -166,6 +170,10 @@ export default function AgentAvailabilityPage() {
   const getAvailabilityIcon = (agent) => {
     if (!agent.attendance || !agent.attendance.isCheckedIn) {
       return <Clock className="w-5 h-5 text-slate-400" />;
+    }
+
+    if (agent.attendance?.onDialingPause) {
+        return <Pause className="w-5 h-5 text-indigo-400 fill-current" />;
     }
 
     return agent.isAvailable && !agent.attendance.onBreak && !agent.activeLead ? (
@@ -292,6 +300,18 @@ export default function AgentAvailabilityPage() {
           const totalBreakMinutes = Math.floor((totalBreakMs + currentBreakMs) / 60000);
           const breakExceeded = totalBreakMinutes > 60;
 
+          const totalPauseMs = agent.attendance?.totalDialingPauseMs || 0;
+          let currentPauseMs = 0;
+          if (agent.attendance?.onDialingPause && agent.attendance?.dialingPauseStartedAt) {
+            const serverNow = agent.attendance.serverTime ? new Date(agent.attendance.serverTime).getTime() : Date.now();
+            const clientNow = Date.now();
+            const clockOffset = serverNow - clientNow;
+            const adjustedNow = Date.now() + clockOffset;
+            
+            currentPauseMs = Math.max(0, adjustedNow - new Date(agent.attendance.dialingPauseStartedAt).getTime());
+          }
+          const totalPauseMinutes = Math.floor((totalPauseMs + currentPauseMs) / 60000);
+
           return (
             <div
               key={agent._id}
@@ -328,11 +348,13 @@ export default function AgentAvailabilityPage() {
                     ? 'Checked Out'
                     : agent.activeLead
                       ? 'On Call'
-                      : agent.attendance.onBreak
-                        ? 'On Break'
-                        : agent.isAvailable
-                          ? 'Available'
-                          : 'Busy'}
+                      : agent.attendance.onDialingPause
+                        ? 'Dialing Paused'
+                        : agent.attendance.onBreak
+                          ? 'On Break'
+                          : agent.isAvailable
+                            ? 'Available'
+                            : 'Busy'}
                 </span>
               </div>
 
@@ -369,6 +391,16 @@ export default function AgentAvailabilityPage() {
                   </span>
                   <span className={`${breakExceeded ? 'text-rose-800 dark:text-rose-300 font-extrabold' : 'text-amber-700 dark:text-amber-400 font-bold'}`}>
                     {totalBreakMinutes} min
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-700/30 pb-2">
+                  <span className="text-indigo-600 dark:text-indigo-500 font-medium flex items-center gap-1.5">
+                    <Pause className="w-3.5 h-3.5 fill-current" />
+                    Pause Taken
+                  </span>
+                  <span className="text-indigo-700 dark:text-indigo-400 font-bold">
+                    {totalPauseMinutes} min
                   </span>
                 </div>
                 

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pause, Play } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { pauseDialing, resumeDialing } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 export default function DialingPauseButton({ user, onShowNotification }) {
   const { hydrateAuth } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [pauseTimer, setPauseTimer] = useState(0);
 
@@ -59,6 +62,9 @@ export default function DialingPauseButton({ user, onShowNotification }) {
         }
         await resumeDialing(targetCampaignId, user._id, true);
         onShowNotification?.("Dialing resumed", "success");
+        if (location.pathname !== '/agent/auto-dialer') {
+            navigate('/agent/auto-dialer');
+        }
       } else {
         if (!user?.autoDialCampaignId) {
              onShowNotification?.("No active campaign to pause", "error");
@@ -80,29 +86,66 @@ export default function DialingPauseButton({ user, onShowNotification }) {
   if (!isDialing && !onPause) return null;
 
   const content = (
-    <div className="flex items-center gap-2">
-      {onPause && (
-        <div className="px-3 py-1.5 rounded-lg text-sm font-bold bg-indigo-950/60 border border-indigo-400/50 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.3)] backdrop-blur-sm">
-          Dialing Paused: {formatTime(pauseTimer)}
+    <div className={`
+      relative overflow-hidden rounded-2xl shadow-2xl backdrop-blur-xl border transition-all duration-500 transform
+      ${onPause 
+        ? "bg-slate-900/80 border-amber-500/30 shadow-amber-900/20" 
+        : "bg-slate-900/80 border-emerald-500/30 shadow-emerald-900/20"}
+      p-4 flex flex-col gap-3 min-w-[280px]
+    `}>
+      {/* Decorative gradient blur */}
+      <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-20 ${onPause ? 'bg-amber-500' : 'bg-emerald-500'}`}></div>
+      
+      <div className="flex items-center justify-between z-10 relative">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className={`w-3 h-3 rounded-full ${onPause ? "bg-amber-400" : "bg-emerald-400"}`}></div>
+            {!onPause && (
+              <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-400 animate-ping opacity-75"></div>
+            )}
+          </div>
+          <span className="text-white font-bold tracking-wide">
+            {onPause ? "Dialer Paused" : "Auto Dialer Active"}
+          </span>
         </div>
-      )}
+        
+        {onPause && (
+          <div className="font-mono text-amber-300 font-bold bg-amber-950/50 px-2 py-0.5 rounded border border-amber-500/30">
+            {formatTime(pauseTimer)}
+          </div>
+        )}
+      </div>
+
       <button
         onClick={handleTogglePause}
         disabled={isLoading}
-        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg transition text-sm font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 backdrop-blur-sm border border-white/10 ${
-          onPause 
-            ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" 
-            : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20"
-        }`}
+        className={`
+          z-10 relative flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-bold transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
+          ${onPause 
+            ? "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-emerald-500/20" 
+            : "bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-amber-500/20"
+          }
+        `}
       >
-        {onPause ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
-        {isLoading ? "..." : (onPause ? "Resume Dialing" : "Pause Dialing")}
+        {isLoading ? (
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+        ) : onPause ? (
+          <>
+            <Play className="w-5 h-5 fill-current" />
+            Resume Dialing
+          </>
+        ) : (
+          <>
+            <Pause className="w-5 h-5 fill-current" />
+            Pause Dialing
+          </>
+        )}
       </button>
     </div>
   );
 
   return createPortal(
-    <div className="fixed top-6 right-[calc(50%+130px)] z-[100000] pointer-events-auto transition-all duration-300">
+    <div className="fixed top-24 right-8 z-[100000] pointer-events-auto animate-in slide-in-from-right-8 fade-in duration-500">
       {content}
     </div>,
     document.body
