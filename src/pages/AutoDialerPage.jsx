@@ -45,8 +45,15 @@ export default function AutoDialerPage() {
     }
   }, [user?.attendance]);
 
-
-
+  // Sync global backend dialer state to the local UI state
+  // This is required because if the agent resumes from another page, 
+  // the websocket event might be missed before the AutoDialerPage mounts.
+  useEffect(() => {
+    if (user?.isAutoDialing && selectedCampaignId && user?.autoDialCampaignId === selectedCampaignId) {
+      setIsDialing(true);
+    }
+  }, [user?.isAutoDialing, user?.autoDialCampaignId, selectedCampaignId, setIsDialing]);
+  
   return (
     <div className="space-y-6">
       {/* Header */}

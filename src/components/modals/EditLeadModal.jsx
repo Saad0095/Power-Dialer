@@ -34,7 +34,7 @@ const NEVER_IN_GRID = new Set([
   ...FOLLOWUP_CARD_KEYS,
 ]);
 
-export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
+export default function EditLeadModal({ isOpen, lead, onClose, onSave, hideCloseButton = false }) {
   const { user } = useAuth();
   const visibleFields = useMemo(
     () => getCallerVisibleFields(user?.role, true),
@@ -206,20 +206,22 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="max-w-2xl" bodyClassName="max-h-[32rem] overflow-y-auto">
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} maxWidth="max-w-2xl" bodyClassName="max-h-[32rem] overflow-y-auto" hideCloseButton={hideCloseButton}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-4">
 
         {/* Save button — sticky at top */}
         <div className="flex gap-3 justify-end sticky top-0 z-10 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 transition disabled:opacity-50 cursor-pointer"
-          >
-            <X className="w-4 h-4 inline mr-2" />
-            Cancel
-          </button>
+          {!hideCloseButton && (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 transition disabled:opacity-50 cursor-pointer"
+            >
+              <X className="w-4 h-4 inline mr-2" />
+              Cancel
+            </button>
+          )}
           <button
             type="submit"
             disabled={isLoading || !canEdit}

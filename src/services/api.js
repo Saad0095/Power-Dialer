@@ -495,6 +495,11 @@ export const stopAgentAutoDialing = async (campaignId, agentId) => {
   return response.data;
 };
 
+export const completeCampaign = async (campaignId) => {
+  const response = await api.post(`/campaigns/${campaignId}/complete`);
+  return response.data;
+};
+
 export const pauseDialing = async (campaignId, agentId = null, isManual = false) => {
   const payload = { campaignId, isManual };
   if (agentId) payload.agentId = agentId;

@@ -565,6 +565,7 @@ export default function DirectDialerPage() {
         onSave={(updatedLead) => {
           showNotification("Disposition saved", "success");
         }}
+        hideCloseButton={true}
       />
     </div>
   );

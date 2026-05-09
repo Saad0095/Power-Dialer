@@ -11,6 +11,7 @@ import {
   logAgentCallAttempt,
   startDialing,
   stopDialing,
+  completeCampaign,
 } from "../services/api";
 import { LeadsContext } from "../context/LeadsContext";
 import EditLeadModal from "./modals/EditLeadModal";
@@ -128,6 +129,7 @@ const DialerControls = forwardRef(function DialerControls(
     if (!pagination || typeof changePage !== "function") {
       try {
         await stopDialing(campaignId, agentId || null);
+        await completeCampaign(campaignId);
         await hydrateAuth();
       } catch(e) {}
       setIsDialing(false);
@@ -169,6 +171,7 @@ const DialerControls = forwardRef(function DialerControls(
 
     try {
       await stopDialing(campaignId, agentId || null);
+      await completeCampaign(campaignId);
       await hydrateAuth();
     } catch(e) {}
     setIsDialing(false);
@@ -282,6 +285,7 @@ const DialerControls = forwardRef(function DialerControls(
 
     try {
       await stopDialing(campaignId, agentId || null);
+      await completeCampaign(campaignId);
       await hydrateAuth();
     } catch(e) {}
     setIsDialing(false);
@@ -368,8 +372,8 @@ const DialerControls = forwardRef(function DialerControls(
   useEffect(() => {
     return () => {
       if (activeStateRef.current && !pauseRef.current) {
-        import("../services/api").then(({ pauseDialing }) => {
-          pauseDialing(campaignId, agentId || null, true).catch(() => {});
+        import("../services/api").then(({ stopDialing }) => {
+          stopDialing(campaignId, agentId || null).catch(() => {});
         });
       }
     };
@@ -498,6 +502,7 @@ const DialerControls = forwardRef(function DialerControls(
         onClose={() => setShowDispositionModal(false)}
         onSave={handleDispositionSaved}
         onLeadDeleted={() => setShowDispositionModal(false)}
+        hideCloseButton={true}
       />
     </div>
   );

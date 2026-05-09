@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pause, Play } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { pauseDialing, resumeDialing } from "../services/api";
+import { pauseDialing, resumeDialing, stopDialing } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 export default function DialingPauseButton({ user, onShowNotification }) {
@@ -14,7 +14,19 @@ export default function DialingPauseButton({ user, onShowNotification }) {
 
   const isDialing = user?.isAutoDialing;
   const onPause = user?.attendance?.onDialingPause;
-  const campaignId = user?.autoDialCampaignId || user?.attendance?.dialingPauseCampaignId;
+
+  // Cleanup ghost sessions: if backend thinks we are actively dialing (not paused), 
+  // but we are NOT on the auto-dialer page (e.g. due to a hard page refresh), 
+  // the local dialing loop is dead. We must hide the button and stop the backend session.
+  useEffect(() => {
+    if (isDialing && !onPause && location.pathname !== '/agent/auto-dialer') {
+       if (user?.autoDialCampaignId) {
+         stopDialing(user.autoDialCampaignId, user._id).then(() => {
+             hydrateAuth();
+         }).catch(() => {});
+       }
+    }
+  }, [isDialing, onPause, location.pathname, user]);
 
   useEffect(() => {
     if (!onPause || !user?.attendance?.dialingPauseStartedAt) {
@@ -84,6 +96,9 @@ export default function DialingPauseButton({ user, onShowNotification }) {
 
   // Only show if dialing or paused
   if (!isDialing && !onPause) return null;
+
+  // Don't show if we are in a ghost session (actively dialing but not on the right page)
+  if (isDialing && !onPause && location.pathname !== '/agent/auto-dialer') return null;
 
   const content = (
     <div className={`
