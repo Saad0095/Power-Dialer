@@ -1,4 +1,4 @@
-import { ArrowUpRight, Search, Phone, Globe, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ArrowUpRight, Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import LoadingSpinner from "./LoadingSpinner";
 
 export default function ScrapeResultsTable({ 
@@ -17,6 +17,26 @@ export default function ScrapeResultsTable({
     setFilters(prev => ({ ...prev, page: newPage }));
   };
 
+  const resultFilterValue = filters.hasPhone
+    ? (filters.hasWebsite ? "phoneWebsite" : "phone")
+    : (filters.hasWebsite ? "website" : "all");
+
+  const handleResultFilterChange = (value) => {
+    if (value === "phone") {
+      setFilters(prev => ({ ...prev, hasPhone: true, hasWebsite: false, page: 1 }));
+      return;
+    }
+    if (value === "website") {
+      setFilters(prev => ({ ...prev, hasPhone: false, hasWebsite: true, page: 1 }));
+      return;
+    }
+    if (value === "phoneWebsite") {
+      setFilters(prev => ({ ...prev, hasPhone: true, hasWebsite: true, page: 1 }));
+      return;
+    }
+    setFilters(prev => ({ ...prev, hasPhone: false, hasWebsite: false, page: 1 }));
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Filters Bar */}
@@ -31,29 +51,18 @@ export default function ScrapeResultsTable({
             className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-cyan-500 transition-shadow text-slate-900 dark:text-white placeholder-slate-400"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleFilterChange('hasPhone', !filters.hasPhone)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-              filters.hasPhone 
-                ? 'bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800' 
-                : 'bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
+        <div className="relative inline-block min-w-[190px]">
+          <select
+            value={resultFilterValue}
+            onChange={(e) => handleResultFilterChange(e.target.value)}
+            className="text-sm pr-8 pl-3 py-2 border rounded-md bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-200 dark:focus:ring-cyan-600 appearance-none"
           >
-            <Phone className="w-4 h-4" />
-            <span className="hidden sm:inline">Has Phone</span>
-          </button>
-          <button
-            onClick={() => handleFilterChange('hasWebsite', !filters.hasWebsite)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-              filters.hasWebsite 
-                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' 
-                : 'bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">Has Website</span>
-          </button>
+            <option value="all">All results</option>
+            <option value="phone">Has phone</option>
+            <option value="website">Has website</option>
+            <option value="phoneWebsite">Has phone + website</option>
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
         </div>
         {/* Per-page selector */}
         <div className="relative inline-block">

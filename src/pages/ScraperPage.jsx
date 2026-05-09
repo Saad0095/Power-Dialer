@@ -4,18 +4,12 @@ import ScrapeImportPanel from "../components/ScrapeImportPanel";
 import ScrapeSessionsList from "../components/ScrapeSessionsList";
 import { useEffect, useState } from "react";
 import { MapPinned, RefreshCw } from "lucide-react";
-import {
-  formatSessionLabel,
-  csvEscape,
-  normalizeExportPhone,
-  getProgressValue,
-} from "../utils/scraperUtils";
+import { csvEscape, normalizeExportPhone, getProgressValue } from "../utils/scraperUtils";
 import useScraperStats from "../hooks/useScraperStats";
 import { useOutletContext } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
 import {
   deleteScrapeSession,
-  getAllAgents,
   getCampaigns,
   getScrapeSession,
   getScrapeSessionResults,
@@ -42,6 +36,8 @@ const STATUS_STYLES = {
     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
   done: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
   error: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+  canceled:
+    "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
 function DailyLeadsChart({ series }) {
@@ -526,60 +522,6 @@ export default function ScraperPage() {
               </button>
             </div>
 
-            {/* ── Stat cards (5) ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Total Results
-                </p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {stats.totalResults}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  With Phone
-                </p>
-                <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-300">
-                  {stats.withPhone}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  With Website
-                </p>
-                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
-                  {stats.withWebsite}
-                </p>
-              </div>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Rated
-                </p>
-                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-                  {stats.rated}
-                </p>
-              </div>
-
-              {/* ── Today's Leads card (noon→noon PKT) ── */}
-              <div className="rounded-lg border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/20 p-4">
-                <p className="text-xs uppercase tracking-wide text-violet-500 dark:text-violet-400">
-                  Today's Leads
-                </p>
-                <p className="text-2xl font-bold text-violet-700 dark:text-violet-300">
-                  {dailyLeads.count}
-                </p>
-                <p className="text-[10px] text-violet-400 dark:text-violet-500 mt-0.5 leading-none">
-                  noon → noon PKT
-                </p>
-              </div>
-            </div>
-
-            {/* ── 7-day bar chart ── */}
-            <div className="mb-5">
-              <DailyLeadsChart series={dailyLeads.series} />
-            </div>
-
             {/* Selected session info */}
             {selectedSession && (
               <div className="mb-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
@@ -690,6 +632,69 @@ export default function ScraperPage() {
               filters={filters}
               setFilters={setFilters}
             />
+          </div>
+
+          {/* Weekly stats (moved to bottom) */}
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-6">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Weekly Snapshot
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Summary of the last 7 days of scraper activity.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Total Results
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {stats.totalResults}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  With Phone
+                </p>
+                <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-300">
+                  {stats.withPhone}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  With Website
+                </p>
+                <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                  {stats.withWebsite}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Rated
+                </p>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                  {stats.rated}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/20 p-4">
+                <p className="text-xs uppercase tracking-wide text-violet-500 dark:text-violet-400">
+                  Today's Leads
+                </p>
+                <p className="text-2xl font-bold text-violet-700 dark:text-violet-300">
+                  {dailyLeads.count}
+                </p>
+                <p className="text-[10px] text-violet-400 dark:text-violet-500 mt-0.5 leading-none">
+                  noon → noon PKT
+                </p>
+              </div>
+            </div>
+
+            <DailyLeadsChart series={dailyLeads.series} />
           </div>
         </div>
 
