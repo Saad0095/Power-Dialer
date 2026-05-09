@@ -557,11 +557,13 @@ export default function ScraperPage() {
                       : selectedSession.updatedAt
                         ? new Date(selectedSession.updatedAt).toLocaleString()
                         : "-"}
-                    {selectedSession.createdAt &&
+                    {(selectedSession.runningAt || selectedSession.createdAt) &&
                       (selectedSession.completedAt ||
                         selectedSession.updatedAt) &&
                       (() => {
-                        const start = new Date(selectedSession.createdAt);
+                        const start = new Date(
+                          selectedSession.runningAt || selectedSession.createdAt,
+                        );
                         const end = new Date(
                           selectedSession.completedAt ||
                             selectedSession.updatedAt,
