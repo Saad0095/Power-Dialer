@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Zap, Users } from "lucide-react";
 import { getAgentEarningsLeaderboard } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
+import { isManager } from "../utils/roleUtils";
 
 // Props:
 // timeframe: string ("all", "month", "week", "today")
@@ -9,6 +11,8 @@ import { getAgentEarningsLeaderboard } from "../services/api";
 const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const isManagerUser = isManager(user?.role);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -35,10 +39,10 @@ const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
         <div>
           <p className="text-sm text-slate-600 dark:text-slate-400">Leaderboard Rank</p>
           <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">#{currentRank}</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">in top earners</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">in top qualifiers</p>
         </div>
-        <div className="rounded-lg bg-amber-100 p-3 dark:bg-amber-900/30">
-          <Zap className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+        <div className="rounded-lg bg-emerald-100 p-3 dark:bg-emerald-900/30">
+          <Zap className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
         </div>
       </div>
     );
@@ -49,7 +53,7 @@ const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
       <div className="border-b border-slate-200 p-6 dark:border-slate-700 flex items-center gap-2">
         <Users className="h-5 w-5 text-primary-500" />
         <h3 className="font-semibold text-slate-900 dark:text-white">
-          Top Earners This {timeframe === "month" ? "Month" : timeframe === "week" ? "Week" : "Period"}
+          Top Qualifiers This {timeframe === "month" ? "Month" : timeframe === "week" ? "Week" : "Period"}
         </h3>
       </div>
       {isLoading ? (
@@ -92,18 +96,19 @@ const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
                     {agent.agentName || agent.agentEmail}
                     {agent.agentId === userId && " (You)"}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {agent.totalQualifications} qualification
-                    {agent.totalQualifications !== 1 ? "s" : ""}
-                  </p>
+                  {isManagerUser && (
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+                      Rs {agent.totalEarnings?.toLocaleString()} earned
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-slate-900 dark:text-white">
-                  Rs {agent.totalEarnings?.toLocaleString()}
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {agent.totalQualifications}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Rs {agent.averagePerQualification || 0}/qual
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Quals
                 </p>
               </div>
             </div>

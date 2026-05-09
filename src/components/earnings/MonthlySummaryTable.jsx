@@ -1,35 +1,66 @@
-import { Wallet } from "lucide-react";
+import { Wallet, CalendarCheck, TrendingUp } from "lucide-react";
 
-export default function MonthlySummaryTable({ monthlyData }) {
+export default function MonthlySummaryTable({ monthlyData, isManagerUser }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="p-4 md:p-6">
       {monthlyData.length > 0 ? (
-        <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-            <tr>
-              <th className="px-6 py-4 font-medium">Month</th>
-              <th className="px-6 py-4 font-medium">Total Qualifications</th>
-              <th className="px-6 py-4 font-medium">Total Earnings</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-            {monthlyData.map((row) => (
-              <tr key={row._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                  {row._id}
-                </td>
-                <td className="px-6 py-4">{row.totalQualifications} leads</td>
-                <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">
-                  Rs {row.totalEarnings?.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {monthlyData.map((row, index) => (
+            <div
+              key={row._id ? row._id : `monthly-${index}`}
+              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-md transition-all hover:shadow-xl hover:-translate-y-1 dark:bg-slate-800/80 dark:border dark:border-slate-700"
+            >
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-100/50 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-primary-900/20" />
+              
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+                    <CalendarCheck className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    {row.month || row._id}
+                  </h3>
+                </div>
+              </div>
+
+              {isManagerUser && row.agentName && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Agent: <span className="text-slate-900 dark:text-white">{row.agentName}</span>
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Total Qualifications</p>
+                  <p className="text-2xl font-semibold text-slate-800 dark:text-slate-200">
+                    {row.totalQualifications} <span className="text-sm font-normal text-slate-500">leads</span>
+                  </p>
+                </div>
+                
+                {isManagerUser && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Earnings</p>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-emerald-500" />
+                      <p className="text-2xl font-bold bg-linear-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-teal-300">
+                        Rs {row.totalEarnings?.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="py-12 text-center text-slate-500 dark:text-slate-400">
-          <Wallet className="mx-auto mb-3 h-10 w-10 opacity-50" />
-          No monthly earnings history found.
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-full bg-slate-100 p-4 dark:bg-slate-800 mb-4">
+            <Wallet className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+          </div>
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No Earnings Found</h3>
+          <p className="text-slate-500 dark:text-slate-400">There is no monthly earnings history available for the selected filters.</p>
         </div>
       )}
     </div>

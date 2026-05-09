@@ -175,7 +175,7 @@ function getSidebarItems(role) {
     },
     {
       id: "earnings",
-      label: "Earnings History",
+      label: "Qualifications",
       icon: Coins,
       path: "/agent/earnings",
     },

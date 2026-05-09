@@ -32,8 +32,8 @@ import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
-    <MobileBlockWrapper>
-      <AuthProvider>
+    <AuthProvider>
+      <MobileBlockWrapper>
         <NotificationProvider>
           <CelebrationListener />
           <Router>
@@ -128,8 +128,8 @@ function App() {
           </Routes>
         </Router>
         </NotificationProvider>
+      </MobileBlockWrapper>
       </AuthProvider>
-    </MobileBlockWrapper>
   );
 }
 

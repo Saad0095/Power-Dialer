@@ -77,12 +77,20 @@ export default function EarningsHistoryPage() {
     let csvContent = "data:text/csv;charset=utf-8,";
 
     if (activeTab === "monthly") {
-      csvContent += "Month,Total Earnings (PKR),Total Qualifications\n";
+      csvContent += isManagerUser 
+        ? "Month,Agent Name,Total Earnings (PKR),Total Qualifications\n"
+        : "Month,Total Qualifications\n";
       monthlyData.forEach((row) => {
-        csvContent += `${row._id},${row.totalEarnings},${row.totalQualifications}\n`;
+        const month = row.month || row._id;
+        const agentName = `"${row.agentName || 'N/A'}"`;
+        csvContent += isManagerUser
+          ? `${month},${agentName},${row.totalEarnings},${row.totalQualifications}\n`
+          : `${month},${row.totalQualifications}\n`;
       });
     } else {
-      csvContent += "Date,Agent Name,Agent Email,Campaign,Lead Business Name,Lead Status,Amount (PKR)\n";
+      csvContent += isManagerUser
+        ? "Date,Agent Name,Agent Email,Campaign,Lead Business Name,Lead Status,Amount (PKR)\n"
+        : "Date,Campaign,Lead Business Name,Lead Status\n";
       detailedData.forEach((row) => {
         const dateStr = new Date(row.earnedAt).toLocaleString();
         const agentName = `"${row.agent?.name || 'N/A'}"`;
@@ -92,7 +100,9 @@ export default function EarningsHistoryPage() {
         const leadStatus = `"${row.lead?.appointmentStatus || 'N/A'}"`;
         const amount = row.amount;
 
-        csvContent += `${dateStr},${agentName},${agentEmail},${campaignName},${leadName},${leadStatus},${amount}\n`;
+        csvContent += isManagerUser
+          ? `${dateStr},${agentName},${agentEmail},${campaignName},${leadName},${leadStatus},${amount}\n`
+          : `${dateStr},${campaignName},${leadName},${leadStatus}\n`;
       });
     }
 
@@ -113,7 +123,9 @@ export default function EarningsHistoryPage() {
             <Users className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Earnings History</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              {isManagerUser ? "Earnings History" : "Qualifications History"}
+            </h1>
             <p className=" text-slate-500 dark:text-slate-400">
               {isManagerUser
                 ? "Monitor and export earnings metrics across all campaigns."
@@ -205,7 +217,7 @@ export default function EarningsHistoryPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
             </div>
           ) : activeTab === "monthly" ? (
-            <MonthlySummaryTable monthlyData={monthlyData} />
+            <MonthlySummaryTable monthlyData={monthlyData} isManagerUser={isManagerUser} />
           ) : (
             <DetailedLogsTable
               detailedData={detailedData}
