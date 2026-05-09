@@ -30,7 +30,10 @@ export default function NotificationDropdown() {
     setIsOpen(false);
 
     // Simple navigation mapping based on type
-    if (notification.type === 'campaign_event' && (user?.role !== "admin" || user?.role !== "manager")) {
+    if (notification.type === 'campaign_event' && (user?.role === "admin" || user?.role === "manager")) {
+      navigate(`${basePath}/campaigns`);
+    }
+    else if (notification.type === 'campaign_event' && (user?.role !== "admin" || user?.role !== "manager")) {
       navigate(`${basePath}/auto-dialer`);
     }
     else if ((notification.type === 'follow_up' || notification.type === 'appointment') && (user?.role === "admin" || user?.role === "manager")) {
