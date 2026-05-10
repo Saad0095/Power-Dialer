@@ -10,6 +10,7 @@ import { FileDown, Calendar, ListFilter, Users } from "lucide-react";
 import MonthlySummaryTable from "../components/earnings/MonthlySummaryTable";
 import DetailedLogsTable from "../components/earnings/DetailedLogsTable";
 import Leaderboard from "../components/Leaderboard";
+import Modal from "../components/common/Modal";
 
 export default function EarningsHistoryPage() {
   const { user } = useAuth();
@@ -19,11 +20,21 @@ export default function EarningsHistoryPage() {
   const [agents, setAgents] = useState([]);
   const [selectedAgentId, setSelectedAgentId] = useState("");
   
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  
   // Data states
   const [monthlyData, setMonthlyData] = useState([]);
-  const [detailedData, setDetailedData] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 15, pages: 1 });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Modal states
+  const [selectedAgentForModal, setSelectedAgentForModal] = useState(null);
+  const [modalDetailedData, setModalDetailedData] = useState([]);
+  const [modalPagination, setModalPagination] = useState({ page: 1, limit: 10, pages: 1 });
+  const [isModalLoading, setIsModalLoading] = useState(false);
 
   // Fetch agents for manager dropdown
   useEffect(() => {
@@ -40,22 +51,14 @@ export default function EarningsHistoryPage() {
     }
   }, [isManagerUser]);
 
-  // Fetch data depending on active tab, page, or selected agent
+  // Fetch data for Monthly Summary
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         if (activeTab === "monthly") {
-          const data = await getMonthlyEarningsHistory({ agentId: selectedAgentId });
-          setMonthlyData(data || []);
-        } else {
-          const response = await getDetailedEarningsHistory({
-            agentId: selectedAgentId,
-            page: pagination.page,
-            limit: pagination.limit,
-          });
-          setDetailedData(response.data || []);
-          setPagination(response.pagination || { page: 1, limit: 15, pages: 1 });
+          const data = await getMonthlyEarningsHistory({ agentId: selectedAgentId, month: selectedMonth });
+          setMonthlyData(data.data || data || []);
         }
       } catch (error) {
         console.error("Failed to fetch earnings history", error);
@@ -65,12 +68,39 @@ export default function EarningsHistoryPage() {
     };
 
     fetchData();
-  }, [activeTab, selectedAgentId, pagination.page, pagination.limit]);
+  }, [activeTab, selectedAgentId, selectedMonth]);
 
-  // Reset pagination when switching tabs
+  // Fetch detailed logs when modal is open
+  useEffect(() => {
+    if (selectedAgentForModal) {
+      const fetchModalData = async () => {
+        setIsModalLoading(true);
+        try {
+          const response = await getDetailedEarningsHistory({
+            agentId: selectedAgentForModal.agentId,
+            month: selectedAgentForModal.month,
+            page: modalPagination.page,
+            limit: modalPagination.limit,
+          });
+          setModalDetailedData(response.data || []);
+          setModalPagination(response.pagination || { page: 1, limit: 10, pages: 1 });
+        } catch (error) {
+          console.error("Failed to fetch detailed logs for modal", error);
+        } finally {
+          setIsModalLoading(false);
+        }
+      };
+      fetchModalData();
+    }
+  }, [selectedAgentForModal?.agentId, selectedAgentForModal?.month, modalPagination.page, modalPagination.limit]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setPagination({ ...pagination, page: 1 });
+  };
+
+  const handleAgentClick = (agentId, agentName, month) => {
+    setSelectedAgentForModal({ agentId, agentName, month });
+    setModalPagination({ page: 1, limit: 10, pages: 1 });
   };
 
   const handleExportCSV = () => {
@@ -87,11 +117,11 @@ export default function EarningsHistoryPage() {
           ? `${month},${agentName},${row.totalEarnings},${row.totalQualifications}\n`
           : `${month},${row.totalQualifications}\n`;
       });
-    } else {
+    } else if (selectedAgentForModal) {
       csvContent += isManagerUser
         ? "Date,Agent Name,Agent Email,Campaign,Lead Business Name,Lead Status,Amount (PKR)\n"
         : "Date,Campaign,Lead Business Name,Lead Status\n";
-      detailedData.forEach((row) => {
+      modalDetailedData.forEach((row) => {
         const dateStr = new Date(row.earnedAt).toLocaleString();
         const agentName = `"${row.agent?.name || 'N/A'}"`;
         const agentEmail = `"${row.agent?.email || 'N/A'}"`;
@@ -142,7 +172,6 @@ export default function EarningsHistoryPage() {
                   value={selectedAgentId}
                   onChange={(e) => {
                     setSelectedAgentId(e.target.value);
-                    setPagination({ ...pagination, page: 1 });
                   }}
                 >
                   <option className="dark:bg-slate-800 dark:text-slate-200" value="">All Agents</option>
@@ -181,17 +210,6 @@ export default function EarningsHistoryPage() {
             Monthly Summary
           </button>
           <button
-            onClick={() => handleTabChange("detailed")}
-            className={`flex items-center gap-2 border-b-2 py-4 text-sm font-medium ${
-              activeTab === "detailed"
-                ? "border-primary-500 text-primary-600 dark:border-primary-400 dark:text-primary-400"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
-            }`}
-          >
-            <ListFilter className="h-4 w-4" />
-            Detailed Logs
-          </button>
-          <button
             onClick={() => handleTabChange("leaderboard")}
             className={`flex items-center gap-2 border-b-2 py-4 text-sm font-medium ${
               activeTab === "leaderboard"
@@ -217,17 +235,50 @@ export default function EarningsHistoryPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
             </div>
           ) : activeTab === "monthly" ? (
-            <MonthlySummaryTable monthlyData={monthlyData} isManagerUser={isManagerUser} />
-          ) : (
-            <DetailedLogsTable
-              detailedData={detailedData}
-              isManagerUser={isManagerUser}
-              pagination={pagination}
-              setPagination={setPagination}
+            <MonthlySummaryTable 
+              monthlyData={monthlyData} 
+              isManagerUser={isManagerUser} 
+              selectedMonth={selectedMonth}
+              setSelectedMonth={setSelectedMonth}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onAgentClick={handleAgentClick}
             />
-          )}
+          ) : null}
         </div>
       )}
+
+      {/* Agent Detailed Logs Modal */}
+      <Modal
+        isOpen={!!selectedAgentForModal}
+        onClose={() => setSelectedAgentForModal(null)}
+        title={`${selectedAgentForModal?.agentName} - Detailed Logs (${selectedAgentForModal?.month})`}
+        maxWidth="max-w-6xl"
+      >
+        {isModalLoading ? (
+          <div className="flex h-40 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+              >
+                <FileDown className="h-4 w-4" />
+                <span>Export Agent Logs</span>
+              </button>
+            </div>
+            <DetailedLogsTable
+              detailedData={modalDetailedData}
+              isManagerUser={isManagerUser}
+              pagination={modalPagination}
+              setPagination={setModalPagination}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
