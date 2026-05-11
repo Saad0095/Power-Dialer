@@ -379,10 +379,17 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleRecycleVoicemails = async (campaignId) => {
+  const handleRecycleVoicemails = async (campaign) => {
+    const isParentCampaign =
+      !campaign.parentCampaign &&
+      Array.isArray(campaign.children) &&
+      campaign.children.length > 0;
+
     if (
       !window.confirm(
-        "Are you sure you want to recycle voicemails? All completed/failed leads with a voicemail disposition will be added back to the dialing queue.",
+        isParentCampaign
+          ? "Are you sure you want to recycle voicemails for all child campaigns under this parent? All completed/failed leads with a voicemail disposition will be added back to the dialing queue."
+          : "Are you sure you want to recycle voicemails? All completed/failed leads with a voicemail disposition will be added back to the dialing queue.",
       )
     ) {
       return;
@@ -390,7 +397,7 @@ export default function CampaignsPage() {
 
     try {
       setIsLoading(true);
-      const res = await recycleVoicemails(campaignId);
+      const res = await recycleVoicemails(campaign._id);
       showNotification(res.message || "Voicemails recycled successfully", "success");
       loadCampaigns();
     } catch (error) {

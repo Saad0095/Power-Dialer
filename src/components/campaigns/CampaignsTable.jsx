@@ -24,6 +24,7 @@ function RootCampaignRow({
   onEdit,
   onDelete,
   onViewHistory,
+  onRecycleVoicemails,
 }) {
   return (
     <tr
@@ -105,6 +106,15 @@ function RootCampaignRow({
           >
             <Upload className="h-4 w-4" />
           </button>
+          {root.children?.length > 0 && (
+            <button
+              onClick={onRecycleVoicemails}
+              className="p-2 text-slate-400 transition hover:text-emerald-600"
+              title="Recycle Child Voicemails"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="p-2 text-slate-400 transition hover:text-amber-600"
@@ -349,6 +359,7 @@ export default function CampaignsTable({
                     }
                     onToggleExpanded={() => onToggleExpanded(root._id)}
                     onUpload={() => onUpload(root)}
+                    onRecycleVoicemails={() => onRecycleVoicemails(root)}
                     onEdit={() => onEdit(root)}
                     onDelete={(event) => onDelete(root._id, event)}
                     onViewHistory={() => onViewHistory(root)}
@@ -372,7 +383,7 @@ export default function CampaignsTable({
                         onViewHistory={onViewHistory}
                         onRecycleVoicemails={(event) => {
                           event.stopPropagation();
-                          onRecycleVoicemails(child._id);
+                          onRecycleVoicemails(child);
                         }}
                       />
                     ))}
