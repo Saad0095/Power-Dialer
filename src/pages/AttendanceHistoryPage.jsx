@@ -12,7 +12,7 @@ export default function AttendanceHistoryPage() {
   const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [dateRange, setDateRange] = useState('7days');
+  const [dateRange, setDateRange] = useState('30days');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +55,8 @@ export default function AttendanceHistoryPage() {
 
       if (start && end) {
         const data = await getAttendanceHistory(start, end, agentFilter !== 'all' ? agentFilter : null);
+        console.log(data);
+        
         setLogs(data?.records || []);
         setSummary(data?.summary || null);
       }
