@@ -867,11 +867,13 @@ export const getAgentEarningsLeaderboard = async ({
   campaignId,
   timeframe = "all",
   limit = 10,
+  month,
 } = {}) => {
   const params = new URLSearchParams();
   if (campaignId) params.append("campaignId", campaignId);
   if (timeframe) params.append("timeframe", timeframe);
   if (limit) params.append("limit", limit);
+  if (month) params.append("month", month);
   const response = await api.get(`/earnings/leaderboard?${params.toString()}`);
   return response.data.data;
 };
@@ -890,9 +892,10 @@ export const getQualificationBreakdown = async ({ agentId, campaignId }) => {
   return response.data.data;
 };
 
-export const getMonthlyEarningsHistory = async ({ agentId } = {}) => {
+export const getMonthlyEarningsHistory = async ({ agentId, month } = {}) => {
   const params = new URLSearchParams();
   if (agentId) params.append("agentId", agentId);
+  if (month) params.append("month", month);
   const response = await api.get(
     `/earnings/monthly-history?${params.toString()}`,
   );
@@ -901,11 +904,13 @@ export const getMonthlyEarningsHistory = async ({ agentId } = {}) => {
 
 export const getDetailedEarningsHistory = async ({
   agentId,
+  month,
   page = 1,
   limit = 20,
 } = {}) => {
   const params = new URLSearchParams();
   if (agentId) params.append("agentId", agentId);
+  if (month) params.append("month", month);
   if (page) params.append("page", page);
   if (limit) params.append("limit", limit);
   const response = await api.get(`/earnings/history?${params.toString()}`);

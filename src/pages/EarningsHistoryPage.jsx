@@ -226,7 +226,12 @@ export default function EarningsHistoryPage() {
       {/* Content */}
       {activeTab === "leaderboard" ? (
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <Leaderboard timeframe={activeTab} userId={user?._id} />
+          <Leaderboard
+            timeframe="month"
+            userId={user?._id}
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
+          />
         </div>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">

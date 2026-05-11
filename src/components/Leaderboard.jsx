@@ -8,19 +8,34 @@ import { isManager } from "../utils/roleUtils";
 // timeframe: string ("all", "month", "week", "today")
 // userId: string (current user id)
 // compact: boolean (if true, show only rank card)
-const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
+const Leaderboard = ({
+  timeframe = "all",
+  userId,
+  compact = false,
+  selectedMonth,
+  onMonthChange,
+}) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const isManagerUser = isManager(user?.role);
 
-  const [selectedMonth, setSelectedMonth] = useState(""); // YYYY-MM format
+  const [internalMonth, setInternalMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const monthValue = selectedMonth ?? internalMonth;
+  const setMonthValue = onMonthChange ?? setInternalMonth;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
         setIsLoading(true);
-        const data = await getAgentEarningsLeaderboard({ timeframe, limit: 10, month: selectedMonth });
+        const data = await getAgentEarningsLeaderboard({
+          timeframe,
+          limit: 10,
+          month: monthValue,
+        });
         setLeaderboard(data.data || data); // ensure we access the array
       } catch (error) {
         console.error("Error fetching leaderboard:", error);
@@ -29,7 +44,7 @@ const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
       }
     };
     fetchLeaderboard();
-  }, [timeframe, selectedMonth]);
+  }, [timeframe, monthValue]);
 
   const currentRank =
     leaderboard.findIndex((agent) => agent.agentId === userId) + 1 || "N/A";
@@ -56,15 +71,15 @@ const Leaderboard = ({ timeframe = "all", userId, compact = false }) => {
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary-500" />
           <h3 className="font-semibold text-slate-900 dark:text-white">
-            Top Qualifiers {selectedMonth ? `(${selectedMonth})` : (timeframe === "month" ? "This Month" : timeframe === "week" ? "This Week" : "Period")}
+            Top Qualifiers {monthValue ? `(${monthValue})` : (timeframe === "month" ? "This Month" : timeframe === "week" ? "This Week" : "Period")}
           </h3>
         </div>
         
         {!compact && (
           <input
             type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
+            value={monthValue}
+            onChange={(e) => setMonthValue(e.target.value)}
             className="block w-full sm:w-auto px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white dark:bg-slate-900 dark:border-slate-700 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors cursor-pointer"
             title="Filter Leaderboard by Month"
           />
