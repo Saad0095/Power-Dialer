@@ -42,6 +42,10 @@ export default function AgentAttendanceSummaryTable({
                 </div>
                 <div className="flex flex-col text-xs mt-1 border-t border-slate-200/50 dark:border-slate-700/50 pt-2 gap-1.5">
                   <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Total Calls</span>
+                    <span className="font-bold text-cyan-600 dark:text-cyan-400">{item.totalCalls || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-slate-500">Lates / Half-days</span>
                     <span className="font-medium text-slate-700 dark:text-slate-300">{item.lateMarks || 0} / {item.halfDayMarks || 0}</span>
                   </div>

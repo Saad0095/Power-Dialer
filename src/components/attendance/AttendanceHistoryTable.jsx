@@ -7,10 +7,11 @@ const getDayName = (dateKey) => {
 };
 
 const getStatusBadge = (log) => {
-  if (log.isHalfDay) return <span className="inline-flex px-2.5 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded-full font-bold text-xs whitespace-nowrap">Half Day</span>;
+  // if (!log.checkInAt) return <span className="inline-flex px-2.5 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded-full font-bold text-xs whitespace-nowrap">Half Day</span>;
   if (log.isLate) return <span className="inline-flex px-2.5 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-full font-bold text-xs whitespace-nowrap">Late</span>;
-  if (!log.checkInAt) return <span className="inline-flex px-2.5 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 rounded-full font-bold text-xs whitespace-nowrap">Absent</span>;
-  return <span className="inline-flex px-2.5 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 rounded-full font-bold text-xs whitespace-nowrap">Present</span>;
+  if (log.isHalfDay) return <span className="inline-flex px-2.5 py-1 bg-orange-100 text-orange-700 dark:bg-orange-800 dark:text-orange-400 rounded-full font-bold text-xs whitespace-nowrap">Half Day</span>;
+  if (!log.checkInAt) <span className="inline-flex px-2.5 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 rounded-full font-bold text-xs whitespace-nowrap">Absent</span>;
+  return <span className="inline-flex px-2.5 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-full font-bold text-xs whitespace-nowrap">Present</span>;
 };
 
 export default function AttendanceHistoryTable({
@@ -47,6 +48,7 @@ export default function AttendanceHistoryTable({
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Log Out</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">First Call</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Last Call</th>
+              <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold text-center">Calls</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold text-center">Status</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold text-center">Break Time</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold text-center">Paused Time</th>
@@ -95,6 +97,9 @@ export default function AttendanceHistoryTable({
                   </td>
                   <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300 border border-[#cf9488] dark:border-[#734b43]">
                     {log.lastCallAt ? formatTime(log.lastCallAt) : <span className="text-slate-400 italic text-xs">None</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center font-bold text-cyan-700 dark:text-cyan-400 border border-[#cf9488] dark:border-[#734b43]">
+                    {log.callCount || 0}
                   </td>
                   <td className="px-4 py-3 text-center border border-[#cf9488] dark:border-[#734b43]">
                     {getStatusBadge(log)}

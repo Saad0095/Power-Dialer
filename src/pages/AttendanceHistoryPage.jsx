@@ -103,15 +103,19 @@ export default function AttendanceHistoryPage() {
       return;
     }
 
-    const headers = ['Date', 'Agent Name', 'Email', 'Check In', 'Check Out', 'Total Shift (excluding breaks)', 'Break Time', 'Breaks Taken', 'Late / Half-day', 'Lost Hours', 'Compensation Hours'];
+    const headers = ['Date', 'Agent Name', 'Email', 'Check In', 'Check Out', 'First Call', 'Last Call', 'Calls', 'Total Shift (excluding breaks)', 'Break Time', 'Paused Time', 'Breaks Taken', 'Late / Half-day', 'Lost Hours', 'Compensation Hours'];
     const csvRows = filteredLogs.map(log => [
       log.dateKey,
       log.agent?.name || 'Unknown',
       log.agent?.email || '',
       formatTime(log.checkInAt),
-      formatTime(log.checkOutAt) || (log.status === 'checked-in' ? 'Still working...' : '—'),
+      formatTime(log.checkOutAt) || (log.status === 'checked-in' ? 'Still working...' : 'â€”'),
+      formatTime(log.firstCallAt),
+      formatTime(log.lastCallAt),
+      log.callCount || 0,
       formatDurationMs(log.shiftDurationMs),
       formatDurationMs(log.totalBreakMs),
+      formatDurationMs(log.totalDialingPauseMs || 0),
       log.breaksTaken || 0,
       log.isHalfDay ? 'Half-day' : (log.isLate ? 'Late' : 'On-time'),
       log.lostHours > 0 ? log.lostHours.toFixed(2) : 0,

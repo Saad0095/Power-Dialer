@@ -207,3 +207,32 @@ body {
 .animate-pulseHotness {
   animation: pulseHotness 1.8s ease-in-out infinite;
 }
+
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  10%       { transform: rotate(18deg); }
+  20%       { transform: rotate(-16deg); }
+  30%       { transform: rotate(12deg); }
+  40%       { transform: rotate(-10deg); }
+  50%       { transform: rotate(7deg); }
+  60%       { transform: rotate(-4deg); }
+  70%       { transform: rotate(2deg); }
+}
+
+@keyframes badgePop {
+  0%   { transform: translate(33%, -33%) scale(0); }
+  60%  { transform: translate(33%, -33%) scale(1.25); }
+  100% { transform: translate(33%, -33%) scale(1); }
+}
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  50%      { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+}
+
+@theme {
+  --animate-bell-ring:   bellRing 0.7s ease-out;
+  --animate-badge-pop:   badgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-badge-pulse: badgePulse 2s 0.4s ease-in-out infinite;
+}
