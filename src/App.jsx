@@ -26,6 +26,8 @@ import MyOffersPage from "./pages/MyOffersPage";
 import OfferDetailPage from "./pages/OfferDetailPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ClientProfilePage from "./pages/ClientProfilePage";
+import ClientDashboardPage from "./pages/ClientDashboardPage";
+import ClientMarketplacePage from "./pages/ClientMarketplacePage";
 import React from "react";
 import MobileBlockWrapper from "./components/MobileBlockWrapper";
 import CelebrationListener from "./components/CelebrationListener";
@@ -77,9 +79,10 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<MyOffersPage />} />
+              <Route index element={<ClientDashboardPage />} />
               <Route path="offers" element={<MyOffersPage />} />
               <Route path="offers/:offerId" element={<OfferDetailPage />} />
+              {/* <Route path="marketplace" element={<ClientMarketplacePage />} /> */}
               <Route path="profile" element={<ClientProfilePage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>

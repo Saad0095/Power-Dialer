@@ -39,43 +39,42 @@ export default function MyOffersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-emerald-50 to-cyan-50 p-8 shadow-lg dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 text-white shadow-lg shadow-emerald-500/20">
+      {/* Header */}
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-cyan-50 to-blue-50 p-8 shadow-lg dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/30 text-white">
               <BriefcaseBusiness className="h-7 w-7" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              My Lead Offers
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Review your assigned lead offers, inspect the masked business details, and
-              decide whether to accept or reject before the expiry window closes. Once paid, you can qualify a lead to level 3 from its detail page.
-            </p>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                My Appointments
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Manage and track your assigned offers
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-white/60 bg-white/90 px-5 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
               Assigned Offers
             </p>
-            <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+            <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
               {pagination.total}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <select
           value={filters.status}
           onChange={(event) =>
-            setFilters((prev) => ({
-              ...prev,
-              status: event.target.value,
-              page: 1,
-            }))
+            setFilters((prev) => ({ ...prev, status: event.target.value, page: 1 }))
           }
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+          className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
         >
           {STATUS_OPTIONS.map((status) => (
             <option key={status || "all"} value={status}>
@@ -85,78 +84,97 @@ export default function MyOffersPage() {
         </select>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {isLoading ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-slate-300 p-12 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            Loading offers...
-          </div>
-        ) : offers.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed border-slate-300 p-12 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            No offers are assigned to your account right now.
-          </div>
-        ) : (
-          offers.map((offer) => (
-            <article
-              key={offer._id}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-                    {offer.meta.businessName || "Lead opportunity"}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    {offer.meta.city || "Unknown city"}, {offer.meta.state || "Unknown state"}
-                  </p>
-                </div>
-                <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[offer.status] || statusClassMap.expired}`}
-                >
-                  {offer.status}
-                </span>
-              </div>
-
-              <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm dark:bg-slate-900/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Price</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {offer.currency} {Number(offer.price || 0).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Qualification</span>
-                  <span className="font-medium text-slate-900 dark:text-white">
-                    {offer.meta.appointmentStatus || "Unknown"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">Payment</span>
-                  <span className="font-medium text-slate-900 dark:text-white">
-                    {offer.payment?.status || "pending"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-                <div className="flex items-center gap-2">
-                  <Clock3 className="h-4 w-4 text-slate-400" />
-                  {offer.expiresAt
-                    ? new Date(offer.expiresAt).toLocaleString()
-                    : "No expiry"}
-                </div>
-                <Link
-                  to={`/client/offers/${offer._id}`}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/20 transition hover:from-emerald-700 hover:to-cyan-700"
-                >
-                  View offer
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </article>
-          ))
-        )}
+      {/* Table */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50">
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Business
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Location
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Price
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Payment
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Status
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Expires
+                </th>
+                <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                    Loading offers...
+                  </td>
+                </tr>
+              ) : offers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                    No offers are assigned to your account right now.
+                  </td>
+                </tr>
+              ) : (
+                offers.map((offer) => (
+                  <tr
+                    key={offer._id}
+                    className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40"
+                  >
+                    <td className="px-5 py-4 font-medium text-slate-900 dark:text-white">
+                      {offer.meta.businessName || "Lead opportunity"}
+                    </td>
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
+                      {offer.meta.city || "Unknown city"}, {offer.meta.state || "Unknown state"}
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
+                      {offer.currency} {Number(offer.price || 0).toFixed(2)}
+                    </td>
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-300 capitalize">
+                      {offer.payment?.status || "pending"}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[offer.status] || statusClassMap.expired}`}>
+                        {offer.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                        {offer.expiresAt
+                          ? new Date(offer.expiresAt).toLocaleString()
+                          : "No expiry"}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        to={`/client/offers/${offer._id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-br from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/30 px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90 cursor-pointer"
+                      >
+                        View
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Page {pagination.page} of {pagination.pages || 1}
@@ -168,7 +186,7 @@ export default function MyOffersPage() {
             onClick={() =>
               setFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))
             }
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             Previous
           </button>
@@ -176,7 +194,7 @@ export default function MyOffersPage() {
             type="button"
             disabled={filters.page >= (pagination.pages || 1)}
             onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="cursor-pointer rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
           >
             Next
           </button>

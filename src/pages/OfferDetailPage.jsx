@@ -1,20 +1,81 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock3, CreditCard, ShieldCheck, XCircle } from "lucide-react";
-import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
-  acceptClientOffer,
-  getAllowedQualifications,
+  ArrowLeft,
+  Clock3,
+  ShieldCheck,
+} from "lucide-react";
+import {
+  Link,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router-dom";
+import {
   getClientOffer,
-  rejectClientOffer,
+  getAllowedQualifications,
   updateQualification,
 } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 const statusClassMap = {
-  offered: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  offered:
+    "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
   paid: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
   expired: "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
   cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
+};
+
+const leadFieldOrder = [
+  "businessName",
+  "contactName",
+  "phoneNumber",
+  "email",
+  "businessAddress",
+  "city",
+  "state",
+  "country",
+  "appointmentDate",
+  "appointmentTime",
+  "appointmentStatus",
+  "leadFor",
+  "currentSetup",
+  "servicesGetting",
+  "frequency",
+  "currentChallenges",
+  "interestLevel",
+  "agentNotes",
+  "managerNotes",
+  "recordingLink",
+];
+
+const leadFieldLabels = {
+  businessName: "Business Name",
+  contactName: "Contact Name",
+  phoneNumber: "Phone",
+  email: "Email",
+  businessAddress: "Address",
+  city: "City",
+  state: "State",
+  country: "Country",
+  appointmentDate: "Appointment Date",
+  appointmentTime: "Appointment Time",
+  appointmentStatus: "Qualification",
+  leadFor: "Lead Type",
+  currentSetup: "Current Setup",
+  servicesGetting: "Services",
+  frequency: "Frequency",
+  currentChallenges: "Challenges",
+  interestLevel: "Interest Level",
+  agentNotes: "Agent Notes",
+  managerNotes: "Manager Notes",
+  recordingLink: "Recording Link",
+};
+
+const formatLeadValue = (value) => {
+  if (value === null || value === undefined || value === "") return "Not available";
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || "Not available";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
 };
 
 export default function OfferDetailPage() {
@@ -26,7 +87,6 @@ export default function OfferDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isActioning, setIsActioning] = useState(false);
   const [qualificationOptions, setQualificationOptions] = useState([]);
-  const [qualificationStatus, setQualificationStatus] = useState("");
   const [isUpdatingQualification, setIsUpdatingQualification] = useState(false);
 
   const loadOffer = async () => {
@@ -34,11 +94,12 @@ export default function OfferDetailPage() {
     try {
       const data = await getClientOffer(offerId);
       setOffer(data);
-      setQualificationStatus(data?.meta?.appointmentStatus || "");
 
       if (data?.meta?.leadId && data?.isUnlocked) {
         try {
-          const qualificationData = await getAllowedQualifications(data.meta.leadId);
+          const qualificationData = await getAllowedQualifications(
+            data.meta.leadId,
+          );
           setQualificationOptions(qualificationData.allowedNextStatuses || []);
         } catch {
           setQualificationOptions([]);
@@ -68,7 +129,10 @@ export default function OfferDetailPage() {
       showNotification(successMessage, "success");
     } catch (error) {
       console.error("Offer action failed", error);
-      showNotification(error.response?.data?.error || "Offer action failed", "error");
+      showNotification(
+        error.response?.data?.error || "Offer action failed",
+        "error",
+      );
     } finally {
       setIsActioning(false);
     }
@@ -86,11 +150,22 @@ export default function OfferDetailPage() {
     return null;
   }
 
-  const canAct = offer.status === "offered";
-  const canClientQualify = offer.isUnlocked && qualificationOptions.includes("qualified-level-3");
+  const canClientQualify =
+    offer.isUnlocked && qualificationOptions.includes("qualified-level-3");
+  const leadPreview = offer.leadPreview || {};
+  const leadEntries = leadFieldOrder
+    .map((key) => ({
+      key,
+      label: leadFieldLabels[key] || key,
+      value: leadPreview[key],
+    }))
+    .filter(({ value }) => value !== undefined && value !== null && value !== "");
 
-  const handleQualificationUpdate = async () => {
-    if (!offer?.meta?.leadId || qualificationStatus !== "qualified-level-3") return;
+  const handleQualificationUpdate = async (
+    qualificationStatus = "qualified-level-3",
+  ) => {
+    // if (!offer?.meta?.leadId || qualificationStatus !== "qualified-level-3")
+    //   return;
 
     setIsUpdatingQualification(true);
     try {
@@ -99,7 +174,7 @@ export default function OfferDetailPage() {
       });
       await loadOffer();
       await hydrateAuth?.();
-      showNotification("Lead moved to Qualified Level 3", "success");
+      showNotification("Lead Qualified Successfully!", "success");
     } catch (error) {
       console.error("Failed to update qualification", error);
       showNotification(
@@ -154,7 +229,9 @@ export default function OfferDetailPage() {
                   Expires
                 </p>
                 <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-                  {offer.expiresAt ? new Date(offer.expiresAt).toLocaleString() : "No expiry"}
+                  {offer.expiresAt
+                    ? new Date(offer.expiresAt).toLocaleString()
+                    : "No expiry"}
                 </p>
               </div>
             </div>
@@ -163,25 +240,33 @@ export default function OfferDetailPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/50">
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Qualification</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Qualification
+                </span>
                 <span className="font-medium text-slate-900 dark:text-white">
                   {offer.meta.appointmentStatus || "Unknown"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Interest level</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Interest level
+                </span>
                 <span className="font-medium text-slate-900 dark:text-white">
                   {offer.meta.interestLevel || "Unknown"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Payment</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Payment
+                </span>
                 <span className="font-medium text-slate-900 dark:text-white">
                   {offer.payment?.status || "pending"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Region</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Region
+                </span>
                 <span className="font-medium text-slate-900 dark:text-white">
                   {offer.meta.city}, {offer.meta.state}, {offer.meta.country}
                 </span>
@@ -207,21 +292,38 @@ export default function OfferDetailPage() {
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
             Visible Lead Data
           </h2>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {Object.entries(offer.leadPreview || {}).map(([key, value]) => (
-              <div
-                key={key}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50"
-              >
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                  {key}
-                </p>
-                <p className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                  {value || "Not available"}
-                </p>
-              </div>
-            ))}
-          </div>
+          {leadEntries.length === 0 ? (
+            <div className="mt-5 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              No lead details are available yet.
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {leadEntries.map(({ key, label, value }) => (
+                <div
+                  key={key}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50"
+                >
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    {label}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900 dark:text-white">
+                    {key === "recordingLink" && typeof value === "string" && value ? (
+                      <a
+                        href={value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-cyan-700 underline-offset-4 hover:underline dark:text-cyan-300"
+                      >
+                        Open recording
+                      </a>
+                    ) : (
+                      formatLeadValue(value)
+                    )}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -229,7 +331,7 @@ export default function OfferDetailPage() {
             Actions
           </h2>
           <div className="mt-5 space-y-3">
-            <button
+            {/* <button
               type="button"
               disabled={!canAct || isActioning}
               onClick={() => executeAction(acceptClientOffer, "Offer accepted")}
@@ -247,11 +349,11 @@ export default function OfferDetailPage() {
             >
               <XCircle className="h-4 w-4" />
               Reject Offer
-            </button>
+            </button> */}
 
             {canClientQualify && (
               <>
-                <select
+                {/* <select
                   value={qualificationStatus}
                   onChange={(event) => setQualificationStatus(event.target.value)}
                   className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
@@ -264,18 +366,20 @@ export default function OfferDetailPage() {
                       {status}
                     </option>
                   ))}
-                </select>
+                </select> */}
 
                 <button
                   type="button"
-                  disabled={
-                    isUpdatingQualification ||
-                    qualificationStatus !== "qualified-level-3"
-                  }
+                  // disabled={
+                  //   isUpdatingQualification ||
+                  //   qualificationStatus !== "qualified-level-3"
+                  // }
                   onClick={handleQualificationUpdate}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl text-lg font-bold bg-emerald-50 px-4 py-3  text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50  dark:bg-green-500 dark:text-white"
                 >
-                  {isUpdatingQualification ? "Updating..." : "Mark as Qualified Level 3"}
+                  {isUpdatingQualification
+                    ? "Updating..."
+                    : "Mark as Qualified"}
                 </button>
               </>
             )}

@@ -103,28 +103,28 @@ function getSidebarItems(role) {
     return [
       {
         id: "overview",
-        label: "My Offers",
+        label: "Dashboard",
         icon: BriefcaseBusiness,
         path: "/client",
       },
       {
-        id: "offers",
-        label: "Offer Marketplace",
-        icon: BadgeDollarSign,
+        id: "my-offers",
+        label: "My Offers",
+        icon: BriefcaseBusiness,
         path: "/client/offers",
       },
+      // {
+      //   id: "offers",
+      //   label: "Offer Marketplace",
+      //   icon: BadgeDollarSign,
+      //   path: "/client/marketplace",
+      // },
       {
         id: "profile",
         label: "My Profile",
         icon: IdCard,
         path: "/client/profile",
       },
-        //    {
-        //   id: "call-logs",
-        //   label: "Call Logs",
-        //   icon: Phone,
-        //   path: "/manager/call-logs",
-        // },
     ];
   }
 

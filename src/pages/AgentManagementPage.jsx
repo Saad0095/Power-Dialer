@@ -30,6 +30,7 @@ export default function AgentManagementPage() {
     email: '',
     password: '',
     role: '',
+    isActive: true,
     shiftStartTime: DEFAULT_SHIFT_START_TIME,
     shiftEndTime: DEFAULT_SHIFT_END_TIME,
     expectedWorkHours: '',
@@ -112,6 +113,7 @@ export default function AgentManagementPage() {
       email: user.email || '',
       password: '',
       role: user.role || '',
+      isActive: user.isActive ?? true,
       shiftStartTime: user.shiftStartTime || DEFAULT_SHIFT_START_TIME,
       shiftEndTime: user.shiftEndTime || DEFAULT_SHIFT_END_TIME,
       expectedWorkHours: user.expectedWorkHours ?? '',
@@ -127,6 +129,7 @@ export default function AgentManagementPage() {
       email: '',
       password: '',
       role: '',
+      isActive: true,
       shiftStartTime: DEFAULT_SHIFT_START_TIME,
       shiftEndTime: DEFAULT_SHIFT_END_TIME,
       expectedWorkHours: '',
@@ -159,6 +162,9 @@ export default function AgentManagementPage() {
     if (trimmedEmail !== (user.email || '').toLowerCase()) payload.email = trimmedEmail;
     if (editForm.password) payload.password = editForm.password;
     if (editForm.role && editForm.role !== user.role) payload.role = editForm.role;
+    if (editForm.isActive !== (user.isActive ?? true)) {
+      payload.isActive = editForm.isActive;
+    }
     if ((editForm.shiftStartTime || DEFAULT_SHIFT_START_TIME) !== (user.shiftStartTime || DEFAULT_SHIFT_START_TIME)) {
       payload.shiftStartTime = editForm.shiftStartTime || DEFAULT_SHIFT_START_TIME;
     }
@@ -192,6 +198,7 @@ export default function AgentManagementPage() {
                 name: updatedUser?.name ?? payload.name ?? existingUser.name,
                 email: updatedUser?.email ?? payload.email ?? existingUser.email,
                 role: updatedUser?.role ?? payload.role ?? existingUser.role,
+                isActive: updatedUser?.isActive ?? payload.isActive ?? existingUser.isActive,
                 shiftStartTime: updatedUser?.shiftStartTime ?? payload.shiftStartTime ?? existingUser.shiftStartTime,
                 shiftEndTime: updatedUser?.shiftEndTime ?? payload.shiftEndTime ?? existingUser.shiftEndTime,
                 expectedWorkHours: updatedUser?.expectedWorkHours ?? payload.expectedWorkHours ?? existingUser.expectedWorkHours,

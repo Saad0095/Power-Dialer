@@ -148,6 +148,37 @@ export default function AgentTable({
                         <div className="space-y-3">
                           <div>
                             <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
+                              Status
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((prev) => ({ ...prev, isActive: true }))}
+                                className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
+                                  editForm.isActive
+                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-400/40"
+                                    : "bg-white dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-600"
+                                }`}
+                                disabled={isSavingEdit}
+                              >
+                                Active
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((prev) => ({ ...prev, isActive: false }))}
+                                className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
+                                  !editForm.isActive
+                                    ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-400/40"
+                                    : "bg-white dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-600"
+                                }`}
+                                disabled={isSavingEdit}
+                              >
+                                Inactive
+                              </button>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
                               New Password (optional)
                             </label>
                             <input
