@@ -13,6 +13,7 @@ import {
   Repeat,
   BriefcaseBusiness,
   BadgeDollarSign,
+  IdCard,
 } from "lucide-react";
 
 function getSidebarItems(role) {
@@ -111,6 +112,12 @@ function getSidebarItems(role) {
         label: "Offer Marketplace",
         icon: BadgeDollarSign,
         path: "/client/offers",
+      },
+      {
+        id: "profile",
+        label: "My Profile",
+        icon: IdCard,
+        path: "/client/profile",
       },
         //    {
         //   id: "call-logs",

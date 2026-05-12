@@ -40,13 +40,6 @@ const DEFAULT_MASKING = {
   addressMasked: true,
 };
 
-const getDefaultExpiry = () => {
-  const nextDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  return new Date(nextDay.getTime() - nextDay.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-};
-
 export default function CreateOfferModal({
   isOpen,
   lead,
@@ -59,9 +52,9 @@ export default function CreateOfferModal({
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [form, setForm] = useState({
     clientId: "",
-    price: "",
+    price: "150",
     currency: "USD",
-    expiresAt: getDefaultExpiry(),
+    expiresAt: "",
     visibleFields: DEFAULT_VISIBLE_FIELDS,
     fieldMasking: DEFAULT_MASKING,
   });
@@ -93,9 +86,9 @@ export default function CreateOfferModal({
     if (!isOpen) return;
     setForm({
       clientId: "",
-      price: "",
+      price: "150",
       currency: "USD",
-      expiresAt: getDefaultExpiry(),
+      expiresAt: "",
       visibleFields: DEFAULT_VISIBLE_FIELDS,
       fieldMasking: DEFAULT_MASKING,
     });
@@ -148,15 +141,17 @@ export default function CreateOfferModal({
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        leadId: lead._id,
-        clientId: form.clientId,
-        price: Number(form.price),
-        currency: form.currency,
-        expiresAt: new Date(form.expiresAt).toISOString(),
-        visibleFields: form.visibleFields,
-        fieldMasking: form.fieldMasking,
-      };
+        const payload = {
+          leadId: lead._id,
+          clientId: form.clientId,
+          price: Number(form.price),
+          currency: form.currency,
+          ...(form.expiresAt
+            ? { expiresAt: new Date(form.expiresAt).toISOString() }
+            : {}),
+          visibleFields: form.visibleFields,
+          fieldMasking: form.fieldMasking,
+        };
 
       const created = await createClientOffer(payload);
       showNotification?.("Offer created successfully", "success");
@@ -253,13 +248,16 @@ export default function CreateOfferModal({
             label="Expires At"
             name="expiresAt"
             type="datetime-local"
-            required
             value={form.expiresAt}
             onChange={(event) =>
               setForm((prev) => ({ ...prev, expiresAt: event.target.value }))
             }
           />
         </div>
+
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Leave expiry empty if this offer should stay open until it is paid, cancelled, or manually handled.
+        </p>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div>

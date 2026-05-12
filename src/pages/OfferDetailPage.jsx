@@ -3,9 +3,12 @@ import { ArrowLeft, Clock3, CreditCard, ShieldCheck, XCircle } from "lucide-reac
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import {
   acceptClientOffer,
+  getAllowedQualifications,
   getClientOffer,
   rejectClientOffer,
+  updateQualification,
 } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 const statusClassMap = {
   offered: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
@@ -15,28 +18,44 @@ const statusClassMap = {
 };
 
 export default function OfferDetailPage() {
+  const { hydrateAuth } = useAuth();
   const { offerId } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useOutletContext();
   const [offer, setOffer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActioning, setIsActioning] = useState(false);
+  const [qualificationOptions, setQualificationOptions] = useState([]);
+  const [qualificationStatus, setQualificationStatus] = useState("");
+  const [isUpdatingQualification, setIsUpdatingQualification] = useState(false);
+
+  const loadOffer = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getClientOffer(offerId);
+      setOffer(data);
+      setQualificationStatus(data?.meta?.appointmentStatus || "");
+
+      if (data?.meta?.leadId && data?.isUnlocked) {
+        try {
+          const qualificationData = await getAllowedQualifications(data.meta.leadId);
+          setQualificationOptions(qualificationData.allowedNextStatuses || []);
+        } catch {
+          setQualificationOptions([]);
+        }
+      } else {
+        setQualificationOptions([]);
+      }
+    } catch (error) {
+      console.error("Failed to load offer", error);
+      showNotification("Failed to load offer", "error");
+      navigate("/client/offers");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadOffer = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getClientOffer(offerId);
-        setOffer(data);
-      } catch (error) {
-        console.error("Failed to load offer", error);
-        showNotification("Failed to load offer", "error");
-        navigate("/client/offers");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadOffer();
   }, [offerId, showNotification, navigate]);
 
@@ -68,6 +87,29 @@ export default function OfferDetailPage() {
   }
 
   const canAct = offer.status === "offered";
+  const canClientQualify = offer.isUnlocked && qualificationOptions.includes("qualified-level-3");
+
+  const handleQualificationUpdate = async () => {
+    if (!offer?.meta?.leadId || qualificationStatus !== "qualified-level-3") return;
+
+    setIsUpdatingQualification(true);
+    try {
+      await updateQualification(offer.meta.leadId, {
+        appointmentStatus: qualificationStatus,
+      });
+      await loadOffer();
+      await hydrateAuth?.();
+      showNotification("Lead moved to Qualified Level 3", "success");
+    } catch (error) {
+      console.error("Failed to update qualification", error);
+      showNotification(
+        error.response?.data?.error || "Failed to update qualification",
+        "error",
+      );
+    } finally {
+      setIsUpdatingQualification(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -112,7 +154,7 @@ export default function OfferDetailPage() {
                   Expires
                 </p>
                 <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-                  {new Date(offer.expiresAt).toLocaleString()}
+                  {offer.expiresAt ? new Date(offer.expiresAt).toLocaleString() : "No expiry"}
                 </p>
               </div>
             </div>
@@ -206,12 +248,45 @@ export default function OfferDetailPage() {
               <XCircle className="h-4 w-4" />
               Reject Offer
             </button>
+
+            {canClientQualify && (
+              <>
+                <select
+                  value={qualificationStatus}
+                  onChange={(event) => setQualificationStatus(event.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                >
+                  <option value={offer.meta.appointmentStatus || ""}>
+                    {offer.meta.appointmentStatus || "Current qualification"}
+                  </option>
+                  {qualificationOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  disabled={
+                    isUpdatingQualification ||
+                    qualificationStatus !== "qualified-level-3"
+                  }
+                  onClick={handleQualificationUpdate}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-100"
+                >
+                  {isUpdatingQualification ? "Updating..." : "Mark as Qualified Level 3"}
+                </button>
+              </>
+            )}
           </div>
 
           <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
             <div className="flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-slate-400" />
-              Offer expires on {new Date(offer.expiresAt).toLocaleString()}.
+              {offer.expiresAt
+                ? `Offer expires on ${new Date(offer.expiresAt).toLocaleString()}.`
+                : "This offer has no expiry date."}
             </div>
           </div>
         </aside>

@@ -99,8 +99,10 @@ export default function LeadDetailModal({
 
   const isManager = user?.role === "manager";
   const hasOffer = Boolean(lead.currentOffer);
+  const hasEverBeenOffered = Boolean(lead.hasEverBeenOffered);
   const canCreateOffer =
     !hasOffer &&
+    !hasEverBeenOffered &&
     onCreateOffer &&
     QUALIFIED_STATUSES.has(lead.appointmentStatus);
   const canUnlockOffer =

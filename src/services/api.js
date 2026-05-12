@@ -169,6 +169,11 @@ export const updateUser = async (userId, updates) => {
   return response.data.data;
 };
 
+export const updateMyProfile = async (updates) => {
+  const response = await api.put("/auth/me", updates);
+  return response.data.data;
+};
+
 /**
  * Logout (client-side only)
  */

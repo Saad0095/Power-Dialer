@@ -50,7 +50,7 @@ export default function MyOffersPage() {
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
               Review your assigned lead offers, inspect the masked business details, and
-              decide whether to accept or reject before the expiry window closes. Payment is handled externally.
+              decide whether to accept or reject before the expiry window closes. Once paid, you can qualify a lead to level 3 from its detail page.
             </p>
           </div>
 
@@ -140,7 +140,9 @@ export default function MyOffersPage() {
               <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
                 <div className="flex items-center gap-2">
                   <Clock3 className="h-4 w-4 text-slate-400" />
-                  {new Date(offer.expiresAt).toLocaleString()}
+                  {offer.expiresAt
+                    ? new Date(offer.expiresAt).toLocaleString()
+                    : "No expiry"}
                 </div>
                 <Link
                   to={`/client/offers/${offer._id}`}

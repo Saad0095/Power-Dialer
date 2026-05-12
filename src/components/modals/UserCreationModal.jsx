@@ -20,6 +20,7 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const isClientRole = role === "client";
 
   const resetForm = () => {
     setName('');
@@ -72,12 +73,15 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
 
     try {
       setIsLoading(true);
-      const result = await createUser(email, password, name, role, {
-        shiftStartTime,
-        shiftEndTime,
-        timezone: timezone.trim() || DEFAULT_TIMEZONE,
-        ...(expectedWorkHours ? { expectedWorkHours: Number(expectedWorkHours) } : {}),
-      });
+      const userOptions = isClientRole
+        ? {}
+        : {
+            shiftStartTime,
+            shiftEndTime,
+            timezone: timezone.trim() || DEFAULT_TIMEZONE,
+            ...(expectedWorkHours ? { expectedWorkHours: Number(expectedWorkHours) } : {}),
+          };
+      const result = await createUser(email, password, name, role, userOptions);
       const createdUser = result?.user || result;
 
       const successMsg = `${role.charAt(0).toUpperCase() + role.slice(1)} ${createdUser?.name || name} created successfully`;
@@ -191,63 +195,67 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
-              Shift Start
-            </label>
-            <input
-              type="time"
-              value={shiftStartTime}
-              onChange={(e) => setShiftStartTime(e.target.value)}
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
-              disabled={isLoading}
-            />
-          </div>
-          <div>
-            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
-              Shift End
-            </label>
-            <input
-              type="time"
-              value={shiftEndTime}
-              onChange={(e) => setShiftEndTime(e.target.value)}
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
-              disabled={isLoading}
-            />
-          </div>
-        </div>
+        {!isClientRole && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+                  Shift Start
+                </label>
+                <input
+                  type="time"
+                  value={shiftStartTime}
+                  onChange={(e) => setShiftStartTime(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+                  Shift End
+                </label>
+                <input
+                  type="time"
+                  value={shiftEndTime}
+                  onChange={(e) => setShiftEndTime(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
-              Expected Hours
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.25"
-              value={expectedWorkHours}
-              onChange={(e) => setExpectedWorkHours(e.target.value)}
-              placeholder="Optional"
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
-              disabled={isLoading}
-            />
-          </div>
-          <div>
-            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
-              Timezone
-            </label>
-            <input
-              type="text"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder={DEFAULT_TIMEZONE}
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
-              disabled={isLoading}
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+                  Expected Hours
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.25"
+                  value={expectedWorkHours}
+                  onChange={(e) => setExpectedWorkHours(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+                  disabled={isLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+                  Timezone
+                </label>
+                <input
+                  type="text"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  placeholder={DEFAULT_TIMEZONE}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Confirm Password */}
         <div>

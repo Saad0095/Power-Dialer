@@ -177,7 +177,9 @@ export default function OffersManagementTable({
                     <td className="px-4 py-4 text-sm text-slate-700 dark:text-slate-300">
                       <div className="flex items-center gap-2">
                         <Clock3 className="h-4 w-4 text-slate-400" />
-                        {new Date(offer.expiresAt).toLocaleString()}
+                        {offer.expiresAt
+                          ? new Date(offer.expiresAt).toLocaleString()
+                          : "No expiry"}
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-700 dark:text-slate-300">

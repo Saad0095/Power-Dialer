@@ -103,7 +103,10 @@ export default function QualifiedLeadsTable({
                   </td>
                 </tr>
               ) : (
-                leads.map((lead) => (
+                leads.map((lead) => {
+                  const canCreateOffer = !lead.currentOffer && !lead.hasEverBeenOffered;
+
+                  return (
                   <tr key={lead._id} className="bg-white dark:bg-slate-800">
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
@@ -132,15 +135,17 @@ export default function QualifiedLeadsTable({
                     <td className="px-4 py-4">
                       <button
                         type="button"
+                        disabled={!canCreateOffer}
                         onClick={() => onCreateOffer(lead)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-cyan-700 shadow-sm shadow-cyan-500/20"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-cyan-700 shadow-sm shadow-cyan-500/20 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                       >
                         <BadgeDollarSign className="h-4 w-4" />
-                        Create Offer
+                        {lead.hasEverBeenOffered ? "Already Offered" : "Create Offer"}
                       </button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
