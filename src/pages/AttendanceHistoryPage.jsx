@@ -97,13 +97,20 @@ export default function AttendanceHistoryPage() {
     return `${minutes}m`;
   };
 
+  const getRowStatusLabel = (log) => {
+    if (!log.checkInAt) return 'Absent';
+    if (log.isHalfDay) return 'Half-day';
+    if (log.isLate) return 'Late';
+    return 'Present';
+  };
+
   const handleExportCSV = () => {
     if (filteredLogs.length === 0) {
       showNotification('No data to export', 'error');
       return;
     }
 
-    const headers = ['Date', 'Agent Name', 'Email', 'Shift', 'Expected Hours', 'Check In', 'Check Out', 'First Call', 'Last Call', 'Calls', 'Total Shift (excluding breaks)', 'Break Time', 'Paused Time', 'Breaks Taken', 'Late / Half-day', 'Lost Hours', 'Compensation Hours'];
+    const headers = ['Date', 'Agent Name', 'Email', 'Shift', 'Expected Hours', 'Check In', 'Check Out', 'First Call', 'Last Call', 'Calls', 'Total Shift (excluding breaks)', 'Break Time', 'Paused Time', 'Breaks Taken', 'Status', 'Daily Lost Hours', 'Daily Compensation Hours'];
     const csvRows = filteredLogs.map(log => [
       log.dateKey,
       log.agent?.name || 'Unknown',
@@ -111,7 +118,7 @@ export default function AttendanceHistoryPage() {
       log.officeHours || '',
       log.expectedWorkHours || '',
       formatTime(log.checkInAt),
-      formatTime(log.checkOutAt) || (log.status === 'checked-in' ? 'Still working...' : 'â€”'),
+      log.checkOutAt ? formatTime(log.checkOutAt) : (log.checkInAt ? 'Still working...' : '—'),
       formatTime(log.firstCallAt),
       formatTime(log.lastCallAt),
       log.callCount || 0,
@@ -119,7 +126,7 @@ export default function AttendanceHistoryPage() {
       formatDurationMs(log.totalBreakMs),
       formatDurationMs(log.totalDialingPauseMs || 0),
       log.breaksTaken || 0,
-      log.isHalfDay ? 'Half-day' : (log.isLate ? 'Late' : 'On-time'),
+      getRowStatusLabel(log),
       log.lostHours > 0 ? log.lostHours.toFixed(2) : 0,
       log.compensationHours > 0 ? log.compensationHours.toFixed(2) : 0
     ]);
