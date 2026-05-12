@@ -35,6 +35,7 @@ export default function AgentTable({
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Name</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Email</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Role</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Shift</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Actions</th>
               </tr>
             </thead>
@@ -91,6 +92,14 @@ export default function AgentTable({
                         </span>
                       )}
                     </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                      <div className="font-medium">
+                        {(userItem.shiftStartTime || '19:00')} - {(userItem.shiftEndTime || '04:00')}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {userItem.expectedWorkHours ? `${userItem.expectedWorkHours}h expected` : 'Auto expected hours'}
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {editingUserId === userItem._id ? (
@@ -135,7 +144,7 @@ export default function AgentTable({
                   </tr>
                   {editingUserId === userItem._id && (
                     <tr className="bg-slate-100 dark:bg-slate-900/50">
-                      <td colSpan="4" className="px-6 py-4">
+                      <td colSpan="5" className="px-6 py-4">
                         <div className="space-y-3">
                           <div>
                             <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
@@ -152,6 +161,59 @@ export default function AgentTable({
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                               Must be at least 6 characters if you want to change it
                             </p>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
+                                Shift Start
+                              </label>
+                              <input
+                                type="time"
+                                value={editForm.shiftStartTime || '19:00'}
+                                onChange={(e) => setEditForm((prev) => ({ ...prev, shiftStartTime: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
+                                disabled={isSavingEdit}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
+                                Shift End
+                              </label>
+                              <input
+                                type="time"
+                                value={editForm.shiftEndTime || '04:00'}
+                                onChange={(e) => setEditForm((prev) => ({ ...prev, shiftEndTime: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
+                                disabled={isSavingEdit}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
+                                Expected Hours
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.25"
+                                value={editForm.expectedWorkHours}
+                                onChange={(e) => setEditForm((prev) => ({ ...prev, expectedWorkHours: e.target.value }))}
+                                placeholder="Optional"
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
+                                disabled={isSavingEdit}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
+                                Timezone
+                              </label>
+                              <input
+                                type="text"
+                                value={editForm.timezone || 'Asia/Karachi'}
+                                onChange={(e) => setEditForm((prev) => ({ ...prev, timezone: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
+                                disabled={isSavingEdit}
+                              />
+                            </div>
                           </div>
                         </div>
                       </td>

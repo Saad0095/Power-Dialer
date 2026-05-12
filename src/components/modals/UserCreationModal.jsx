@@ -3,12 +3,20 @@ import { UserPlus, AlertCircle, X, Mail, Lock, User, Shield, CheckCircle2 } from
 import { createUser } from '../../services/api';
 import Modal from '../common/Modal';
 
+const DEFAULT_SHIFT_START_TIME = '19:00';
+const DEFAULT_SHIFT_END_TIME = '04:00';
+const DEFAULT_TIMEZONE = 'Asia/Karachi';
+
 export default function UserCreationModal({ isOpen, onClose, onSuccess, availableRoles, userRole }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('');
+  const [shiftStartTime, setShiftStartTime] = useState(DEFAULT_SHIFT_START_TIME);
+  const [shiftEndTime, setShiftEndTime] = useState(DEFAULT_SHIFT_END_TIME);
+  const [expectedWorkHours, setExpectedWorkHours] = useState('');
+  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +27,10 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
     setPassword('');
     setConfirmPassword('');
     setRole('');
+    setShiftStartTime(DEFAULT_SHIFT_START_TIME);
+    setShiftEndTime(DEFAULT_SHIFT_END_TIME);
+    setExpectedWorkHours('');
+    setTimezone(DEFAULT_TIMEZONE);
     setError('');
     setSuccessMessage('');
   };
@@ -60,7 +72,12 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
 
     try {
       setIsLoading(true);
-      const result = await createUser(email, password, name, role);
+      const result = await createUser(email, password, name, role, {
+        shiftStartTime,
+        shiftEndTime,
+        timezone: timezone.trim() || DEFAULT_TIMEZONE,
+        ...(expectedWorkHours ? { expectedWorkHours: Number(expectedWorkHours) } : {}),
+      });
       const createdUser = result?.user || result;
 
       const successMsg = `${role.charAt(0).toUpperCase() + role.slice(1)} ${createdUser?.name || name} created successfully`;
@@ -169,6 +186,64 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+              Shift Start
+            </label>
+            <input
+              type="time"
+              value={shiftStartTime}
+              onChange={(e) => setShiftStartTime(e.target.value)}
+              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+              Shift End
+            </label>
+            <input
+              type="time"
+              value={shiftEndTime}
+              onChange={(e) => setShiftEndTime(e.target.value)}
+              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+              Expected Hours
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.25"
+              value={expectedWorkHours}
+              onChange={(e) => setExpectedWorkHours(e.target.value)}
+              placeholder="Optional"
+              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+              Timezone
+            </label>
+            <input
+              type="text"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              placeholder={DEFAULT_TIMEZONE}
+              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition"
               disabled={isLoading}
             />
           </div>

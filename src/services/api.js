@@ -125,12 +125,13 @@ export const getCurrentUser = async () => {
  * @param {string} role - User role (manager or agent)
  * @returns {Promise} Created user data
  */
-export const createUser = async (email, password, name, role = "agent") => {
+export const createUser = async (email, password, name, role = "agent", options = {}) => {
   const response = await api.post("/auth/create-user", {
     email,
     password,
     name,
     role,
+    ...options,
   });
   return response.data.data;
 };

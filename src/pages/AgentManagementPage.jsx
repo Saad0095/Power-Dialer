@@ -6,6 +6,9 @@ import AgentManagementHeader from '../components/AgentManagementHeader';
 import AgentTable from '../components/AgentTable';
 import { SuccessMessage, EditErrorMessage } from '../components/AgentManagementMessages';
 
+const DEFAULT_SHIFT_START_TIME = '19:00';
+const DEFAULT_SHIFT_END_TIME = '04:00';
+const DEFAULT_TIMEZONE = 'Asia/Karachi';
 
 export default function AgentManagementPage() {
   const { user } = useAuth();
@@ -22,7 +25,16 @@ export default function AgentManagementPage() {
   const [pageSize, setPageSize] = useState(50);
 
   const [editingUserId, setEditingUserId] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', email: '' });
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: '',
+    shiftStartTime: DEFAULT_SHIFT_START_TIME,
+    shiftEndTime: DEFAULT_SHIFT_END_TIME,
+    expectedWorkHours: '',
+    timezone: DEFAULT_TIMEZONE,
+  });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -100,13 +112,26 @@ export default function AgentManagementPage() {
       email: user.email || '',
       password: '',
       role: user.role || '',
+      shiftStartTime: user.shiftStartTime || DEFAULT_SHIFT_START_TIME,
+      shiftEndTime: user.shiftEndTime || DEFAULT_SHIFT_END_TIME,
+      expectedWorkHours: user.expectedWorkHours ?? '',
+      timezone: user.timezone || DEFAULT_TIMEZONE,
     });
     setEditError('');
   };
 
   const handleEditCancel = () => {
     setEditingUserId(null);
-    setEditForm({ name: '', email: '', password: '', role: '' });
+    setEditForm({
+      name: '',
+      email: '',
+      password: '',
+      role: '',
+      shiftStartTime: DEFAULT_SHIFT_START_TIME,
+      shiftEndTime: DEFAULT_SHIFT_END_TIME,
+      expectedWorkHours: '',
+      timezone: DEFAULT_TIMEZONE,
+    });
     setEditError('');
   };
 
@@ -134,6 +159,20 @@ export default function AgentManagementPage() {
     if (trimmedEmail !== (user.email || '').toLowerCase()) payload.email = trimmedEmail;
     if (editForm.password) payload.password = editForm.password;
     if (editForm.role && editForm.role !== user.role) payload.role = editForm.role;
+    if ((editForm.shiftStartTime || DEFAULT_SHIFT_START_TIME) !== (user.shiftStartTime || DEFAULT_SHIFT_START_TIME)) {
+      payload.shiftStartTime = editForm.shiftStartTime || DEFAULT_SHIFT_START_TIME;
+    }
+    if ((editForm.shiftEndTime || DEFAULT_SHIFT_END_TIME) !== (user.shiftEndTime || DEFAULT_SHIFT_END_TIME)) {
+      payload.shiftEndTime = editForm.shiftEndTime || DEFAULT_SHIFT_END_TIME;
+    }
+    if ((editForm.timezone || DEFAULT_TIMEZONE) !== (user.timezone || DEFAULT_TIMEZONE)) {
+      payload.timezone = editForm.timezone || DEFAULT_TIMEZONE;
+    }
+    const normalizedExpectedWorkHours = editForm.expectedWorkHours === '' ? null : Number(editForm.expectedWorkHours);
+    const currentExpectedWorkHours = user.expectedWorkHours ?? null;
+    if (normalizedExpectedWorkHours !== currentExpectedWorkHours) {
+      payload.expectedWorkHours = normalizedExpectedWorkHours;
+    }
 
     if (Object.keys(payload).length === 0) {
       handleEditCancel();
@@ -142,7 +181,8 @@ export default function AgentManagementPage() {
 
     setIsSavingEdit(true);
     try {
-      const updatedUser = await updateUser(user._id, payload);
+      const updateResult = await updateUser(user._id, payload);
+      const updatedUser = updateResult?.user || updateResult;
 
       setUsers((prevUsers) =>
         prevUsers.map((existingUser) =>
@@ -152,6 +192,10 @@ export default function AgentManagementPage() {
                 name: updatedUser?.name ?? payload.name ?? existingUser.name,
                 email: updatedUser?.email ?? payload.email ?? existingUser.email,
                 role: updatedUser?.role ?? payload.role ?? existingUser.role,
+                shiftStartTime: updatedUser?.shiftStartTime ?? payload.shiftStartTime ?? existingUser.shiftStartTime,
+                shiftEndTime: updatedUser?.shiftEndTime ?? payload.shiftEndTime ?? existingUser.shiftEndTime,
+                expectedWorkHours: updatedUser?.expectedWorkHours ?? payload.expectedWorkHours ?? existingUser.expectedWorkHours,
+                timezone: updatedUser?.timezone ?? payload.timezone ?? existingUser.timezone,
               }
             : existingUser
         )

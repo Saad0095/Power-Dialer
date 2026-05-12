@@ -29,6 +29,9 @@ export default function AgentAttendanceSummaryTable({
               <div className="mb-5">
                 <p className="font-bold text-slate-900 dark:text-white truncate pr-2">{item.name}</p>
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">{item.email}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {item.officeHours || 'Default shift'} • {item.expectedWorkHours || 0}h expected
+                </p>
               </div>
 
               <div className="flex flex-col gap-2">

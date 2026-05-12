@@ -44,6 +44,7 @@ export default function AttendanceHistoryTable({
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Date</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Day</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Agent</th>
+              <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Shift</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Login</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">Log Out</th>
               <th className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43] font-bold">First Call</th>
@@ -59,14 +60,14 @@ export default function AttendanceHistoryTable({
           <tbody className="bg-white dark:bg-slate-900 border border-[#cf9488] dark:border-[#734b43]">
             {isLoading ? (
               <tr>
-                <td colSpan="12" className="px-6 py-16 text-center text-slate-500 font-medium tracking-wide border border-[#cf9488] dark:border-[#734b43]">
+                <td colSpan="14" className="px-6 py-16 text-center text-slate-500 font-medium tracking-wide border border-[#cf9488] dark:border-[#734b43]">
                   <div className="w-8 h-8 border-4 border-slate-200 dark:border-slate-700 border-t-cyan-500 rounded-full animate-spin mx-auto mb-3"></div>
                   Loading timesheets...
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan="12" className="px-6 py-12 text-center text-slate-600 dark:text-slate-400 border border-[#cf9488] dark:border-[#734b43]">
+                <td colSpan="14" className="px-6 py-12 text-center text-slate-600 dark:text-slate-400 border border-[#cf9488] dark:border-[#734b43]">
                   No attendance records found for this date range.
                 </td>
               </tr>
@@ -84,6 +85,12 @@ export default function AttendanceHistoryTable({
                       <div>
                         <p className="font-medium text-slate-900 dark:text-slate-200">{log.agent?.name || 'Unknown Agent'}</p>
                       </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 border border-[#cf9488] dark:border-[#734b43]">
+                    <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{log.officeHours || 'Default shift'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {log.expectedWorkHours ? `${log.expectedWorkHours}h expected` : 'Auto expected hours'}
                     </div>
                   </td>
                   <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300 border border-[#cf9488] dark:border-[#734b43]">

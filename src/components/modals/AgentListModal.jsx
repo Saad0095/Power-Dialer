@@ -74,7 +74,8 @@ export default function AgentListModal({ isOpen, onClose, onDeleteAgent, onShowN
 
     setIsSaving(true);
     try {
-      const updatedAgent = await updateUser(agent._id, payload);
+      const updateResult = await updateUser(agent._id, payload);
+      const updatedAgent = updateResult?.user || updateResult;
 
       setAgents((prevAgents) =>
         prevAgents.map((existingAgent) =>
