@@ -17,8 +17,8 @@ const statusClassMap = {
 };
 
 const summaryCards = [
-  { key: "offered", label: "Open Offers", icon: BriefcaseBusiness },
-  { key: "paid", label: "Paid Offers", icon: BadgeDollarSign },
+  { key: "offered", label: "Open Leads", icon: BriefcaseBusiness },
+  { key: "paid", label: "Unlocked Leads", icon: BadgeDollarSign },
   { key: "expired", label: "Expired", icon: Clock3 },
 ];
 
@@ -70,16 +70,16 @@ export default function ClientDashboardPage() {
                 Client Dashboard
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Track your offers, payment status, and qualification activity at
+                Track your leads, payment status, and qualification activity at
                 a glance.
               </p>
             </div>
           </div>
           <Link
-            to="/client/offers"
+            to="/client/leads"
             className="inline-flex items-center gap-2 rounded-xl bg-linear-to-br from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/30 px-3.5 py-2 font-semibold text-white transition hover:opacity-90 cursor-pointer"
           >
-            View all offers
+            View all leads
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -114,10 +114,10 @@ export default function ClientDashboardPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Recent Offers
+            Recent Leads
           </h2>
           <Link
-            to="/client/offers"
+            to="/client/leads"
             className="text-sm font-semibold text-cyan-700 hover:text-cyan-800 dark:text-cyan-200"
           >
             See all
@@ -127,11 +127,11 @@ export default function ClientDashboardPage() {
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           {isLoading ? (
             <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              Loading offers...
+              Loading leads...
             </div>
           ) : recentOffers.length === 0 ? (
             <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              No offers yet. New offers will appear here when assigned.
+              No leads yet. New leads will appear here when assigned.
             </div>
           ) : (
             recentOffers.map((offer) => (
@@ -166,7 +166,7 @@ export default function ClientDashboardPage() {
                       : "No expiry"}
                   </div>
                   <Link
-                    to={`/client/offers/${offer._id}`}
+                    to={`/client/leads/${offer._id}`}
                     className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     View

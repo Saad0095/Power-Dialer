@@ -43,6 +43,7 @@ const DEFAULT_MASKING = {
 export default function CreateOfferModal({
   isOpen,
   lead,
+  allowReplace = false,
   onClose,
   onCreated,
   showNotification,
@@ -153,7 +154,10 @@ export default function CreateOfferModal({
           fieldMasking: form.fieldMasking,
         };
 
-      const created = await createClientOffer(payload);
+      const created = await createClientOffer({
+        ...payload,
+        ...(allowReplace ? { allowReplace: true } : {}),
+      });
       showNotification?.("Offer created successfully", "success");
       onCreated?.(created);
       onClose?.();
@@ -172,7 +176,7 @@ export default function CreateOfferModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create Client Offer"
+      title={allowReplace ? "Reassign Client Offer" : "Create Client Offer"}
       maxWidth="max-w-3xl"
     >
       <form className="space-y-6" onSubmit={handleSubmit}>
@@ -258,6 +262,12 @@ export default function CreateOfferModal({
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Leave expiry empty if this offer should stay open until it is paid, cancelled, or manually handled.
         </p>
+
+        {allowReplace && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+            Creating this offer will cancel the current active offer for this lead.
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div>

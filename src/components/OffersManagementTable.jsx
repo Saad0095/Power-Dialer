@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Ban, Clock3, CreditCard, Search, Unlock } from "lucide-react";
+import { Ban, Clock3, CreditCard, Repeat2, Search, Unlock } from "lucide-react";
 import { cancelManagerOffer, unlockManagerOffer } from "../services/api";
 import ConfirmModal from "./common/ConfirmModal";
 
@@ -19,6 +19,7 @@ export default function OffersManagementTable({
   pagination,
   onPageChange,
   onOfferCancelled,
+  onReassignOffer,
   showNotification,
   isLoading,
 }) {
@@ -207,6 +208,16 @@ export default function OffersManagementTable({
                             <Ban className="h-4 w-4" />
                             Cancel
                           </button>
+                          {!offer.isUnlocked && offer.payment?.status !== "paid" && (
+                            <button
+                              type="button"
+                              onClick={() => onReassignOffer?.(offer)}
+                              className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-100"
+                            >
+                              <Repeat2 className="h-4 w-4" />
+                              Reassign
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <span className="text-xs text-slate-500 dark:text-slate-400">

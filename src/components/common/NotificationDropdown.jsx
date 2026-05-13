@@ -30,7 +30,6 @@ export default function NotificationDropdown() {
     }
     setIsOpen(false);
 
-    // Simple navigation mapping based on type
     if (
       notification.type === "campaign_event" &&
       (user?.role === "admin" || user?.role === "manager")
@@ -47,6 +46,11 @@ export default function NotificationDropdown() {
       (user?.role === "admin" || user?.role === "manager")
     ) {
       navigate(`${basePath}/caller-leads`);
+    } else if (
+      (notification.type === "follow_up" ||
+      notification.type === "appointment") && user?.role === "client"
+    ) {
+      navigate(`${basePath}/leads`);
     } else if (
       notification.type === "follow_up" ||
       notification.type === "appointment"

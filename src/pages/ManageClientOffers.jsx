@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Layers3, Plus, Search } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import {
   getManagerOffers,
   getQualifiedLeadsPool as loadQualifiedLeadsPool,
@@ -8,6 +9,7 @@ import {
 import CreateOfferModal from "../components/CreateOfferModal";
 import OffersManagementTable from "../components/OffersManagementTable";
 import QualifiedLeadsTable from "../components/QualifiedLeadsTable";
+import LeadDetailsModal from "../components/LeadDetailsModal";
 
 const QUALIFIED_OPTIONS = [
   "",
@@ -17,7 +19,9 @@ const QUALIFIED_OPTIONS = [
 ];
 
 export default function ManageClientOffers() {
+  const { user } = useAuth();
   const { showNotification } = useOutletContext();
+  const canManageOffers = ["admin", "manager"].includes(user?.role);
   const [leadFilters, setLeadFilters] = useState({
     search: "",
     appointmentStatus: "",
@@ -45,6 +49,8 @@ export default function ManageClientOffers() {
   const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   const [isLoadingOffers, setIsLoadingOffers] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedLeadForPreview, setSelectedLeadForPreview] = useState(null);
+  const [allowReplace, setAllowReplace] = useState(false);
 
   const refreshQualifiedLeads = useCallback(async () => {
     setIsLoadingLeads(true);
@@ -85,6 +91,7 @@ export default function ManageClientOffers() {
   const handleOfferCreated = () => {
     refreshQualifiedLeads();
     refreshOffers();
+    setAllowReplace(false);
   };
 
   const handleOfferCancelled = () => {
@@ -154,7 +161,11 @@ export default function ManageClientOffers() {
         onPageChange={(page) =>
           setLeadFilters((prev) => ({ ...prev, page }))
         }
-        onCreateOffer={setSelectedLead}
+        onCreateOffer={(lead, options = {}) => {
+          setAllowReplace(Boolean(options.allowReplace));
+          setSelectedLead(lead);
+        }}
+        onViewLead={setSelectedLeadForPreview}
         isLoading={isLoadingLeads}
       />
 
@@ -167,6 +178,10 @@ export default function ManageClientOffers() {
           setOfferFilters((prev) => ({ ...prev, page }))
         }
         onOfferCancelled={handleOfferCancelled}
+        onReassignOffer={(offer) => {
+          setAllowReplace(true);
+          setSelectedLead(offer?.lead || null);
+        }}
         showNotification={showNotification}
         isLoading={isLoadingOffers}
       />
@@ -174,9 +189,24 @@ export default function ManageClientOffers() {
       <CreateOfferModal
         isOpen={Boolean(selectedLead)}
         lead={selectedLead}
-        onClose={() => setSelectedLead(null)}
+        allowReplace={allowReplace}
+        onClose={() => {
+          setSelectedLead(null);
+          setAllowReplace(false);
+        }}
         onCreated={handleOfferCreated}
         showNotification={showNotification}
+      />
+
+      <LeadDetailsModal
+        isOpen={Boolean(selectedLeadForPreview)}
+        lead={selectedLeadForPreview}
+        canManageOffers={canManageOffers}
+        onCreateOffer={(lead, options = {}) => {
+          setAllowReplace(Boolean(options.allowReplace));
+          setSelectedLead(lead);
+        }}
+        onClose={() => setSelectedLeadForPreview(null)}
       />
     </div>
   );

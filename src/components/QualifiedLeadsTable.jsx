@@ -1,4 +1,4 @@
-import { Search, BadgeDollarSign, User, MapPin } from "lucide-react";
+import { Search, BadgeDollarSign, User, MapPin, Eye } from "lucide-react";
 
 const QUALIFIED_OPTIONS = [
   "qualified-level-1",
@@ -19,6 +19,7 @@ export default function QualifiedLeadsTable({
   pagination,
   onPageChange,
   onCreateOffer,
+  onViewLead,
   isLoading,
 }) {
   const totalPages = pagination?.pages || 1;
@@ -104,7 +105,12 @@ export default function QualifiedLeadsTable({
                 </tr>
               ) : (
                 leads.map((lead) => {
-                  const canCreateOffer = !lead.currentOffer && !lead.hasEverBeenOffered;
+                  const hasOffer = Boolean(lead.currentOffer);
+                  const isUnlocked = Boolean(lead.currentOffer?.isUnlocked);
+                  const isPaid = lead.currentOffer?.payment?.status === "paid";
+                  const hasPaidOffer = Boolean(lead.hasPaidOffer);
+                  const allowReplace = hasOffer && !isUnlocked && !isPaid && !hasPaidOffer;
+                  const canCreateOffer = (!hasOffer && !hasPaidOffer) || allowReplace;
 
                   return (
                   <tr key={lead._id} className="bg-white dark:bg-slate-800">
@@ -133,15 +139,33 @@ export default function QualifiedLeadsTable({
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        disabled={!canCreateOffer}
-                        onClick={() => onCreateOffer(lead)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-cyan-700 shadow-sm shadow-cyan-500/20 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
-                      >
-                        <BadgeDollarSign className="h-4 w-4" />
-                        {lead.hasEverBeenOffered ? "Already Offered" : "Create Offer"}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onViewLead?.(lead)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canCreateOffer}
+                          onClick={() => onCreateOffer?.(lead, { allowReplace })}
+                          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition shadow-sm disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none ${
+                            allowReplace
+                              ? "bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/30"
+                              : "bg-cyan-600 text-white hover:bg-cyan-700 shadow-cyan-500/20"
+                          }`}
+                        >
+                          <BadgeDollarSign className="h-4 w-4" />
+                          {allowReplace
+                            ? "Reassign Offer"
+                            : hasPaidOffer
+                              ? "Paid - locked"
+                              : "Create Offer"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );

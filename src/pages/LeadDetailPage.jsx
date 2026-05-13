@@ -78,7 +78,7 @@ const formatLeadValue = (value) => {
   return String(value);
 };
 
-export default function OfferDetailPage() {
+export default function LeadDetailPage() {
   const { hydrateAuth } = useAuth();
   const { offerId } = useParams();
   const navigate = useNavigate();
@@ -108,9 +108,9 @@ export default function OfferDetailPage() {
         setQualificationOptions([]);
       }
     } catch (error) {
-      console.error("Failed to load offer", error);
-      showNotification("Failed to load offer", "error");
-      navigate("/client/offers");
+      console.error("Failed to load lead", error);
+      showNotification("Failed to load lead", "error");
+      navigate("/client/leads");
     } finally {
       setIsLoading(false);
     }
@@ -128,9 +128,9 @@ export default function OfferDetailPage() {
       setOffer(nextOffer);
       showNotification(successMessage, "success");
     } catch (error) {
-      console.error("Offer action failed", error);
+      console.error("Lead action failed", error);
       showNotification(
-        error.response?.data?.error || "Offer action failed",
+        error.response?.data?.error || "Lead action failed",
         "error",
       );
     } finally {
@@ -141,7 +141,7 @@ export default function OfferDetailPage() {
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center text-sm text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-        Loading offer...
+        Loading lead...
       </div>
     );
   }
@@ -164,9 +164,6 @@ export default function OfferDetailPage() {
   const handleQualificationUpdate = async (
     qualificationStatus = "qualified-level-3",
   ) => {
-    // if (!offer?.meta?.leadId || qualificationStatus !== "qualified-level-3")
-    //   return;
-
     setIsUpdatingQualification(true);
     try {
       await updateQualification(offer.meta.leadId, {
@@ -190,11 +187,11 @@ export default function OfferDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Link
-          to="/client/offers"
+          to="/client/leads"
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to offers
+          Back to leads
         </Link>
         <span
           className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[offer.status] || statusClassMap.expired}`}
@@ -212,7 +209,7 @@ export default function OfferDetailPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {offer.isUnlocked
                 ? "Full contact details have been unlocked and are visible below."
-                : "Please pay to view complete details. Only the masked data is visible below."}
+                : "Complete payment to unlock full details. Only the masked data is visible below."}
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -328,7 +325,7 @@ export default function OfferDetailPage() {
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            Actions
+            Lead Actions
           </h2>
           <div className="mt-5 space-y-3">
             {/* <button
@@ -370,11 +367,7 @@ export default function OfferDetailPage() {
 
                 <button
                   type="button"
-                  // disabled={
-                  //   isUpdatingQualification ||
-                  //   qualificationStatus !== "qualified-level-3"
-                  // }
-                  onClick={handleQualificationUpdate}
+                  onClick={() => handleQualificationUpdate()}
                   className="flex w-full items-center justify-center gap-2 rounded-xl text-lg font-bold bg-emerald-50 px-4 py-3  text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50  dark:bg-green-500 dark:text-white"
                 >
                   {isUpdatingQualification
@@ -389,8 +382,8 @@ export default function OfferDetailPage() {
             <div className="flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-slate-400" />
               {offer.expiresAt
-                ? `Offer expires on ${new Date(offer.expiresAt).toLocaleString()}.`
-                : "This offer has no expiry date."}
+                ? `Access expires on ${new Date(offer.expiresAt).toLocaleString()}.`
+                : "This lead has no expiry date."}
             </div>
           </div>
         </aside>

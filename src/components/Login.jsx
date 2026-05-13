@@ -168,7 +168,7 @@ export default function Login({ onLoginSuccess }) {
 
         {/* Footer */}
         <p className="text-center text-slate-600 dark:text-slate-500 text-sm mt-6">
-          © {new Date().getFullYear()} Power Dialer. All rights reserved.
+          © {new Date().getFullYear()} CleanMeets. All rights reserved.
         </p>
       </div>
     </div>

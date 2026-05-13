@@ -12,34 +12,33 @@ const statusClassMap = {
   cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
 };
 
-export default function MyOffersPage() {
+export default function MyLeadsPage() {
   const { showNotification } = useOutletContext();
   const [filters, setFilters] = useState({ status: "", page: 1, limit: 8 });
-  const [offers, setOffers] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadOffers = useCallback(async () => {
+  const loadLeads = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getClientOffers(filters);
-      setOffers(data.items || []);
+      setLeads(data.items || []);
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
     } catch (error) {
-      console.error("Failed to load client offers", error);
-      showNotification("Failed to load your offers", "error");
+      console.error("Failed to load client leads", error);
+      showNotification("Failed to load your leads", "error");
     } finally {
       setIsLoading(false);
     }
   }, [filters, showNotification]);
 
   useEffect(() => {
-    loadOffers();
-  }, [loadOffers]);
+    loadLeads();
+  }, [loadLeads]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-cyan-50 to-blue-50 p-8 shadow-lg dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -48,17 +47,17 @@ export default function MyOffersPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                My Appointments
+                My Leads
               </h1>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Manage and track your assigned offers
+                Manage and track your assigned leads
               </p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/60 bg-white/90 px-5 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Assigned Offers
+              Assigned Leads
             </p>
             <p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">
               {pagination.total}
@@ -67,7 +66,6 @@ export default function MyOffersPage() {
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <select
           value={filters.status}
@@ -84,7 +82,6 @@ export default function MyOffersPage() {
         </select>
       </div>
 
-      {/* Table */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -117,49 +114,49 @@ export default function MyOffersPage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Loading offers...
+                    Loading leads...
                   </td>
                 </tr>
-              ) : offers.length === 0 ? (
+              ) : leads.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-                    No offers are assigned to your account right now.
+                    No leads are assigned to your account right now.
                   </td>
                 </tr>
               ) : (
-                offers.map((offer) => (
+                leads.map((lead) => (
                   <tr
-                    key={offer._id}
+                    key={lead._id}
                     className="transition hover:bg-slate-50 dark:hover:bg-slate-700/40"
                   >
                     <td className="px-5 py-4 font-medium text-slate-900 dark:text-white">
-                      {offer.meta.businessName || "Lead opportunity"}
+                      {lead.meta.businessName || "Lead opportunity"}
                     </td>
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-300">
-                      {offer.meta.city || "Unknown city"}, {offer.meta.state || "Unknown state"}
+                      {lead.meta.city || "Unknown city"}, {lead.meta.state || "Unknown state"}
                     </td>
                     <td className="px-5 py-4 font-semibold text-slate-900 dark:text-white">
-                      {offer.currency} {Number(offer.price || 0).toFixed(2)}
+                      {lead.currency} {Number(lead.price || 0).toFixed(2)}
                     </td>
                     <td className="px-5 py-4 text-slate-600 dark:text-slate-300 capitalize">
-                      {offer.payment?.status || "pending"}
+                      {lead.payment?.status || "pending"}
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[offer.status] || statusClassMap.expired}`}>
-                        {offer.status}
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClassMap[lead.status] || statusClassMap.expired}`}>
+                        {lead.status}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-1.5">
                         <Clock3 className="h-3.5 w-3.5 shrink-0" />
-                        {offer.expiresAt
-                          ? new Date(offer.expiresAt).toLocaleString()
+                        {lead.expiresAt
+                          ? new Date(lead.expiresAt).toLocaleString()
                           : "No expiry"}
                       </div>
                     </td>
                     <td className="px-5 py-4 text-right">
                       <Link
-                        to={`/client/offers/${offer._id}`}
+                        to={`/client/leads/${lead._id}`}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-br from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/30 px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90 cursor-pointer"
                       >
                         View
@@ -174,7 +171,6 @@ export default function MyOffersPage() {
         </div>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Page {pagination.page} of {pagination.pages || 1}

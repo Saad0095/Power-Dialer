@@ -109,9 +109,9 @@ function getSidebarItems(role) {
       },
       {
         id: "my-offers",
-        label: "My Offers",
+        label: "My Leads",
         icon: BriefcaseBusiness,
-        path: "/client/offers",
+        path: "/client/leads",
       },
       // {
       //   id: "offers",

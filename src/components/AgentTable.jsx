@@ -42,7 +42,13 @@ export default function AgentTable({
             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {users.map((userItem) => (
                 <React.Fragment key={userItem._id}>
-                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                  <tr
+                    className={`transition hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                      userItem.isActive === false
+                        ? "bg-rose-50/70 dark:bg-rose-950/20"
+                        : ""
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       {editingUserId === userItem._id ? (
                         <input
@@ -54,7 +60,16 @@ export default function AgentTable({
                           disabled={isSavingEdit}
                         />
                       ) : (
-                        <p className="font-semibold text-slate-900 dark:text-white">{userItem.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900 dark:text-white">
+                            {userItem.name}
+                          </p>
+                          {userItem.isActive === false && (
+                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4">

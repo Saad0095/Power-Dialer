@@ -22,8 +22,8 @@ import RoleHomeRedirect from "./routes/RoleHomeRedirect";
 import MyTasksPage from "./pages/MyTasksPage";
 import EarningsHistoryPage from "./pages/EarningsHistoryPage";
 import ManageClientOffers from "./pages/ManageClientOffers";
-import MyOffersPage from "./pages/MyOffersPage";
-import OfferDetailPage from "./pages/OfferDetailPage";
+import MyLeadsPage from "./pages/MyLeadsPage";
+import LeadDetailPage from "./pages/LeadDetailPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ClientProfilePage from "./pages/ClientProfilePage";
 import ClientDashboardPage from "./pages/ClientDashboardPage";
@@ -80,8 +80,8 @@ function App() {
               }
             >
               <Route index element={<ClientDashboardPage />} />
-              <Route path="offers" element={<MyOffersPage />} />
-              <Route path="offers/:offerId" element={<OfferDetailPage />} />
+              <Route path="leads" element={<MyLeadsPage />} />
+              <Route path="leads/:offerId" element={<LeadDetailPage />} />
               {/* <Route path="marketplace" element={<ClientMarketplacePage />} /> */}
               <Route path="profile" element={<ClientProfilePage />} />
               <Route path="notifications" element={<NotificationsPage />} />
