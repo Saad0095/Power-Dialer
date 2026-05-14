@@ -85,6 +85,18 @@ export default function LeadDetailModal({
     }
   }, [isOpen, leadId, loadLead]);
 
+  useEffect(() => {
+    const handleUpdate = (event) => {
+      // Refresh if the modal is open and either no specific ID was provided or it matches our lead
+      if (isOpen && leadId && (!event.detail?.leadId || event.detail.leadId === leadId)) {
+        loadLead();
+      }
+    };
+
+    window.addEventListener("lead:updated", handleUpdate);
+    return () => window.removeEventListener("lead:updated", handleUpdate);
+  }, [isOpen, leadId, loadLead]);
+
   if (isLoading) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Lead Details">
@@ -108,6 +120,7 @@ export default function LeadDetailModal({
   const canUnlockOffer =
     hasOffer &&
     lead.currentOffer.status === "offered" &&
+    !lead.currentOffer.isUnlocked &&
     (user?.role === "admin" || user?.role === "manager");
 
   const handleUnlockOffer = async () => {
@@ -121,6 +134,7 @@ export default function LeadDetailModal({
     try {
       await unlockManagerOffer(lead.currentOffer._id);
       await loadLead(); // Refresh the lead data
+      window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: lead._id } }));
     } catch (error) {
       console.error("Failed to unlock offer", error);
       alert(error.response?.data?.error || "Failed to unlock offer");
@@ -221,6 +235,16 @@ export default function LeadDetailModal({
             <span className="text-xs text-slate-500">
               Qualification Scenario
             </span>
+          </div>
+        )}
+        {hasOffer && (
+          <div className="flex flex-col items-start">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize shadow-sm border border-slate-200 dark:border-slate-700 mb-1 ${lead.currentOffer.isUnlocked ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" : "bg-rose-500/20 text-rose-700 dark:text-rose-400"}`}
+            >
+              {lead.currentOffer.isUnlocked ? "Unlocked" : "Locked"}
+            </span>
+            <span className="text-xs text-slate-500">Client Access</span>
           </div>
         )}
       </div>

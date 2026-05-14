@@ -192,14 +192,21 @@ export default function OffersManagementTable({
                     <td className="px-4 py-4">
                       {offer.status === "offered" ? (
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setOfferToUnlock(offer)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          >
-                            <Unlock className="h-4 w-4" />
-                            Unlock
-                          </button>
+                          {offer.isUnlocked ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                              <Unlock className="h-3 w-3" />
+                              Unlocked
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setOfferToUnlock(offer)}
+                              className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200"
+                            >
+                              <Unlock className="h-4 w-4" />
+                              Unlock
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => setOfferToCancel(offer)}

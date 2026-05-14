@@ -58,6 +58,9 @@ export default function CreateOfferModal({
     expiresAt: "",
     visibleFields: DEFAULT_VISIBLE_FIELDS,
     fieldMasking: DEFAULT_MASKING,
+    isLocked: false,
+    includeInvoiceLink: false,
+    invoiceLink: "",
   });
 
   useEffect(() => {
@@ -92,6 +95,9 @@ export default function CreateOfferModal({
       expiresAt: "",
       visibleFields: DEFAULT_VISIBLE_FIELDS,
       fieldMasking: DEFAULT_MASKING,
+      isLocked: false,
+      includeInvoiceLink: false,
+      invoiceLink: "",
     });
   }, [isOpen, lead?._id]);
 
@@ -152,6 +158,8 @@ export default function CreateOfferModal({
             : {}),
           visibleFields: form.visibleFields,
           fieldMasking: form.fieldMasking,
+          isLocked: form.isLocked,
+          invoiceLink: form.includeInvoiceLink ? form.invoiceLink : null,
         };
 
       const created = await createClientOffer({
@@ -259,6 +267,67 @@ export default function CreateOfferModal({
           />
         </div>
 
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-900/30">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                Lead Access
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Determine if the client sees full details immediately.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white p-1 shadow-sm dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, isLocked: false }))}
+                className={`rounded-md px-4 py-1.5 text-xs font-medium transition ${
+                  !form.isLocked
+                    ? "bg-cyan-600 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                Unlocked
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm(prev => ({ ...prev, isLocked: true }))}
+                className={`rounded-md px-4 py-1.5 text-xs font-medium transition ${
+                  form.isLocked
+                    ? "bg-amber-600 text-white shadow-md"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                Locked
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={form.includeInvoiceLink}
+                onChange={(e) => setForm(prev => ({ ...prev, includeInvoiceLink: e.target.checked }))}
+                className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Include Invoice Link in Email
+              </span>
+            </label>
+            {form.includeInvoiceLink && (
+              <div className="mt-3">
+                <FormInput
+                  label="Invoice URL"
+                  placeholder="https://..."
+                  value={form.invoiceLink}
+                  onChange={(e) => setForm(prev => ({ ...prev, invoiceLink: e.target.value }))}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Leave expiry empty if this offer should stay open until it is paid, cancelled, or manually handled.
         </p>
@@ -269,65 +338,67 @@ export default function CreateOfferModal({
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div>
-            <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-              Visible Fields
-            </p>
-            <div className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/50">
-              {FIELD_OPTIONS.map((field) => {
-                const checked = form.visibleFields.includes(field);
-                return (
-                  <label
-                    key={field}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleVisibleField(field)}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
-                    />
-                    <span>{field}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-4">
+        {form.isLocked && (
+          <div className="grid gap-6 lg:grid-cols-2">
             <div>
               <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-                Masking Controls
+                Visible Fields
               </p>
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-                {[
-                  ["emailMasked", "Mask email"],
-                  ["phoneMasked", "Mask phone number"],
-                  ["addressMasked", "Mask street address"],
-                ].map(([key, label]) => (
-                  <label
-                    key={key}
-                    className="flex items-center justify-between rounded-lg bg-white px-4 py-3 text-sm dark:bg-slate-800"
-                  >
-                    <span className="text-slate-700 dark:text-slate-200">{label}</span>
-                    <input
-                      type="checkbox"
-                      checked={form.fieldMasking[key]}
-                      onChange={() => toggleMask(key)}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
-                    />
-                  </label>
-                ))}
+              <div className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/50">
+                {FIELD_OPTIONS.map((field) => {
+                  const checked = form.visibleFields.includes(field);
+                  return (
+                    <label
+                      key={field}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleVisibleField(field)}
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                      />
+                      <span>{field}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900 dark:border-cyan-900/40 dark:bg-cyan-950/30 dark:text-cyan-100">
-              Clients only see masked data from the offer snapshot. They do not get direct
-              access to `CallerLead`.
+            <div className="space-y-4">
+              <div>
+                <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
+                  Masking Controls
+                </p>
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+                  {[
+                    ["emailMasked", "Mask email"],
+                    ["phoneMasked", "Mask phone number"],
+                    ["addressMasked", "Mask street address"],
+                  ].map(([key, label]) => (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between rounded-lg bg-white px-4 py-3 text-sm dark:bg-slate-800"
+                    >
+                      <span className="text-slate-700 dark:text-slate-200">{label}</span>
+                      <input
+                        type="checkbox"
+                        checked={form.fieldMasking[key]}
+                        onChange={() => toggleMask(key)}
+                        className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900 dark:border-cyan-900/40 dark:bg-cyan-950/30 dark:text-cyan-100">
+                Clients only see masked data from the offer snapshot. They do not get direct
+                access to `CallerLead`.
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <button

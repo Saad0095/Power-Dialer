@@ -97,6 +97,7 @@ export default function LeadsTable({ showNotification, activeCalls = [] }) {
       triggerCelebration();
     }
     setShowEditModal(false);
+    window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: updated._id } }));
   };
 
   const handleUpdateStatus = (leadId) => {
@@ -132,6 +133,7 @@ export default function LeadsTable({ showNotification, activeCalls = [] }) {
     updateLead(updated);
     showNotification("Qualification updated successfully", "success");
     setShowStatusModal(false);
+    window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: updated._id } }));
   };
 
   // Selection handlers
