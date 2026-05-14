@@ -55,7 +55,13 @@ export default function MonthlySummaryTable({
               {isManagerUser && <th className="px-6 py-4 font-medium">Agent</th>}
               <th className="px-6 py-4 font-medium">Month</th>
               <th className="px-6 py-4 font-medium">Total Qualifications</th>
-              {isManagerUser && <th className="px-6 py-4 font-medium">Total Earnings</th>}
+              {isManagerUser && (
+                <>
+                  <th className="px-6 py-4 font-medium text-center">Power Hour</th>
+                  <th className="px-6 py-4 font-medium text-center">Normal</th>
+                  <th className="px-6 py-4 font-medium text-right">Total Earnings</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -82,15 +88,27 @@ export default function MonthlySummaryTable({
                     </span>
                   </td>
                   {isManagerUser && (
-                    <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">
-                      Rs {row.totalEarnings?.toLocaleString()}
-                    </td>
+                    <>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center rounded-full bg-cyan-100 px-2.5 py-0.5 text-xs font-semibold text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">
+                          Rs {row.powerHourEarnings?.toLocaleString() || 0}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                          Rs {row.normalEarnings?.toLocaleString() || 0}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400 text-right">
+                        Rs {row.totalEarnings?.toLocaleString()}
+                      </td>
+                    </>
                   )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={isManagerUser ? 4 : 2} className="py-16 text-center">
+                <td colSpan={isManagerUser ? 6 : 3} className="py-16 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <div className="rounded-full bg-slate-100 p-4 dark:bg-slate-800 mb-4">
                       <Wallet className="h-10 w-10 text-slate-400 dark:text-slate-500" />
