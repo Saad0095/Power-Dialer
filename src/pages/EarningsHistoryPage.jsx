@@ -127,7 +127,7 @@ export default function EarningsHistoryPage() {
         const agentEmail = `"${row.agent?.email || 'N/A'}"`;
         const campaignName = `"${row.campaign?.name || 'N/A'}"`;
         const leadName = `"${row.lead?.businessName || 'N/A'}"`;
-        const leadStatus = `"${row.lead?.appointmentStatus || 'N/A'}"`;
+        const leadStatus = `"${row.qualificationLevel || row.lead?.appointmentStatus || 'Qualified'}"`;
         const amount = row.amount;
 
         csvContent += isManagerUser

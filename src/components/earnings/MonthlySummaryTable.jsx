@@ -58,7 +58,7 @@ export default function MonthlySummaryTable({
               {isManagerUser && (
                 <>
                   <th className="px-6 py-4 font-medium text-center">Power Hour</th>
-                  <th className="px-6 py-4 font-medium text-center">Normal</th>
+                  <th className="px-6 py-4 font-medium text-center">Commission</th>
                   <th className="px-6 py-4 font-medium text-right">Total Earnings</th>
                 </>
               )}
