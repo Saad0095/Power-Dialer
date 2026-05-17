@@ -7,6 +7,7 @@ import useWebSocket from '../hooks/useWebSocket';
 import DashboardHeader from '../components/DashboardHeader';
 import AgentCallStatsPanel from '../components/AgentCallStatsPanel';
 import AgentEarningsDashboard from '../components/AgentEarningsDashboard';
+import { getAllAgents } from '../services/api';
 
 export default function OverviewPage() {
   const { showNotification } = useOutletContext();
@@ -24,6 +25,7 @@ export default function OverviewPage() {
   });
   const [isDailyCallsLoading, setIsDailyCallsLoading] = useState(false);
   const [dailyCallsError, setDailyCallsError] = useState('');
+  const [teamAgentCount, setTeamAgentCount] = useState(0);
 
   useWebSocket({
     onAgentCallCompleted: () => {
@@ -61,12 +63,35 @@ export default function OverviewPage() {
     loadDailyCallCounts();
   }, [managerView, windowHours, selectedDate]);
 
+  useEffect(() => {
+    const loadTeamAgents = async () => {
+      if (user?.role !== 'team-lead') return;
+      try {
+        const res = await getAllAgents();
+        const list = res.data || res;
+        const team = (list || []).filter(a => (a.teamLead?._id || a.teamLead) === user._id);
+        setTeamAgentCount(team.length);
+      } catch (err) {
+        console.error('Failed to load team agents count', err);
+      }
+    };
+    loadTeamAgents();
+  }, [user]);
+
   const maxDate = (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
   return (
     <div className="space-y-6">
       <DashboardHeader managerView={managerView} role={user?.role.charAt(0).toUpperCase() + user?.role.slice(1) || ""}/>
       {managerView ? (
+        // Manager / Team-lead view
+        <>
+          {user?.role === 'team-lead' && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <h3 className="text-sm font-semibold">My Team</h3>
+              <p className="text-2xl font-bold mt-2">{teamAgentCount} agent{teamAgentCount !== 1 ? 's' : ''}</p>
+            </div>
+          )}
         <AgentCallStatsPanel
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
@@ -76,6 +101,7 @@ export default function OverviewPage() {
           dailyCallsError={dailyCallsError}
           maxDate={maxDate}
         />
+        </>
       ) : (
         <AgentEarningsDashboard />
       )}

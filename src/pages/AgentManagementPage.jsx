@@ -19,6 +19,7 @@ export default function AgentManagementPage() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [teamLeadFilter, setTeamLeadFilter] = useState("");
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -35,6 +36,8 @@ export default function AgentManagementPage() {
     shiftEndTime: DEFAULT_SHIFT_END_TIME,
     expectedWorkHours: '',
     timezone: DEFAULT_TIMEZONE,
+    teamLead: '',
+    assignedAgentIds: [],
   });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
@@ -44,12 +47,20 @@ export default function AgentManagementPage() {
       return ['admin', 'manager', 'caller-agent', 'closer-agent', 'scrapper', 'client'];
     } else if (user?.role === 'manager') {
       return ['caller-agent', 'closer-agent', 'scrapper', 'client'];
+    } else if (user?.role === 'client') {
+      return ['client'];
     }
     return [];
   };
 
   const availableRoles = getAvailableRoles();
-
+  const getSupervisorId = (userItem) => userItem?.teamLead?._id || userItem?.teamLead || '';
+  const roleFilterOptions = Array.from(
+    new Set(users.map((userItem) => userItem.role).filter(Boolean)),
+  );
+  const teamLeadFilterOptions = users
+    .filter((userItem) => ['team-lead'].includes(userItem.role))
+    .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -57,7 +68,13 @@ export default function AgentManagementPage() {
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase());
     const matchesRole = !roleFilter || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const supervisorId = getSupervisorId(u);
+    const matchesTeamLead =
+      !teamLeadFilter ||
+      (teamLeadFilter === 'unassigned'
+        ? !supervisorId
+        : String(supervisorId) === String(teamLeadFilter));
+    return matchesSearch && matchesRole && matchesTeamLead;
   });
 
   // Pagination logic
@@ -73,7 +90,7 @@ export default function AgentManagementPage() {
   // Reset to page 1 when filters/search change
   useEffect(() => {
     setPage(1);
-  }, [search, roleFilter, pageSize]);
+  }, [search, roleFilter, teamLeadFilter, pageSize]);
 
   const loadUsers = async () => {
     setIsLoadingUsers(true);
@@ -84,6 +101,7 @@ export default function AgentManagementPage() {
       if (user?.role === 'manager') {
         filteredUsers = filteredUsers.filter(
           u =>
+            u.role === 'team-lead' ||
             u.role === 'caller-agent' ||
             u.role === 'closer-agent' ||
             u.role === 'scrapper' ||
@@ -118,6 +136,10 @@ export default function AgentManagementPage() {
       shiftEndTime: user.shiftEndTime || DEFAULT_SHIFT_END_TIME,
       expectedWorkHours: user.expectedWorkHours ?? '',
       timezone: user.timezone || DEFAULT_TIMEZONE,
+      teamLead: user.teamLead?._id || user.teamLead || '',
+      assignedAgentIds: users
+        .filter(u => u.teamLead && (u.teamLead?._id || u.teamLead) === user._id)
+        .map(u => u._id),
     });
     setEditError('');
   };
@@ -134,6 +156,8 @@ export default function AgentManagementPage() {
       shiftEndTime: DEFAULT_SHIFT_END_TIME,
       expectedWorkHours: '',
       timezone: DEFAULT_TIMEZONE,
+      teamLead: '',
+      assignedAgentIds: [],
     });
     setEditError('');
   };
@@ -179,16 +203,40 @@ export default function AgentManagementPage() {
     if (normalizedExpectedWorkHours !== currentExpectedWorkHours) {
       payload.expectedWorkHours = normalizedExpectedWorkHours;
     }
+    if (editForm.teamLead !== (user.teamLead?._id || user.teamLead || "")) {
+      payload.teamLead = editForm.teamLead || null;
+    }
 
-    if (Object.keys(payload).length === 0) {
+    // Handle team member (re)assignment for team leads
+    const prevAssigned = users
+      .filter(u => u.teamLead && (u.teamLead?._id || u.teamLead) === user._id)
+      .map(u => u._id);
+    const nextAssigned = editForm.assignedAgentIds || [];
+    const toAdd = nextAssigned.filter(id => !prevAssigned.includes(id));
+    const toRemove = prevAssigned.filter(id => !nextAssigned.includes(id));
+
+    if (Object.keys(payload).length === 0 && toAdd.length === 0 && toRemove.length === 0) {
       handleEditCancel();
       return;
     }
 
     setIsSavingEdit(true);
     try {
-      const updateResult = await updateUser(user._id, payload);
+      // Save main user updates
+      const updateResult = Object.keys(payload).length > 0
+        ? await updateUser(user._id, payload)
+        : { user };
       const updatedUser = updateResult?.user || updateResult;
+
+      // Reassign team members if changed
+      const reassignPromises = [
+        ...toAdd.map(id => updateUser(id, { teamLead: user._id })),
+        ...toRemove.map(id => updateUser(id, { teamLead: null })),
+      ];
+      if (reassignPromises.length > 0) await Promise.all(reassignPromises);
+
+      // Refresh users so teamLead columns reflect changes
+      if (reassignPromises.length > 0) await loadUsers();
 
       setUsers((prevUsers) =>
         prevUsers.map((existingUser) =>
@@ -203,6 +251,7 @@ export default function AgentManagementPage() {
                 shiftEndTime: updatedUser?.shiftEndTime ?? payload.shiftEndTime ?? existingUser.shiftEndTime,
                 expectedWorkHours: updatedUser?.expectedWorkHours ?? payload.expectedWorkHours ?? existingUser.expectedWorkHours,
                 timezone: updatedUser?.timezone ?? payload.timezone ?? existingUser.timezone,
+                teamLead: updatedUser?.teamLead ?? payload.teamLead ?? existingUser.teamLead,
               }
             : existingUser
         )
@@ -242,6 +291,7 @@ export default function AgentManagementPage() {
       'caller-agent': 'Caller Agent',
       'closer-agent': 'Closer Agent',
       'scrapper': 'Scrapper',
+      'team-lead': 'Team Lead',
       'client': 'Client',
     };
     return labels[role] || role;
@@ -254,6 +304,7 @@ export default function AgentManagementPage() {
       'caller-agent': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
       'closer-agent': 'bg-green-500/20 text-green-600 dark:text-green-400',
       'scrapper': 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400',
+      'team-lead': 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
       'client': 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
     };
     return colors[role] || 'bg-slate-500/20 text-slate-600 dark:text-slate-400';
@@ -269,7 +320,10 @@ export default function AgentManagementPage() {
           setSearch={setSearch}
           roleFilter={roleFilter}
           setRoleFilter={setRoleFilter}
-          availableRoles={availableRoles}
+          roleFilterOptions={roleFilterOptions}
+          teamLeadFilter={teamLeadFilter}
+          setTeamLeadFilter={setTeamLeadFilter}
+          teamLeadFilterOptions={teamLeadFilterOptions}
           getRoleLabel={getRoleLabel}
         />
       </div>
@@ -279,8 +333,8 @@ export default function AgentManagementPage() {
 
       <AgentTable
         users={paginatedUsers}
+        allUsers={users}
         isLoadingUsers={isLoadingUsers}
-        editingUserId={editingUserId}
         editForm={editForm}
         isSavingEdit={isSavingEdit}
         availableRoles={availableRoles}
@@ -291,6 +345,7 @@ export default function AgentManagementPage() {
         onEditSave={handleEditSave}
         onDeleteUser={handleDeleteUser}
         setEditForm={setEditForm}
+        editError={editError}
       />
 
       {/* Pagination Controls */}
@@ -346,6 +401,7 @@ export default function AgentManagementPage() {
         onSuccess={handleUserCreated}
         availableRoles={availableRoles}
         userRole={user?.role}
+        allUsers={users}
       />
     </div>
   );

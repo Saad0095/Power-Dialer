@@ -99,6 +99,65 @@ function getSidebarItems(role) {
     ];
   }
 
+  if (role === "team-lead") {
+    return [
+      {
+        id: "overview",
+        label: "Dashboard",
+        icon: LayoutGrid,
+        path: "/manager",
+      },
+      {
+        id: "tasks",
+        label: "My Tasks",
+        icon: ClipboardList,
+        path: "/manager/tasks",
+      },
+      {
+        id: "campaigns",
+        label: "Campaigns",
+        icon: Megaphone,
+        path: "/manager/campaigns",
+      },
+      {
+        id: "caller-leads",
+        label: "Manage Team Leads",
+        icon: Repeat2,
+        path: "/manager/caller-leads",
+      },
+      {
+        id: "auto-dialer",
+        label: "Auto Dialer",
+        icon: PhoneCall,
+        path: "/manager/auto-dialer",
+      },
+      {
+        id: "direct-dialer",
+        label: "Direct Dialer",
+        icon: Phone,
+        path: "/manager/direct-dialer",
+      },
+      {
+        id: "agents",
+        label: "Team Live Status",
+        icon: Users,
+        path: "/manager/agents",
+      },
+      {
+        id: "attendance",
+        label: "Attendance Record",
+        icon: CalendarDays,
+        path: "/manager/attendance",
+      },
+      {
+        id: "earnings",
+        label: "Earnings History",
+        icon: Coins,
+        path: "/manager/earnings",
+      },
+    ];
+  }
+
   if (role === "client") {
     return [
       {

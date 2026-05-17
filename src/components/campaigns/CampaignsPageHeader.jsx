@@ -1,6 +1,6 @@
 import { Layers3, Plus, RotateCcw } from "lucide-react";
 
-export default function CampaignsPageHeader({ onCreateCampaign, onRefresh }) {
+export default function CampaignsPageHeader({ onCreateCampaign, onRefresh, canCreate = true }) {
   return (
     <div className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-linear-to-br from-slate-50 via-white to-blue-50/30 p-8 shadow-lg dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 md:flex-row md:items-center md:justify-between">
       <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -25,13 +25,15 @@ export default function CampaignsPageHeader({ onCreateCampaign, onRefresh }) {
           <RotateCcw className="h-4 w-4" />
           Refresh
         </button>
-        <button
-          onClick={onCreateCampaign}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4" />
-          Create Campaign
-        </button>
+        {canCreate && (
+          <button
+            onClick={onCreateCampaign}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4" />
+            Create Campaign
+          </button>
+        )}
       </div>
     </div>
   );

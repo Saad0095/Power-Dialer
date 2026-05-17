@@ -75,7 +75,9 @@ export default function LeadsTable({ showNotification, activeCalls = [] }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [selectedRows, setSelectedRows] = useState(new Set());
-  const canUpdateQualification = ["admin", "manager"].includes(user?.role);
+  const canUpdateQualification = ["admin", "manager", "team-lead"].includes(
+    user?.role,
+  );
   const canEditDisposition = user?.role === "caller-agent";
 
   // Modal handlers

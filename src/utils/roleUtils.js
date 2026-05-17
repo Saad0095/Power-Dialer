@@ -9,14 +9,16 @@ export const ROLES = {
   CALLER_AGENT: 'caller-agent',
   CLOSER_AGENT: 'closer-agent',
   SCRAPPER: 'scrapper',
+  TEAM_LEAD: 'team-lead',
   CLIENT: 'client',
 };
 
-export const AGENT_ROLES = [ROLES.CALLER_AGENT];
+export const AGENT_ROLES = [ROLES.CALLER_AGENT, ROLES.TEAM_LEAD];
 export const ATTENDANCE_ROLES = [
   ROLES.CALLER_AGENT,
   ROLES.CLOSER_AGENT,
   ROLES.SCRAPPER,
+  ROLES.TEAM_LEAD,
 ];
 
 /**
@@ -48,6 +50,10 @@ export const isScrapper = (role) => {
   return role === ROLES.SCRAPPER;
 };
 
+export const isTeamLead = (role) => {
+  return role === ROLES.TEAM_LEAD;
+};
+
 export const canUseAttendanceControls = (role) => {
   return ATTENDANCE_ROLES.includes(role);
 };
@@ -56,14 +62,15 @@ export const canUseAttendanceControls = (role) => {
  * Check if user is a manager or admin (same permissions)
  */
 export const isManager = (role) => {
-  return role === ROLES.MANAGER || role === ROLES.ADMIN;
+  return role === ROLES.MANAGER || role === ROLES.ADMIN || role === ROLES.TEAM_LEAD;
 };
 
 /**
  * Get the home route for a given role
  */
 export const getRoleHomeRoute = (role) => {
-  if (isManager(role)) return '/manager';
+  if (role === ROLES.ADMIN || role === ROLES.MANAGER) return '/manager';
+  if (role === ROLES.TEAM_LEAD) return '/manager'; // Team leads use manager dashboard but filtered
   if (isCallerAgent(role)) return '/agent';
   if (isScrapper(role)) return '/scrapper';
   if (isClient(role)) return '/client';

@@ -1,8 +1,10 @@
-import React from "react";
-import { AlertCircle, Trash2, Pencil, Save, X } from 'lucide-react';
+import React, { useState } from "react";
+import { AlertCircle, Trash2, Pencil } from 'lucide-react';
+import UserEditModal from './modals/UserEditModal';
 
 export default function AgentTable({
   users,
+  allUsers,
   isLoadingUsers,
   editingUserId,
   editForm,
@@ -15,262 +17,153 @@ export default function AgentTable({
   onEditSave,
   onDeleteUser,
   setEditForm,
+  editError = '',
 }) {
+  // Track which user's modal is open locally
+  const [modalUser, setModalUser] = useState(null);
+
+  const handleOpenEdit = (userItem) => {
+    setModalUser(userItem);
+    onEditStart(userItem);
+  };
+
+  const handleCloseEdit = () => {
+    setModalUser(null);
+    onEditCancel();
+  };
+
+  const handleSave = async (userItem) => {
+    await onEditSave(userItem);
+    setModalUser(null);
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="overflow-x-auto">
-        {isLoadingUsers ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-cyan-400"></div>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertCircle className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-600 dark:text-slate-400">No users found</p>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-900">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Role</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Shift</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-              {users.map((userItem) => (
-                <React.Fragment key={userItem._id}>
-                  <tr
-                    className={`transition hover:bg-slate-50 dark:hover:bg-slate-700 ${
-                      userItem.isActive === false
-                        ? "bg-rose-50/70 dark:bg-rose-950/20"
-                        : ""
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      {editingUserId === userItem._id ? (
-                        <input
-                          type="text"
-                          value={editForm.name}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                          className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                          placeholder="User name"
-                          disabled={isSavingEdit}
-                        />
-                      ) : (
+    <>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          {isLoadingUsers ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-cyan-400" />
+            </div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-12">
+              <AlertCircle className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-600 dark:text-slate-400">No users found</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Team Lead</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Agents</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Shift</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                {users.map((userItem) => {
+                  const teamLeadName =
+                    userItem.teamLead?.name ||
+                    (typeof userItem.teamLead === 'string'
+                      ? (allUsers || []).find(u => u._id === userItem.teamLead)?.name
+                      : null);
+
+                  return (
+                    <tr
+                      key={userItem._id}
+                      className={`transition hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
+                        userItem.isActive === false ? 'bg-rose-50/60 dark:bg-rose-950/20' : ''
+                      }`}
+                    >
+                      {/* Name */}
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {userItem.name}
-                          </p>
+                          <p className="font-semibold text-slate-900 dark:text-white">{userItem.name}</p>
                           {userItem.isActive === false && (
                             <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
                               Inactive
                             </span>
                           )}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingUserId === userItem._id ? (
-                        <input
-                          type="email"
-                          value={editForm.email}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                          className="w-full pl-3 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                          placeholder="user@email.com"
-                          disabled={isSavingEdit}
-                        />
-                      ) : (
-                        <p className="text-slate-600 dark:text-slate-400">{userItem.email}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingUserId === userItem._id ? (
-                        <select
-                          value={editForm.role}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, role: e.target.value }))}
-                          className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                          disabled={isSavingEdit}
-                        >
-                          <option value="">Select Role</option>
-                          {availableRoles.map((r) => (
-                            <option key={r} value={r}>
-                              {getRoleLabel(r)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
+                      </td>
+
+                      {/* Email */}
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{userItem.email}</td>
+
+                      {/* Role */}
+                      <td className="px-6 py-4">
                         <span className={`px-3 py-1 text-xs font-medium rounded-full ${getRoleColor(userItem.role)}`}>
                           {getRoleLabel(userItem.role)}
                         </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
-                      <div className="font-medium">
-                        {(userItem.shiftStartTime || '19:00')} - {(userItem.shiftEndTime || '04:00')}
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {userItem.expectedWorkHours ? `${userItem.expectedWorkHours}h expected` : 'Auto expected hours'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {editingUserId === userItem._id ? (
-                          <>
-                            <button
-                              onClick={() => onEditSave(userItem)}
-                              disabled={isSavingEdit}
-                              className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 rounded transition disabled:opacity-50"
-                              title="Save changes"
-                            >
-                              <Save className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={onEditCancel}
-                              disabled={isSavingEdit}
-                              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-500/20 rounded transition disabled:opacity-50"
-                              title="Cancel edit"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </>
+                      </td>
+
+                      {/* Team Lead */}
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        {teamLeadName || <span className="text-slate-400 dark:text-slate-600 italic text-xs">None</span>}
+                      </td>
+
+                      {/* Agents count (for team-leads) */}
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                        {userItem.role === 'team-lead' ? (
+                          ((allUsers || []).filter(u => u.teamLead && (u.teamLead?._id || u.teamLead) === userItem._id).length)
                         ) : (
-                          <>
-                            <button
-                              onClick={() => onEditStart(userItem)}
-                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 rounded transition"
-                              title="Edit user"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => onDeleteUser(userItem)}
-                              className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 rounded transition"
-                              title="Delete user"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
+                          <span className="text-slate-400 dark:text-slate-600 italic text-xs">-</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                  {editingUserId === userItem._id && (
-                    <tr className="bg-slate-100 dark:bg-slate-900/50">
-                      <td colSpan="5" className="px-6 py-4">
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                              Status
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <button
-                                type="button"
-                                onClick={() => setEditForm((prev) => ({ ...prev, isActive: true }))}
-                                className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
-                                  editForm.isActive
-                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-400/40"
-                                    : "bg-white dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-600"
-                                }`}
-                                disabled={isSavingEdit}
-                              >
-                                Active
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditForm((prev) => ({ ...prev, isActive: false }))}
-                                className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
-                                  !editForm.isActive
-                                    ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-400/40"
-                                    : "bg-white dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-600"
-                                }`}
-                                disabled={isSavingEdit}
-                              >
-                                Inactive
-                              </button>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                              New Password (optional)
-                            </label>
-                            <input
-                              type="password"
-                              value={editForm.password}
-                              onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))}
-                              placeholder="Leave blank to keep current password"
-                              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                              disabled={isSavingEdit}
-                            />
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              Must be at least 6 characters if you want to change it
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                                Shift Start
-                              </label>
-                              <input
-                                type="time"
-                                value={editForm.shiftStartTime || '19:00'}
-                                onChange={(e) => setEditForm((prev) => ({ ...prev, shiftStartTime: e.target.value }))}
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                                disabled={isSavingEdit}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                                Shift End
-                              </label>
-                              <input
-                                type="time"
-                                value={editForm.shiftEndTime || '04:00'}
-                                onChange={(e) => setEditForm((prev) => ({ ...prev, shiftEndTime: e.target.value }))}
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                                disabled={isSavingEdit}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                                Expected Hours
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.25"
-                                value={editForm.expectedWorkHours}
-                                onChange={(e) => setEditForm((prev) => ({ ...prev, expectedWorkHours: e.target.value }))}
-                                placeholder="Optional"
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                                disabled={isSavingEdit}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-slate-700 dark:text-slate-300 text-xs font-medium mb-2">
-                                Timezone
-                              </label>
-                              <input
-                                type="text"
-                                value={editForm.timezone || 'Asia/Karachi'}
-                                onChange={(e) => setEditForm((prev) => ({ ...prev, timezone: e.target.value }))}
-                                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
-                                disabled={isSavingEdit}
-                              />
-                            </div>
-                          </div>
+                      </td>
+
+                      {/* Shift */}
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                        <div className="font-medium">{userItem.shiftStartTime || '19:00'} – {userItem.shiftEndTime || '04:00'}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {userItem.expectedWorkHours ? `${userItem.expectedWorkHours}h expected` : 'Auto'}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleOpenEdit(userItem)}
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 rounded-lg transition"
+                            title="Edit user"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteUser(userItem)}
+                            className="p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 rounded-lg transition"
+                            title="Delete user"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        )}
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Edit Modal */}
+      <UserEditModal
+        isOpen={Boolean(modalUser)}
+        userItem={modalUser}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        isSavingEdit={isSavingEdit}
+        availableRoles={availableRoles}
+        getRoleLabel={getRoleLabel}
+        allUsers={allUsers}
+        onSave={handleSave}
+        onCancel={handleCloseEdit}
+        editError={editError}
+      />
+    </>
   );
 }

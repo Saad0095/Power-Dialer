@@ -67,6 +67,9 @@ export default function ManageCallerLeads() {
   const { user } = useAuth();
   const canExport = ["admin", "manager"].includes(user?.role);
   const canManageLeads = ["admin", "manager"].includes(user?.role);
+  const canQualifyAppointments = ["admin", "manager", "team-lead"].includes(
+    user?.role,
+  );
   const [dateFilterType, setDateFilterType] = useState("");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
@@ -1059,7 +1062,7 @@ export default function ManageCallerLeads() {
         leadId={selectedLeadId}
         onClose={() => setShowDetailModal(false)}
         onEditLead={handleEditLead}
-        onStatusUpdate={canManageLeads ? handleUpdateStatus : undefined}
+        onStatusUpdate={canQualifyAppointments ? handleUpdateStatus : undefined}
         onCreateOffer={canManageLeads ? handleCreateOffer : undefined}
       />
 
@@ -1070,7 +1073,7 @@ export default function ManageCallerLeads() {
         onSave={handleEditSave}
       />
 
-      {canManageLeads && (
+      {canQualifyAppointments && (
         <>
           <UpdateQualificationModal
             isOpen={showStatusModal}
@@ -1079,7 +1082,7 @@ export default function ManageCallerLeads() {
             onSuccess={handleStatusUpdateSuccess}
             onError={(message) => showNotification(message, "error")}
           />
-
+          {canManageLeads && (
           <CreateOfferModal
             isOpen={Boolean(selectedLeadForOffer)}
             lead={selectedLeadForOffer}
@@ -1087,6 +1090,7 @@ export default function ManageCallerLeads() {
             onCreated={handleOfferCreated}
             showNotification={showNotification}
           />
+          )}
         </>
       )}
     </div>

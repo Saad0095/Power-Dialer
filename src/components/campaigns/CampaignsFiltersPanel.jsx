@@ -66,39 +66,39 @@ export default function CampaignsFiltersPanel({
             </div>
           </div>
 
-          {selectedCount > 0 && (
-            <div className="animate-in zoom-in-95 flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 px-4 py-1.5 duration-200 dark:border-primary-800/50 dark:bg-primary-900/20">
-              <span className="text-xs font-bold text-primary-700 dark:text-primary-400">
-                {selectedCount} Selected
-              </span>
-              <div className="h-4 w-px bg-primary-200 dark:bg-primary-800" />
-              <select
-                value={selectedAgentId}
-                onChange={(event) => onSelectedAgentChange(event.target.value)}
-                className="cursor-pointer rounded-lg bg-transparent p-2 text-xs font-semibold text-slate-700 outline-none focus:ring-0 dark:bg-slate-900 dark:text-slate-300"
-              >
-                <option value="">Assign Agent...</option>
-                {agents.map((agent) => (
-                  <option key={agent._id} value={agent._id}>
-                    {agent.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={onBulkAssign}
-                disabled={!selectedAgentId || isBulkAssigning}
-                className="text-xs font-bold text-primary-600 disabled:opacity-50 dark:text-primary-400"
-              >
-                Apply
-              </button>
-              <button
-                onClick={onClearSelected}
-                className="text-xs font-bold text-slate-500 dark:text-slate-400"
-              >
-                Clear
-              </button>
-            </div>
-          )}
+          {selectedCount > 0 && onBulkAssign && (
+                <div className="animate-in zoom-in-95 flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 px-4 py-1.5 duration-200 dark:border-primary-800/50 dark:bg-primary-900/20">
+                  <span className="text-xs font-bold text-primary-700 dark:text-primary-400">
+                    {selectedCount} Selected
+                  </span>
+                  <div className="h-4 w-px bg-primary-200 dark:bg-primary-800" />
+                  <select
+                    value={selectedAgentId}
+                    onChange={(event) => onSelectedAgentChange(event.target.value)}
+                    className="cursor-pointer rounded-lg bg-transparent p-2 text-xs font-semibold text-slate-700 outline-none focus:ring-0 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    <option value="">Assign Agent...</option>
+                    {agents.map((agent) => (
+                      <option key={agent._id} value={agent._id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={onBulkAssign}
+                    disabled={!selectedAgentId || isBulkAssigning}
+                    className="text-xs font-bold text-primary-600 disabled:opacity-50 dark:text-primary-400"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={onClearSelected}
+                    className="text-xs font-bold text-slate-500 dark:text-slate-400"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
         </div>
 
         <div className="flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4 dark:border-slate-700/50">

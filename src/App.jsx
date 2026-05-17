@@ -47,7 +47,7 @@ function App() {
             <Route
               path="/manager"
               element={
-                <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
+                <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.TEAM_LEAD]}>
                   <LeadsProvider campaignId="">
                     <DashboardLayout />
                   </LeadsProvider>
@@ -66,6 +66,7 @@ function App() {
               <Route path="user-management" element={<AgentManagementPage />} />
               <Route path="attendance" element={<AttendanceHistoryPage />} />
               <Route path="earnings" element={<EarningsHistoryPage />} />
+              <Route path="auto-dialer" element={<AutoDialerPage />} />
               <Route path="direct-dialer" element={<DirectDialerPage />} />
               <Route path="client-leads" element={<ManageClientOffers />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -90,7 +91,7 @@ function App() {
             <Route
               path="/agent"
               element={
-                <ProtectedRoute allowedRoles={[ROLES.CALLER_AGENT]}>
+                <ProtectedRoute allowedRoles={[ROLES.CALLER_AGENT, ROLES.TEAM_LEAD]}>
                   <LeadsProvider campaignId="">
                     <DashboardLayout />
                   </LeadsProvider>

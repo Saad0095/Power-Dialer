@@ -7,7 +7,7 @@ const DEFAULT_SHIFT_START_TIME = '19:00';
 const DEFAULT_SHIFT_END_TIME = '04:00';
 const DEFAULT_TIMEZONE = 'Asia/Karachi';
 
-export default function UserCreationModal({ isOpen, onClose, onSuccess, availableRoles, userRole }) {
+export default function UserCreationModal({ isOpen, onClose, onSuccess, availableRoles, userRole, allUsers = [] }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +17,8 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
   const [shiftEndTime, setShiftEndTime] = useState(DEFAULT_SHIFT_END_TIME);
   const [expectedWorkHours, setExpectedWorkHours] = useState('');
   const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
+  const [teamLead, setTeamLead] = useState('');
+  const [assignedAgentIds, setAssignedAgentIds] = useState([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +34,8 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
     setShiftEndTime(DEFAULT_SHIFT_END_TIME);
     setExpectedWorkHours('');
     setTimezone(DEFAULT_TIMEZONE);
+    setTeamLead('');
+    setAssignedAgentIds([]);
     setError('');
     setSuccessMessage('');
   };
@@ -80,6 +84,8 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
             shiftEndTime,
             timezone: timezone.trim() || DEFAULT_TIMEZONE,
             ...(expectedWorkHours ? { expectedWorkHours: Number(expectedWorkHours) } : {}),
+            ...(teamLead ? { teamLead } : {}),
+            ...(role === 'team-lead' && assignedAgentIds.length > 0 ? { assignedAgentIds } : {}),
           };
       const result = await createUser(email, password, name, role, userOptions);
       const createdUser = result?.user || result;
@@ -110,6 +116,7 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
       'caller-agent': 'Caller Agent',
       'closer-agent': 'Closer Agent',
       'scrapper': 'Scrapper',
+      'team-lead': 'Team Lead',
       'client': 'Client',
     };
     return labels[role] || role;
@@ -176,6 +183,86 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
             </select>
           </div>
         </div>
+
+        {/* Team Lead */}
+        {(role === 'caller-agent' || role === 'closer-agent' || role === 'scrapper') && (
+          <div>
+            <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+              Assigned Team Lead
+            </label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
+              <select
+                value={teamLead}
+                onChange={(e) => setTeamLead(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border border-slate-300 dark:border-slate-600 focus:border-cyan-500 outline-none transition appearance-none"
+                disabled={isLoading}
+              >
+                <option value="">None (No Team Lead)</option>
+                {allUsers
+                  .filter(u => u.role === 'team-lead' || u.role === 'manager' || u.role === 'admin')
+                  .map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({getRoleLabel(u.role)})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Assign Agents to Team Lead */}
+        {role === 'team-lead' && (() => {
+          const assignableAgents = (allUsers || []).filter(
+            u => ['caller-agent', 'closer-agent', 'scrapper'].includes(u.role)
+          );
+          if (assignableAgents.length === 0) return null;
+          return (
+            <div>
+              <label className="block text-slate-700 dark:text-slate-300 text-sm font-medium mb-2">
+                Assign Agents to This Team Lead
+                <span className="ml-2 text-xs text-slate-400">(optional)</span>
+              </label>
+              <div className="max-h-44 overflow-y-auto border border-slate-300 dark:border-slate-600 rounded-lg divide-y divide-slate-200 dark:divide-slate-700">
+                {assignableAgents.map(u => {
+                  const checked = assignedAgentIds.includes(u._id);
+                  return (
+                    <label
+                      key={u._id}
+                      className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition ${
+                        checked ? 'bg-cyan-50 dark:bg-cyan-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setAssignedAgentIds(prev =>
+                            prev.includes(u._id) ? prev.filter(id => id !== u._id) : [...prev, u._id]
+                          );
+                        }}
+                        className="w-4 h-4 accent-cyan-500"
+                        disabled={isLoading}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{u.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{u.email} · {getRoleLabel(u.role)}</p>
+                      </div>
+                      {u.teamLead && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0">Has lead</span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              {assignedAgentIds.length > 0 && (
+                <p className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                  {assignedAgentIds.length} agent{assignedAgentIds.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Password */}
         <div>

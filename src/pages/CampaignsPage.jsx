@@ -52,6 +52,8 @@ export default function CampaignsPage() {
     loadAgents();
   }, []);
 
+  const canBulkAssign = user?.role === 'admin' || user?.role === 'manager';
+
   useEffect(() => {
     if (user && !checkIsManager(user?.role)) {
       showNotification("Access denied", "error");
@@ -63,12 +65,16 @@ export default function CampaignsPage() {
     try {
       const response = await getAllAgents();
       const allAgents = response.data || response;
-      setAgents(
-        allAgents.filter(
-          (agent) =>
-            agent.role === "caller-agent" || agent.role === "closer-agent",
-        ),
+      let filtered = allAgents.filter(
+        (agent) => agent.role === "caller-agent" || agent.role === "closer-agent",
       );
+
+      // If current user is a team-lead, only show their team members
+      if (user?.role === 'team-lead') {
+        filtered = filtered.filter(a => (a.teamLead?._id || a.teamLead) === user._id);
+      }
+
+      setAgents(filtered);
     } catch (error) {
       showNotification("Failed to load agents", "error");
     }
@@ -419,6 +425,7 @@ export default function CampaignsPage() {
       <CampaignsPageHeader
         onCreateCampaign={() => setShowCreateModal(true)}
         onRefresh={loadCampaigns}
+        canCreate={canBulkAssign}
       />
 
       <CampaignsFiltersPanel
@@ -430,7 +437,7 @@ export default function CampaignsPage() {
         selectedAgentId={selectedAgentId}
         onSelectedAgentChange={setSelectedAgentId}
         agents={agents}
-        onBulkAssign={handleBulkAssign}
+        onBulkAssign={canBulkAssign ? handleBulkAssign : undefined}
         onClearSelected={handleClearSelected}
         isBulkAssigning={isBulkAssigning}
         dialerTypeFilter={dialerTypeFilter}
