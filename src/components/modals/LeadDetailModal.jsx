@@ -299,9 +299,9 @@ export default function LeadDetailModal({
           </button>
         )}
         {onStatusUpdate &&
-          (user?.role === "manager" || user?.role === "admin") && (
+          (user?.role === "manager" || user?.role === "admin" || user?.role === "team-lead") && (
             <button
-              onClick={() => onStatusUpdate?.(lead._id)}
+              onClick={() => onStatusUpdate?.(lead)}
               className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-2 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
             >
               <ListChecks className="w-4 h-4" />

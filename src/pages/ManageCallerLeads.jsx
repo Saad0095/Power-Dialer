@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import {
   Search,
@@ -79,7 +79,7 @@ export default function ManageCallerLeads() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [selectedDialerStatus, setSelectedDialerStatus] = useState("");
-  const [selectedDisposition, setSelectedDisposition] = useState("followup");
+  const [selectedDisposition, setSelectedDisposition] = useState("");
   const [selectedAppointmentStatus, setSelectedAppointmentStatus] =
     useState("");
   const [selectedAgent, setSelectedAgent] = useState("");
@@ -103,6 +103,17 @@ export default function ManageCallerLeads() {
     qa3: null,
   });
   const tableRef = useRef(null);
+  const [searchParams] = useSearchParams();
+
+  // Auto-open lead detail modal if ?leadId= is in the URL (from notification click)
+  useEffect(() => {
+    const leadIdFromParam = searchParams.get('leadId');
+    if (leadIdFromParam) {
+      setSelectedLeadId(leadIdFromParam);
+      setShowDetailModal(true);
+    }
+  }, [searchParams]);
+
 
   // Bulk selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState([]);
@@ -212,12 +223,12 @@ export default function ManageCallerLeads() {
     showNotification,
     dateField,
     pageSize,
+    currentPage,
     searchInput,
     selectedDialerStatus,
     selectedDisposition,
     selectedAppointmentStatus,
     selectedAgent,
-    showNotification,
     dateFilterType,
     customStartDate,
     customEndDate,
@@ -312,9 +323,12 @@ export default function ManageCallerLeads() {
     window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: updated._id } }));
   };
 
-  const handleUpdateStatus = (leadId) => {
-    const lead = leads.find((item) => item._id === leadId);
-    setSelectedLeadForStatus(lead || null);
+  const handleUpdateStatus = (lead) => {
+    // Accept either a full lead object (from LeadDetailModal) or fall back to lookup in the current list
+    const resolvedLead = lead && typeof lead === 'object' && lead._id
+      ? lead
+      : leads.find((item) => item._id === lead) || null;
+    setSelectedLeadForStatus(resolvedLead);
     setShowStatusModal(true);
   };
 

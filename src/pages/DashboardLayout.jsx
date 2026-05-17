@@ -1,6 +1,6 @@
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { isAgent } from '../utils/roleUtils';
+import { canUseAttendanceControls, isAgent } from '../utils/roleUtils';
 import { useNotification } from '../hooks/useNotification';
 import { useTwilioDevice } from '../hooks/useTwilioDevice';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -9,12 +9,154 @@ import Sidebar from '../components/Sidebar';
 import NotificationSystem from '../components/NotificationSystem';
 import ActiveCallPanel from '../components/ActiveCallPanel';
 import LeadDetailModal from '../components/modals/LeadDetailModal';
-import { useState, useEffect } from 'react';
+import { checkIn } from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import { LogIn, X, Clock, AlertTriangle } from 'lucide-react';
 
+// ─── Check-in Enforcement Modal ─────────────────────────────────────────────
+function CheckInModal({ user, onCheckedIn }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { hydrateAuth } = useAuth();
+
+  const handleCheckIn = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await checkIn();
+      await hydrateAuth();
+      onCheckedIn();
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to check in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[99990] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
+            <LogIn className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-white">You're Not Checked In</h2>
+          <p className="text-amber-100 text-sm mt-1">
+            Please check in to start your shift
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 text-center">
+          <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">
+            Welcome back, <span className="font-semibold text-slate-900 dark:text-white">{user?.name || user?.email}</span>!
+          </p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mb-6">
+            Your attendance record requires a check-in before you can start working.
+          </p>
+
+          {error && (
+            <div className="mb-4 px-4 py-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg text-rose-600 dark:text-rose-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleCheckIn}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-xl transition shadow-lg shadow-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <LogIn className="w-5 h-5" />
+            {loading ? 'Checking In...' : 'Check In Now'}
+          </button>
+
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-4">
+            Your attendance will be recorded from this moment.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Shift-End Reminder Banner ───────────────────────────────────────────────
+function ShiftEndReminderBanner({ onDismiss }) {
+  return (
+    <div className="sticky top-[73px] z-[800] w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2.5 flex items-center justify-between shadow-lg">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Clock className="w-4 h-4 shrink-0 text-blue-200" />
+        <span>
+          <span className="font-bold">Shift Ending Soon</span> — Please make sure to
+          check out after completing your shift to ensure accurate attendance records.
+        </span>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="shrink-0 ml-4 p-1 rounded hover:bg-white/20 transition"
+        aria-label="Dismiss reminder"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+// ─── Main DashboardLayout ────────────────────────────────────────────────────
 export default function DashboardLayout() {
   const { user, logout, theme } = useAuth();
   const navigate = useNavigate();
   const { successMessage, errorMessage, showNotification } = useNotification();
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showShiftReminder, setShowShiftReminder] = useState(false);
+  const [reminderDismissedAt, setReminderDismissedAt] = useState(null);
+
+  // Should show check-in enforcement for attendance-tracked roles only
+  const isAttendanceRole = canUseAttendanceControls(user?.role);
+  const isCheckedIn = user?.attendance?.isCheckedIn;
+
+  // Show modal if agent is in CRM but not checked in
+  useEffect(() => {
+    if (!user || !isAttendanceRole) return;
+    setShowCheckInModal(!isCheckedIn);
+  }, [user, isAttendanceRole, isCheckedIn]);
+
+  // 3:45 AM shift-end reminder (runs every minute)
+  useEffect(() => {
+    if (!isAttendanceRole) return;
+
+    const checkReminderTime = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+
+      // Show reminder between 3:45 AM and 4:30 AM
+      const isReminderWindow =
+        (hours === 3 && minutes >= 45) || (hours === 4 && minutes < 30);
+
+      if (isReminderWindow) {
+        // Only show again if we haven't dismissed within this window
+        const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+        if (reminderDismissedAt !== todayKey) {
+          setShowShiftReminder(true);
+        }
+      } else {
+        // Reset outside window so it can show again next time
+        setShowShiftReminder(false);
+      }
+    };
+
+    checkReminderTime();
+    const interval = setInterval(checkReminderTime, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isAttendanceRole, reminderDismissedAt]);
+
+  const handleDismissReminder = useCallback(() => {
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    setReminderDismissedAt(todayKey);
+    setShowShiftReminder(false);
+  }, []);
 
   // Initialize Twilio Voice SDK for agent browsers (receiving calls)
   const { 
@@ -59,15 +201,12 @@ export default function DashboardLayout() {
         setAutoLeadId(customLeadId);
       }
     } else if (callStatus === 'idle') {
-      // Don't auto-close it when hanging up right away so they can take notes,
-      // but if the call is entirely dead, we can leave it open until they close it manually.
+      // Don't auto-close it when hanging up right away so they can take notes
     }
   }, [activeCall, callStatus, autoLeadId]);
 
   // Surface Twilio device issues to the user (non-blocking)
   if (isAgent(user?.role) && twilioError) {
-    // Avoid spamming notifications every render by relying on NotificationSystem state
-    // eslint-disable-next-line no-console
     console.error('Twilio Device init error:', twilioError);
   }
 
@@ -85,25 +224,18 @@ export default function DashboardLayout() {
         onToggleSidebar={() => setIsSidebarOpen(true)}
       />
 
+      {/* Shift-end reminder banner (3:45 AM – 4:30 AM) */}
+      {showShiftReminder && isCheckedIn && (
+        <ShiftEndReminderBanner onDismiss={handleDismissReminder} />
+      )}
+
       <NotificationSystem successMessage={successMessage} errorMessage={errorMessage} />
 
-      {/* <div className="max-w-7xl mx-auto p-4 md:p-8"> */}
       <div className="mx-auto p-4 md:p-8">
         <div className="flex gap-4 lg:gap-6">
           <Sidebar user={user} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
           <main className="flex-1 min-w-0">
-            {/* {isAgent(user?.role) && (
-              <div className="mb-4">
-                <div className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Twilio Device:{' '}
-                  <span className={isTwilioReady ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
-                    {isTwilioReady ? 'Ready' : 'Initializing...'}
-                  </span>
-                </div>
-              </div>
-            )} */}
-
             <Outlet
               context={{
                 showNotification,
@@ -131,6 +263,14 @@ export default function DashboardLayout() {
             onClose={() => setAutoLeadId(null)}
           />
         </>
+      )}
+
+      {/* Check-in enforcement modal */}
+      {showCheckInModal && (
+        <CheckInModal
+          user={user}
+          onCheckedIn={() => setShowCheckInModal(false)}
+        />
       )}
     </div>
   );

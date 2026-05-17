@@ -27,6 +27,8 @@ const NotificationContext = createContext({
   notifications: [],
   unreadCount: 0,
   loading: false,
+  popupQueue: [],
+  dismissPopup: () => {},
   markAsRead: async () => { },
   markAllAsRead: async () => { },
   fetchRecent: async () => { },
@@ -37,6 +39,8 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Queue of notifications to show as modal popups
+  const [popupQueue, setPopupQueue] = useState([]);
 
   const fetchRecent = useCallback(async () => {
     if (!user) return;
@@ -85,48 +89,12 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user || !websocketService) return;
 
-    // const handleNewNotification = (notification) => {
-    //   setNotifications((prev) => [notification, ...prev].slice(0, 5));
-    //   setUnreadCount((prev) => prev + 1);
-
-    //   try {
-    //     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    //     const playTone = (freq, startTime, duration) => {
-    //       const oscillator = audioCtx.createOscillator();
-    //       const gainNode = audioCtx.createGain();
-
-    //       oscillator.type = 'sine';
-    //       oscillator.frequency.setValueAtTime(freq, startTime);
-
-    //       gainNode.gain.setValueAtTime(0, startTime);
-    //       gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.02);
-    //       gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
-    //       oscillator.connect(gainNode);
-    //       gainNode.connect(audioCtx.destination);
-
-    //       oscillator.start(startTime);
-    //       oscillator.stop(startTime + duration);
-    //     };
-
-    //     const now = audioCtx.currentTime;
-    //     // Ring 1
-    //     playTone(880, now, 0.15);      // A5
-    //     playTone(1108.73, now, 0.15);  // C#6
-
-    //     // Ring 2 (slightly longer and brighter)
-    //     playTone(880, now + 0.2, 0.4);
-    //     playTone(1108.73, now + 0.2, 0.4);
-    //     playTone(1318.51, now + 0.2, 0.4); // E6
-    //   } catch (err) {
-    //     console.error("Could not play notification sound", err);
-    //   }
-    // };
-
     const handleNewNotification = (notification) => {
       setNotifications((prev) => [notification, ...prev].slice(0, 5));
       setUnreadCount((prev) => prev + 1);
+
+      // Push to popup queue so the modal popup is displayed
+      setPopupQueue((prev) => [...prev, notification]);
 
       try {
         const audioCtx = initAudioContext();
@@ -148,7 +116,6 @@ export const NotificationProvider = ({ children }) => {
         const now = audioCtx.currentTime;
 
         // A nice, longer, elegant ascending 4-note chime
-        // C5, E5, G5, C6 with long sustain on the last note
         playTone(523.25, now, 0.4);        // C5
         playTone(659.25, now + 0.15, 0.4); // E5
         playTone(783.99, now + 0.3, 0.4);  // G5
@@ -168,6 +135,10 @@ export const NotificationProvider = ({ children }) => {
       websocketService.off('notification:new', handleNewNotification);
     };
   }, [user, websocketService]);
+
+  const dismissPopup = useCallback((notificationId) => {
+    setPopupQueue((prev) => prev.filter((n) => n._id !== notificationId));
+  }, []);
 
   const markAsRead = async (id) => {
     try {
@@ -197,6 +168,8 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         loading,
+        popupQueue,
+        dismissPopup,
         markAsRead,
         markAllAsRead,
         fetchRecent,
