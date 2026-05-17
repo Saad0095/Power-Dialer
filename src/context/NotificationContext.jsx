@@ -89,16 +89,9 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user || !websocketService) return;
 
-    const handleNewNotification = (notification) => {
-      setNotifications((prev) => [notification, ...prev].slice(0, 5));
-      setUnreadCount((prev) => prev + 1);
-
-      // Push to popup queue so the modal popup is displayed
-      setPopupQueue((prev) => [...prev, notification]);
-
+    const playChime = () => {
       try {
         const audioCtx = initAudioContext();
-
         const playTone = (freq, startTime, duration) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -112,29 +105,53 @@ export const NotificationProvider = ({ children }) => {
           osc.start(startTime);
           osc.stop(startTime + duration);
         };
-
         const now = audioCtx.currentTime;
-
-        // A nice, longer, elegant ascending 4-note chime
-        playTone(523.25, now, 0.4);        // C5
-        playTone(659.25, now + 0.15, 0.4); // E5
-        playTone(783.99, now + 0.3, 0.4);  // G5
-        
-        // Final chord with a much longer, ringing decay
-        playTone(523.25, now + 0.45, 2.0); // C5 base
-        playTone(1046.50, now + 0.45, 2.0); // C6 peak
-        playTone(1318.51, now + 0.45, 2.0); // E6 peak
+        playTone(523.25, now, 0.4);
+        playTone(659.25, now + 0.15, 0.4);
+        playTone(783.99, now + 0.3, 0.4);
+        playTone(523.25, now + 0.45, 2.0);
+        playTone(1046.50, now + 0.45, 2.0);
+        playTone(1318.51, now + 0.45, 2.0);
       } catch (err) {
         console.error('Could not play notification sound', err);
       }
     };
 
+    const handleNewNotification = (notification) => {
+      setNotifications((prev) => [notification, ...prev].slice(0, 5));
+      setUnreadCount((prev) => prev + 1);
+      // Deduplicate: only push if not already in queue
+      setPopupQueue((prev) =>
+        prev.some((n) => n._id === notification._id) ? prev : [...prev, notification]
+      );
+      playChime();
+    };
+
+    // Subscribe immediately in case socket is already connected
     websocketService.on('notification:new', handleNewNotification);
+
+    // Also re-subscribe after every reconnect (socket.on fires once per call,
+    // but the underlying socket may have been replaced — the connect callback
+    // ensures we always have a live subscription after reconnection)
+    const resubscribe = () => {
+      websocketService.off('notification:new', handleNewNotification);
+      websocketService.on('notification:new', handleNewNotification);
+      // Re-fetch any notifications missed while disconnected
+      fetchRecent();
+    };
+
+    const socket = websocketService.socket;
+    if (socket) {
+      socket.on('connect', resubscribe);
+    }
 
     return () => {
       websocketService.off('notification:new', handleNewNotification);
+      if (socket) {
+        socket.off('connect', resubscribe);
+      }
     };
-  }, [user, websocketService]);
+  }, [user, websocketService, fetchRecent]);
 
   const dismissPopup = useCallback((notificationId) => {
     setPopupQueue((prev) => prev.filter((n) => n._id !== notificationId));
