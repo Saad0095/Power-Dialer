@@ -40,6 +40,10 @@ export default function CampaignSelector({
       return namedAgents.length ? namedAgents.join(', ') : `${agents.length} agents`;
     }
 
+    if (campaign?.dialerType === 'direct') {
+      return 'Shared Direct Dialer';
+    }
+
     return 'N/A';
   };
 

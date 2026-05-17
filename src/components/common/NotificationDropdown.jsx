@@ -13,6 +13,7 @@ export default function NotificationDropdown() {
   const { notifications, unreadCount, markAsRead } = useNotificationContext();
   const { user } = useAuth();
   const basePath = getRoleHomeRoute(user?.role);
+  const isManagerLike = ["admin", "manager", "team-lead"].includes(user?.role);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -30,20 +31,14 @@ export default function NotificationDropdown() {
     }
     setIsOpen(false);
 
-    if (
-      notification.type === "campaign_event" &&
-      (user?.role === "admin" || user?.role === "manager")
-    ) {
+    if (notification.type === "campaign_event" && isManagerLike) {
       navigate(`${basePath}/campaigns`);
-    } else if (
-      notification.type === "campaign_event" &&
-      (user?.role !== "admin" || user?.role !== "manager")
-    ) {
+    } else if (notification.type === "campaign_event") {
       navigate(`${basePath}/auto-dialer`);
     } else if (
       (notification.type === "follow_up" ||
         notification.type === "appointment") &&
-      (user?.role === "admin" || user?.role === "manager")
+      isManagerLike
     ) {
       navigate(`${basePath}/caller-leads`);
     } else if (

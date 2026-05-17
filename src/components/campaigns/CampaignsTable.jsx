@@ -146,6 +146,20 @@ function ChildCampaignRow({
   onViewHistory,
   onRecycleVoicemails,
 }) {
+  const assignmentLabel =
+    child.dialerType === "auto"
+      ? child.assignedAgent?.name || "Unassigned"
+      : child.dialerType === "direct"
+        ? "Shared Direct Dialer"
+        : `${child.assignedAgents?.length || 0} Agents`;
+
+  const dialerColor =
+    child.dialerType === "auto"
+      ? "text-emerald-600 dark:text-emerald-400"
+      : child.dialerType === "direct"
+        ? "text-cyan-600 dark:text-cyan-400"
+        : "text-orange-600 dark:text-orange-400";
+
   return (
     <tr
       className={`group border-l-2 border-slate-200 transition-colors dark:border-slate-700 ${
@@ -183,11 +197,7 @@ function ChildCampaignRow({
       </td>
       <td className="px-4 py-2.5">
         <span
-          className={`text-[10px] font-bold uppercase tracking-wider ${
-            child.dialerType === "auto"
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-orange-600 dark:text-orange-400"
-          }`}
+          className={`text-[10px] font-bold uppercase tracking-wider ${dialerColor}`}
         >
           {child.dialerType}
         </span>
@@ -198,12 +208,17 @@ function ChildCampaignRow({
             {child.dialerType === "auto" ? (
               <>
                 <UserIcon className="h-3.5 w-3.5" />
-                {child.assignedAgent?.name || "Unassigned"}
+                {assignmentLabel}
+              </>
+            ) : child.dialerType === "direct" ? (
+              <>
+                <Users className="h-3.5 w-3.5" />
+                {assignmentLabel}
               </>
             ) : (
               <>
                 <Users className="h-3.5 w-3.5" />
-                {child.assignedAgents?.length || 0} Agents
+                {assignmentLabel}
               </>
             )}
           </div>
@@ -276,13 +291,15 @@ function ChildCampaignRow({
           >
             <UserIcon className="h-3.5 w-3.5" />
           </button>
-          <button
-            onClick={onRemoveAgents}
-            className="p-1.5 text-slate-400 transition hover:text-slate-600"
-            title="Unassign"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          {child.dialerType !== "direct" && (
+            <button
+              onClick={onRemoveAgents}
+              className="p-1.5 text-slate-400 transition hover:text-slate-600"
+              title="Unassign"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
             onClick={onDelete}
             className="p-1.5 text-slate-400 transition hover:text-rose-600"

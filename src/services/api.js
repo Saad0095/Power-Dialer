@@ -225,8 +225,11 @@ export const createCampaign = async (name, options = {}) => {
   return response.data.data;
 };
 
-export const getCampaigns = async () => {
-  const response = await api.get("/campaigns");
+export const getCampaigns = async (options = {}) => {
+  const includeSharedDirect = Boolean(options?.includeSharedDirect);
+  const response = await api.get("/campaigns", {
+    params: includeSharedDirect ? { includeSharedDirect: true } : undefined,
+  });
   return response.data.data;
 };
 

@@ -126,12 +126,6 @@ function getSidebarItems(role) {
         path: "/manager/caller-leads",
       },
       {
-        id: "auto-dialer",
-        label: "Auto Dialer",
-        icon: PhoneCall,
-        path: "/manager/auto-dialer",
-      },
-      {
         id: "direct-dialer",
         label: "Direct Dialer",
         icon: Phone,

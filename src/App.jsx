@@ -66,7 +66,14 @@ function App() {
               <Route path="user-management" element={<AgentManagementPage />} />
               <Route path="attendance" element={<AttendanceHistoryPage />} />
               <Route path="earnings" element={<EarningsHistoryPage />} />
-              <Route path="auto-dialer" element={<AutoDialerPage />} />
+              <Route
+                path="auto-dialer"
+                element={
+                  <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
+                    <AutoDialerPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="direct-dialer" element={<DirectDialerPage />} />
               <Route path="client-leads" element={<ManageClientOffers />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -103,7 +110,14 @@ function App() {
               <Route path="leads" element={<LeadsPage />} />
               <Route path="followups" element={<ManageCallerLeads />} />
               <Route path="power-dialer" element={<PowerDialerPage />} />
-              <Route path="auto-dialer" element={<AutoDialerPage />} />
+              <Route
+                path="auto-dialer"
+                element={
+                  <ProtectedRoute allowedRoles={[ROLES.CALLER_AGENT]}>
+                    <AutoDialerPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="direct-dialer" element={<DirectDialerPage />} />
               <Route path="earnings" element={<EarningsHistoryPage />} />
               <Route path="notifications" element={<NotificationsPage />} />

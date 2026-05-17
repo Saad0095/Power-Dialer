@@ -21,6 +21,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
 
   const isChildCampaign = Boolean(formData.parentCampaign);
   const isAutoDialer = isChildCampaign && formData.dialerType === 'auto';
+  const isDirectDialer = isChildCampaign && formData.dialerType === 'direct';
   const isParallelDialer = isChildCampaign && formData.dialerType === 'parallel';
 
   const parentCampaignOptions = useMemo(
@@ -68,6 +69,10 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
       if (name === 'dialerType') {
         if (value === 'auto') next.assignedAgents = [];
         if (value === 'parallel') next.assignedAgent = '';
+        if (value === 'direct') {
+          next.assignedAgent = '';
+          next.assignedAgents = [];
+        }
       }
 
       return next;
@@ -120,6 +125,10 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
       if (formData.parentCampaign) payload.parentCampaign = formData.parentCampaign;
       if (isChildCampaign) payload.dialerType = formData.dialerType;
       if (isAutoDialer && formData.assignedAgent) payload.assignedAgent = formData.assignedAgent;
+      if (isDirectDialer) {
+        payload.assignedAgent = null;
+        payload.assignedAgents = [];
+      }
       if (isParallelDialer) payload.assignedAgents = formData.assignedAgents;
 
       const campaign = await createCampaign(payload);
@@ -217,6 +226,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
               onChange={handleChange}
               options={[
                 { value: 'auto', label: 'Auto (Single Agent)' },
+                { value: 'direct', label: 'Direct (Shared Direct Dialer)' },
                 { value: 'parallel', label: 'Parallel (Agent Pool)' },
               ]}
               error={errors.dialerType}
@@ -233,6 +243,12 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
                 error={errors.assignedAgent}
                 placeholder="Assign an agent now (optional)..."
               />
+            )}
+
+            {isDirectDialer && (
+              <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs font-medium text-cyan-800 dark:border-cyan-900/40 dark:bg-cyan-950/20 dark:text-cyan-300">
+                Direct campaigns are shared across direct dialer users and do not require agent assignment.
+              </div>
             )}
 
             {isParallelDialer && (

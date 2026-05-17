@@ -119,6 +119,7 @@ export default function CampaignsPage() {
           const childMatchesDialer =
             !dialerTypeFilter || childCampaign.dialerType === dialerTypeFilter;
           const isAssigned =
+            childCampaign.dialerType === "direct" ||
             childCampaign.assignedAgent ||
             (childCampaign.assignedAgents &&
               childCampaign.assignedAgents.length > 0);

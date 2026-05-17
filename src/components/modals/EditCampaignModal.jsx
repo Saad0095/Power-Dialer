@@ -20,6 +20,7 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
 
   const isChildCampaign = Boolean(formData.parentCampaign);
   const isAutoDialer = isChildCampaign && formData.dialerType === 'auto';
+  const isDirectDialer = isChildCampaign && formData.dialerType === 'direct';
   const isParallelDialer = isChildCampaign && formData.dialerType === 'parallel';
 
   const parentCampaignOptions = useMemo(
@@ -78,6 +79,10 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
       if (name === 'dialerType') {
         if (value === 'auto') next.assignedAgents = [];
         if (value === 'parallel') next.assignedAgent = '';
+        if (value === 'direct') {
+          next.assignedAgent = '';
+          next.assignedAgents = [];
+        }
       }
 
       return next;
@@ -139,6 +144,10 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
       if (isChildCampaign) payload.dialerType = formData.dialerType;
       if (isAutoDialer) {
         payload.assignedAgent = sanitizeId(formData.assignedAgent) || null;
+        payload.assignedAgents = [];
+      }
+      if (isDirectDialer) {
+        payload.assignedAgent = null;
         payload.assignedAgents = [];
       }
       if (isParallelDialer) {
@@ -234,6 +243,7 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
               onChange={handleChange}
               options={[
                 { value: 'auto', label: 'Auto (Single Agent)' },
+                { value: 'direct', label: 'Direct (Shared Direct Dialer)' },
                 { value: 'parallel', label: 'Parallel (Agent Pool)' },
               ]}
               error={errors.dialerType}
@@ -251,6 +261,12 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
                 required
                 placeholder="Select an agent..."
               />
+            )}
+
+            {isDirectDialer && (
+              <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-xs font-medium text-cyan-800 dark:border-cyan-900/40 dark:bg-cyan-950/20 dark:text-cyan-300">
+                Direct campaigns are shared across direct dialer users and do not require agent assignment.
+              </div>
             )}
 
             {isParallelDialer && (

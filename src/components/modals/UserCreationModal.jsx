@@ -200,7 +200,7 @@ export default function UserCreationModal({ isOpen, onClose, onSuccess, availabl
               >
                 <option value="">None (No Team Lead)</option>
                 {allUsers
-                  .filter(u => u.role === 'team-lead' || u.role === 'manager' || u.role === 'admin')
+                  .filter(u => u.role === 'team-lead')
                   .map((u) => (
                     <option key={u._id} value={u._id}>
                       {u.name} ({getRoleLabel(u.role)})

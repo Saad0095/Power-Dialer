@@ -149,16 +149,14 @@ export default function DirectDialerPage() {
 
   // Fetch campaigns on mount
   useEffect(() => {
-    getCampaigns()
+    getCampaigns({ includeSharedDirect: true })
       .then((data) => {
-        // data contains root (parent) campaigns with their children nested
-        const autoCampaigns = [];
+        const directCampaigns = [];
         (data || []).forEach((parent) => {
           if (parent.children && parent.children.length > 0) {
             parent.children.forEach((child) => {
-              if (child.pipelineType === "caller" && child.dialerType === "auto") {
-                // Prepend parent name for clarity
-                autoCampaigns.push({
+              if (child.pipelineType === "caller" && child.dialerType === "direct") {
+                directCampaigns.push({
                   ...child,
                   displayName: `${parent.name} > ${child.name}`,
                 });
@@ -166,7 +164,15 @@ export default function DirectDialerPage() {
             });
           }
         });
-        setCampaigns(autoCampaigns);
+        directCampaigns.sort((left, right) =>
+          left.displayName.localeCompare(right.displayName),
+        );
+        setCampaigns(directCampaigns);
+        setSelectedCampaignId((current) =>
+          current && directCampaigns.some((campaign) => campaign._id === current)
+            ? current
+            : directCampaigns[0]?._id || "",
+        );
       })
       .catch((err) => console.error("Failed to load campaigns", err));
   }, []);
@@ -395,20 +401,24 @@ export default function DirectDialerPage() {
         {/* Campaign Selector */}
         <div className="mb-4">
           <label className="block text-sm text-slate-700 dark:text-slate-300 mb-1">
-            Campaign (Optional)
+            Direct Campaign
           </label>
           <select
             value={selectedCampaignId}
             onChange={(e) => setSelectedCampaignId(e.target.value)}
             className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-slate-900 dark:text-white outline-none focus:border-cyan-500"
           >
-            <option value="">No Campaign</option>
             {campaigns.map((c) => (
               <option key={c._id} value={c._id}>
                 {c.displayName}
               </option>
             ))}
           </select>
+          {campaigns.length === 0 && (
+            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+              No shared direct campaigns are available yet.
+            </p>
+          )}
         </div>
 
         <div className="mb-4">

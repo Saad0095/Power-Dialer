@@ -151,7 +151,7 @@ export default function UserEditModal({
               >
                 <option value="">None</option>
                 {(allUsers || [])
-                  .filter(u => ['team-lead', 'manager', 'admin'].includes(u.role) && u._id !== userItem._id)
+                  .filter(u => ['team-lead'].includes(u.role) && u._id !== userItem._id)
                   .map(u => (
                     <option key={u._id} value={u._id}>{u.name} ({getRoleLabel(u.role)})</option>
                   ))}

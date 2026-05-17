@@ -141,6 +141,7 @@ export default function CampaignsFiltersPanel({
           >
             <option value="">All Dialers</option>
             <option value="auto">Auto</option>
+            <option value="direct">Direct</option>
             <option value="parallel">Parallel</option>
           </select>
 
