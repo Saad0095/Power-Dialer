@@ -108,13 +108,13 @@ export default function EarningsHistoryPage() {
 
     if (activeTab === "monthly") {
       csvContent += isManagerUser 
-        ? "Month,Agent Name,Total Earnings (PKR),Total Qualifications\n"
+        ? "Month,Agent Name,Power Hour Earnings,Normal Earnings,Total Earnings (PKR),Total Qualifications\n"
         : "Month,Total Qualifications\n";
       monthlyData.forEach((row) => {
         const month = row.month || row._id;
         const agentName = `"${row.agentName || 'N/A'}"`;
         csvContent += isManagerUser
-          ? `${month},${agentName},${row.totalEarnings},${row.totalQualifications}\n`
+          ? `${month},${agentName},${row.powerHourEarnings || 0},${row.normalEarnings || 0},${row.totalEarnings},${row.totalQualifications}\n`
           : `${month},${row.totalQualifications}\n`;
       });
     } else if (selectedAgentForModal) {
@@ -127,7 +127,7 @@ export default function EarningsHistoryPage() {
         const agentEmail = `"${row.agent?.email || 'N/A'}"`;
         const campaignName = `"${row.campaign?.name || 'N/A'}"`;
         const leadName = `"${row.lead?.businessName || 'N/A'}"`;
-        const leadStatus = `"${row.lead?.appointmentStatus || 'N/A'}"`;
+        const leadStatus = `"${row.qualificationLevel || row.lead?.appointmentStatus || 'Qualified'}"`;
         const amount = row.amount;
 
         csvContent += isManagerUser

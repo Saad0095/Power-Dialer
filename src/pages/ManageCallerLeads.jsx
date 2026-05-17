@@ -309,6 +309,7 @@ export default function ManageCallerLeads() {
     showNotification("Lead updated successfully", "success");
     setShowEditModal(false);
     loadFollowupLeads();
+    window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: updated._id } }));
   };
 
   const handleUpdateStatus = (leadId) => {
@@ -324,6 +325,7 @@ export default function ManageCallerLeads() {
     showNotification("Qualification updated successfully", "success");
     setShowStatusModal(false);
     loadFollowupLeads();
+    window.dispatchEvent(new CustomEvent("lead:updated", { detail: { leadId: updated._id } }));
   };
 
   const handleCreateOffer = (lead) => {
@@ -337,8 +339,13 @@ export default function ManageCallerLeads() {
     setSelectedLeadForOffer(lead || null);
   };
 
-  const handleOfferCreated = () => {
+  const handleOfferCreated = (data) => {
     loadFollowupLeads();
+    if (data?.lead?._id || data?.callerLead) {
+      window.dispatchEvent(new CustomEvent("lead:updated", { 
+        detail: { leadId: data?.lead?._id || data?.callerLead } 
+      }));
+    }
   };
 
   const handleSearch = (e) => {

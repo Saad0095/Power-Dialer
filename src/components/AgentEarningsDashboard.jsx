@@ -74,6 +74,14 @@ const AgentEarningsDashboard = () => {
               <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
                 Rs {earnings?.totalEarnings?.toLocaleString() || 0}
               </p>
+              <div className="mt-2 flex gap-2">
+                <span className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">
+                  ⚡ Rs {earnings?.powerHourEarnings?.toLocaleString() || 0}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                  Normal Rs {earnings?.normalEarnings?.toLocaleString() || 0}
+                </span>
+              </div>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 {timeframe === "all"
                   ? "All time"

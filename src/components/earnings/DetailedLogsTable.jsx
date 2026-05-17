@@ -24,8 +24,13 @@ export default function DetailedLogsTable({
                   <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     {row.lead?.businessName || "Unknown Lead"}
                     <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      {row.lead?.appointmentStatus || "Qualified"}
+                      {row.qualificationLevel || row.lead?.appointmentStatus || "Qualified"}
                     </span>
+                    {row.earningType === "power-hour" && (
+                      <span className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-bold text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400">
+                        Power Hour ⚡
+                      </span>
+                    )}
                   </h4>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">

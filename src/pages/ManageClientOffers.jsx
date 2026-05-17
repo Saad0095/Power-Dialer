@@ -88,15 +88,25 @@ export default function ManageClientOffers() {
     refreshOffers();
   }, [refreshOffers]);
 
-  const handleOfferCreated = () => {
+  const handleOfferCreated = (data) => {
     refreshQualifiedLeads();
     refreshOffers();
     setAllowReplace(false);
+    if (data?.lead?._id || data?.callerLead) {
+      window.dispatchEvent(new CustomEvent("lead:updated", { 
+        detail: { leadId: data?.lead?._id || data?.callerLead } 
+      }));
+    }
   };
 
-  const handleOfferCancelled = () => {
+  const handleOfferCancelled = (data) => {
     refreshQualifiedLeads();
     refreshOffers();
+    if (data?.lead?._id || data?.callerLead) {
+      window.dispatchEvent(new CustomEvent("lead:updated", { 
+        detail: { leadId: data?.lead?._id || data?.callerLead } 
+      }));
+    }
   };
 
   return (
