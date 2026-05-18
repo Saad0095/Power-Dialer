@@ -133,8 +133,7 @@ export const NotificationProvider = ({ children }) => {
     // Subscribe immediately in case socket is already connected
     websocketService.on('notification:new', handleNewNotification);
 
-    // Also re-subscribe after every reconnect (socket.on fires once per call,
-    // but the underlying socket may have been replaced — the connect callback
+    // Also re-subscribe after every reconnect (the connect callback
     // ensures we always have a live subscription after reconnection)
     const resubscribe = () => {
       websocketService.off('notification:new', handleNewNotification);
@@ -143,16 +142,11 @@ export const NotificationProvider = ({ children }) => {
       fetchRecent();
     };
 
-    const socket = websocketService.socket;
-    if (socket) {
-      socket.on('connect', resubscribe);
-    }
+    websocketService.on('connect', resubscribe);
 
     return () => {
       websocketService.off('notification:new', handleNewNotification);
-      if (socket) {
-        socket.off('connect', resubscribe);
-      }
+      websocketService.off('connect', resubscribe);
     };
   }, [user, websocketService, fetchRecent]);
 

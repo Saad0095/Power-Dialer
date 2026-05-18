@@ -46,8 +46,7 @@ export default function UpdateQualificationModal({
     };
 
     if (isOpen && lead) {
-      // setStatus(lead.appointmentStatus || "qualified-level-1");
-      setStatus(currentLevel);
+      setStatus(lead.appointmentStatus || "");
       setManagerNotes(lead?.managerNotes || "");
       setRecordingLink(lead?.recordingLink || "");
       setCallQuality(lead?.callQuality || "");
@@ -64,6 +63,11 @@ export default function UpdateQualificationModal({
   const handleStatusChange = (newStatus) => {
     setStatus(newStatus);
 
+    if (newStatus === lead?.appointmentStatus || newStatus === "") {
+      setValidationError(null);
+      return;
+    }
+
     if (!allowedStatuses.includes(newStatus)) {
       setValidationError(
         `You cannot select ${newStatus}. This lead must progress sequentially.`
@@ -76,19 +80,23 @@ export default function UpdateQualificationModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!lead || !status) return;
+    if (!lead) return;
 
-    if (validationError || !allowedStatuses.includes(status)) {
+    if (status !== lead?.appointmentStatus && status !== "" && (validationError || !allowedStatuses.includes(status))) {
       onError?.("Cannot update to this status. Qualification must be sequential.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const payload = { appointmentStatus: status };
+      const payload = {};
+      if (status !== lead?.appointmentStatus) {
+        payload.appointmentStatus = status;
+      }
       if (managerNotes !== undefined) payload.managerNotes = managerNotes;
       if (recordingLink !== undefined) payload.recordingLink = recordingLink;
-        if (callQuality !== undefined && callQuality !== "") payload.callQuality = callQuality;
+      if (callQuality !== undefined) payload.callQuality = callQuality;
+      
       const updated = await updateQualification(lead._id, payload);
       onSuccess?.(updated);
       onClose();
@@ -216,15 +224,6 @@ export default function UpdateQualificationModal({
                 <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
                   Valid Update
                 </p>
-                {status.startsWith("qualified-level-") && (
-                  <p className="text-xs text-emerald-800 dark:text-emerald-200 mt-1">
-                    Agent will earn Rs 500 {
-                      status === "qualified-level-1" && lead?.wasPowerHour
-                        ? "+ Rs 500 (power hour bonus)"
-                        : ""
-                    }
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -295,9 +294,12 @@ export default function UpdateQualificationModal({
             type="submit"
             disabled={
               isLoading ||
-              status === lead?.appointmentStatus ||
               validationError ||
-              !allowedStatuses.includes(status)
+              (status !== lead?.appointmentStatus && status !== "" && !allowedStatuses.includes(status)) ||
+              (status === lead?.appointmentStatus &&
+                managerNotes === (lead?.managerNotes || "") &&
+                recordingLink === (lead?.recordingLink || "") &&
+                callQuality === (lead?.callQuality || ""))
             }
             className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2 cursor-pointer"
           >

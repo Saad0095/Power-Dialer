@@ -38,6 +38,25 @@ class WebSocketService {
         transports: ["websocket", "polling"],
       });
 
+      // Automatically bind any pre-registered (queued) listeners
+      this.listeners.forEach((callbacks, event) => {
+        if (!this.wrappedListeners.has(event)) {
+          this.wrappedListeners.set(event, new Map());
+        }
+        const eventWrappedMap = this.wrappedListeners.get(event);
+        callbacks.forEach((callback) => {
+          if (!eventWrappedMap.has(callback)) {
+            const wrappedCallback = (data) => {
+              console.log(`📡 Event received: ${event}`, data);
+              callback(data);
+            };
+            eventWrappedMap.set(callback, wrappedCallback);
+            this.socket.on(event, wrappedCallback);
+            console.log(`📡 Late-bound listener registered for event: ${event}`);
+          }
+        });
+      });
+
       this.socket.on('connect', () => {
         console.log('✅ WebSocket connected:', this.socket.id);
         this.isConnecting = false;
@@ -88,22 +107,22 @@ class WebSocketService {
    * @param {Object} user - Logged in user object
    */
   registerUser(user) {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+
     if (!this.socket) {
-      console.warn('⚠️ Cannot register user: WebSocket not initialized');
+      console.log(`⏳ Queued user registration for: ${userId} (socket not initialized yet)`);
       return;
     }
     
-    const userId = user?._id || user?.id;
-    if (userId) {
-      // Register for generic user events (notifications, etc)
-      this.socket.emit('user:register', userId);
-      console.log(`✅ Dynamically registered user on socket: ${userId}`);
-      
-      // Legacy agent registration for specific dialer features
-      if (user?.role === 'caller-agent') {
-        this.socket.emit('agent:register', userId);
-        console.log(`✅ Dynamically registered agent on socket: ${userId}`);
-      }
+    // Register for generic user events (notifications, etc)
+    this.socket.emit('user:register', userId);
+    console.log(`✅ Dynamically registered user on socket: ${userId}`);
+    
+    // Legacy agent registration for specific dialer features
+    if (user?.role === 'caller-agent') {
+      this.socket.emit('agent:register', userId);
+      console.log(`✅ Dynamically registered agent on socket: ${userId}`);
     }
   }
 
@@ -124,29 +143,32 @@ class WebSocketService {
    * @param {function} callback - Callback function
    */
   on(event, callback) {
-    if (!this.socket) {
-      console.warn(`WebSocket not initialized, cannot listen to ${event}`);
-      return;
-    }
-
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
 
-    this.listeners.get(event).push(callback);
-
-    const wrappedCallback = (data) => {
-      console.log(`📡 Event received: ${event}`, data);
-      callback(data);
-    };
-
-    if (!this.wrappedListeners.has(event)) {
-      this.wrappedListeners.set(event, new Map());
+    const callbacks = this.listeners.get(event);
+    if (callbacks.includes(callback)) {
+      return;
     }
-    this.wrappedListeners.get(event).set(callback, wrappedCallback);
+    callbacks.push(callback);
 
-    this.socket.on(event, wrappedCallback);
-    console.log(`📡 Listening to event: ${event}`);
+    if (this.socket) {
+      const wrappedCallback = (data) => {
+        console.log(`📡 Event received: ${event}`, data);
+        callback(data);
+      };
+
+      if (!this.wrappedListeners.has(event)) {
+        this.wrappedListeners.set(event, new Map());
+      }
+      this.wrappedListeners.get(event).set(callback, wrappedCallback);
+
+      this.socket.on(event, wrappedCallback);
+      console.log(`📡 Listening to event: ${event}`);
+    } else {
+      console.log(`⏳ Queued listener for event: ${event} (socket not initialized yet)`);
+    }
   }
 
   /**
@@ -155,19 +177,19 @@ class WebSocketService {
    * @param {function} callback - Callback function
    */
   off(event, callback) {
-    if (!this.socket) return;
-
-    const wrappedCallback = this.wrappedListeners.get(event)?.get(callback);
-    if (wrappedCallback) {
-      this.socket.off(event, wrappedCallback);
-      this.wrappedListeners.get(event).delete(callback);
-    }
-
     if (this.listeners.has(event)) {
       const callbacks = this.listeners.get(event);
       const index = callbacks.indexOf(callback);
       if (index > -1) {
         callbacks.splice(index, 1);
+      }
+    }
+
+    if (this.socket) {
+      const wrappedCallback = this.wrappedListeners.get(event)?.get(callback);
+      if (wrappedCallback) {
+        this.socket.off(event, wrappedCallback);
+        this.wrappedListeners.get(event).delete(callback);
       }
     }
   }
