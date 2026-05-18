@@ -73,7 +73,7 @@ export default function ManageCallerLeads() {
   const [dateFilterType, setDateFilterType] = useState("");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
-  const [dateField, setDateField] = useState("updatedAt");
+  const [dateField, setDateField] = useState("lastDialedAt");
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -376,7 +376,7 @@ export default function ManageCallerLeads() {
     setDateFilterType("");
     setCustomStartDate("");
     setCustomEndDate("");
-    setDateField("updatedAt");
+    setDateField("lastDialedAt");
     setCurrentPage(1);
   };
 
