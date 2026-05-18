@@ -84,6 +84,30 @@ class WebSocketService {
   }
 
   /**
+   * Register a user dynamically on the active socket
+   * @param {Object} user - Logged in user object
+   */
+  registerUser(user) {
+    if (!this.socket) {
+      console.warn('⚠️ Cannot register user: WebSocket not initialized');
+      return;
+    }
+    
+    const userId = user?._id || user?.id;
+    if (userId) {
+      // Register for generic user events (notifications, etc)
+      this.socket.emit('user:register', userId);
+      console.log(`✅ Dynamically registered user on socket: ${userId}`);
+      
+      // Legacy agent registration for specific dialer features
+      if (user?.role === 'caller-agent') {
+        this.socket.emit('agent:register', userId);
+        console.log(`✅ Dynamically registered agent on socket: ${userId}`);
+      }
+    }
+  }
+
+  /**
    * Disconnect from WebSocket server
    */
   disconnect() {

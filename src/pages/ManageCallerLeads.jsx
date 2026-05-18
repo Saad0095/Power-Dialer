@@ -738,7 +738,7 @@ export default function ManageCallerLeads() {
         {/* Second Row: Date + Actions */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 items-end">
           {/* Date Filter */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <select
               value={dateFilterType}
               onChange={(e) => {
@@ -776,25 +776,8 @@ export default function ManageCallerLeads() {
             )}
           </div>
 
-          {/* Date Field */}
-          <div className="lg:col-span-2">
-            <select
-              value={dateField}
-              onChange={(e) => {
-                setDateField(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3 text-sm dark:bg-slate-900"
-            >
-              <option value="">--Filter By--</option>
-              <option value="createdAt">By Lead Created Date</option>
-              <option value="lastDialedAt">By Lead Last Dialed Date</option>
-              <option value="updatedAt">By Lead Last Updated Date</option>
-            </select>
-          </div>
-
           {/* Clear */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <button
               onClick={clearAllFilters}
               className="h-11 w-full cursor-pointer rounded-lg border border-rose-300 bg-rose-50 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:bg-rose-950/30"

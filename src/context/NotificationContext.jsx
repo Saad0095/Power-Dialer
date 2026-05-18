@@ -89,6 +89,9 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user || !websocketService) return;
 
+    // Dynamically register the user on the socket room
+    websocketService.registerUser(user);
+
     const playChime = () => {
       try {
         const audioCtx = initAudioContext();
