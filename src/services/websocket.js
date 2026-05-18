@@ -1,8 +1,70 @@
 import io from 'socket.io-client';
 
-// Extract base URL from API URL (remove /api path)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-const SOCKET_BASE_URL = API_BASE_URL.replace('/api', '') || 'http://localhost:3000';
+// Extract base URL from API URL (remove /api path) safely and defensively
+const getSocketUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // 1. If VITE_API_BASE_URL is not set or empty, default to origin or localhost
+  if (!envUrl) {
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin;
+    }
+    return 'http://localhost:3000';
+  }
+
+  // 2. If it's a relative path like "/api"
+  if (envUrl.startsWith('/')) {
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin;
+    }
+    return 'http://localhost:3000';
+  }
+
+  // 3. If it's a malformed protocol-only string like "https" or "https:"
+  if (envUrl === 'https' || envUrl === 'http' || envUrl === 'https:' || envUrl === 'http:') {
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin;
+    }
+    return 'http://localhost:3000';
+  }
+
+  // 4. Try parsing it as a full URL
+  try {
+    // Normalize double slashes
+    const normalized = envUrl.replace(/([^:]\/)\/+/g, "$1");
+    
+    if (normalized.includes('://')) {
+      const url = new URL(normalized);
+      // Verify parsed host is not just "https"
+      if (url.hostname === 'https') {
+        if (typeof window !== 'undefined' && window.location) {
+          return window.location.origin;
+        }
+      }
+      return url.origin;
+    } else {
+      const url = new URL('https://' + normalized);
+      if (url.hostname === 'https') {
+        if (typeof window !== 'undefined' && window.location) {
+          return window.location.origin;
+        }
+      }
+      return url.origin;
+    }
+  } catch (e) {
+    // Fallback: strip /api from the end
+    const cleaned = envUrl.replace(/\/api\/?$/, '');
+    if (cleaned === 'https' || cleaned === 'http' || !cleaned) {
+      if (typeof window !== 'undefined' && window.location) {
+        return window.location.origin;
+      }
+    }
+    return cleaned;
+  }
+};
+
+const SOCKET_BASE_URL = getSocketUrl();
+console.log('📡 Resolved WebSocket Base URL:', SOCKET_BASE_URL);
 
 class WebSocketService {
   constructor() {
