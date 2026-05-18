@@ -29,6 +29,9 @@ import EditLeadModal from "../components/modals/EditLeadModal";
 import UpdateQualificationModal from "../components/modals/UpdateQualificationModal";
 import SelectCampaignMsg from "../components/common/SelectCampaignMsg";
 import CreateOfferModal from "../components/CreateOfferModal";
+// ─── NEW ────────────────────────────────────────────────────────────────────────
+import AgentFunnelAnalytics from "../components/AgentFunnelAnalytics";
+// ────────────────────────────────────────────────────────────────────────────────
 
 const DIALER_STATUSES = [
   "pending",
@@ -101,6 +104,7 @@ export default function ManageCallerLeads() {
     qa1: null,
     qa2: null,
     qa3: null,
+    byDisposition: {},
   });
   const tableRef = useRef(null);
   const [searchParams] = useSearchParams();
@@ -211,6 +215,7 @@ export default function ManageCallerLeads() {
         qa1: response?.stats?.qa1 || 0,
         qa2: response?.stats?.qa2 || 0,
         qa3: response?.stats?.qa3 || 0,
+        byDisposition: response?.stats?.byDisposition || {},
       });
     } catch (error) {
       console.error("Error fetching followup leads:", error);
@@ -660,6 +665,15 @@ export default function ManageCallerLeads() {
           </div>
         </div>
       </div>
+
+      {/* ─── SALES FUNNEL ANALYTICS ─────────────────────────────────────────────── */}
+      <AgentFunnelAnalytics
+        stats={stats}
+        leads={leads}
+        isLoading={isLoading}
+        onRefresh={loadFollowupLeads}
+      />
+      {/* ──────────────────────────────────────────────────────────────────────────── */}
 
       {/* Filters Section */}
       <div className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
