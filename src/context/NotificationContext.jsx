@@ -123,6 +123,15 @@ export const NotificationProvider = ({ children }) => {
     const handleNewNotification = (notification) => {
       setNotifications((prev) => [notification, ...prev].slice(0, 5));
       setUnreadCount((prev) => prev + 1);
+
+      // Check if self-triggered (avoid self popups)
+      const actorId = notification.metadata?.triggeredBy;
+      const currentUserId = user?._id || user?.id;
+      if (actorId && currentUserId && String(actorId) === String(currentUserId)) {
+        console.log("ℹ️ Skipping notification popup/chime for self-triggered event");
+        return;
+      }
+
       // Deduplicate: only push if not already in queue
       setPopupQueue((prev) =>
         prev.some((n) => n._id === notification._id) ? prev : [...prev, notification]

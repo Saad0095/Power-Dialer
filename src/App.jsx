@@ -28,6 +28,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import ClientProfilePage from "./pages/ClientProfilePage";
 import ClientDashboardPage from "./pages/ClientDashboardPage";
 import ClientMarketplacePage from "./pages/ClientMarketplacePage";
+import ClientManagementPage from "./pages/ClientManagementPage";
 import React from "react";
 import MobileBlockWrapper from "./components/MobileBlockWrapper";
 import CelebrationListener from "./components/CelebrationListener";
@@ -64,6 +65,7 @@ function App() {
               <Route path="campaigns" element={<CampaignsPage />} />
               <Route path="agents" element={<AgentAvailabilityPage />} />
               <Route path="user-management" element={<AgentManagementPage />} />
+              <Route path="client-management" element={<ClientManagementPage />} />
               <Route path="attendance" element={<AttendanceHistoryPage />} />
               <Route path="earnings" element={<EarningsHistoryPage />} />
               <Route

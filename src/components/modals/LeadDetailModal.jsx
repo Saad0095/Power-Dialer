@@ -145,9 +145,22 @@ export default function LeadDetailModal({
 
   const renderFieldValue = (key, value) => {
     if (!value) return "—";
+    if (key === "lastDialedAt" || key.endsWith("At")) {
+      const d = new Date(value);
+      return !isNaN(d.getTime())
+        ? d.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—";
+    }
     if (key.includes("Date") || key.includes("date")) {
-      return typeof value === "string"
-        ? new Date(value).toLocaleDateString()
+      const d = new Date(value);
+      return !isNaN(d.getTime())
+        ? d.toLocaleDateString()
         : "—";
     }
     if (typeof value === "boolean") {

@@ -19,6 +19,7 @@ const SENTIMENTS = [
 ];
 
 const CALL_QUALITIES = [
+  { value: '', label: 'Not Rated' },
   { value: 1, label: '1 - Very Poor' },
   { value: 2, label: '2 - Poor' },
   { value: 3, label: '3 - Fair' },
@@ -40,7 +41,7 @@ export default function CompleteCallModal({
   const [disposition, setDisposition] = useState('followup');
   const [agentNotes, setAgentNotes] = useState('');
   const [sentiment, setSentiment] = useState('neutral');
-  const [callQuality, setCallQuality] = useState(3);
+  const [callQuality, setCallQuality] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [recordingSid, setRecordingSid] = useState('');
   const [recordingUrl, setRecordingUrl] = useState('');
@@ -92,7 +93,7 @@ export default function CompleteCallModal({
         disposition,
         agentNotes,
         sentiment,
-        callQuality: parseInt(callQuality),
+        callQuality: callQuality !== '' ? parseInt(callQuality) : null,
       };
 
       if (disposition === 'followup' && followUpDate) {
@@ -112,7 +113,7 @@ export default function CompleteCallModal({
       setAgentNotes('');
       setDisposition('interested');
       setSentiment('neutral');
-      setCallQuality(3);
+      setCallQuality('');
       setFollowUpDate('');
       setRecordingSid('');
       setRecordingUrl('');

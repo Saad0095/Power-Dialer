@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useDialer } from "../hooks/useDialer";
 import SmartCampaignSelector from "../components/SmartCampaignSelector";
 import DialerControls from "../components/DialerControls";
+import CampaignClientDetailsCard from "../components/CampaignClientDetailsCard";
 import { LeadsProvider } from "../context/LeadsContext";
 import LeadsTable from "../components/LeadsTable";
 import { PhoneCall } from "lucide-react";
@@ -84,28 +85,36 @@ export default function AutoDialerPage() {
         />
         {selectedCampaignId && (
           <LeadsProvider campaignId={selectedCampaignId}>
-            <div className="mt-4 mb-6">
-              <DialerControls
-                ref={dialerRef}
-                campaignId={selectedCampaignId}
-                isDialing={isDialing}
-                setIsDialing={setIsDialing}
-                onError={(message) => showNotification(message, "error")}
-                onSuccess={(message) => showNotification(message, "success")}
-                totalLeads={1}
-                isLoading={false}
-                mode="agent"
-                agentId={user?._id}
-                isOnBreak={isOnBreak}
-                isOnDialingPause={isOnDialingPause}
-              />
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="mt-4 mb-6">
+                  <DialerControls
+                    ref={dialerRef}
+                    campaignId={selectedCampaignId}
+                    isDialing={isDialing}
+                    setIsDialing={setIsDialing}
+                    onError={(message) => showNotification(message, "error")}
+                    onSuccess={(message) => showNotification(message, "success")}
+                    totalLeads={1}
+                    isLoading={false}
+                    mode="agent"
+                    agentId={user?._id}
+                    isOnBreak={isOnBreak}
+                    isOnDialingPause={isOnDialingPause}
+                  />
+                </div>
 
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-4 px-1">
-                Campaign Queue
-              </h2>
-              <LeadsTable showNotification={showNotification} />
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-4 px-1">
+                    Campaign Queue
+                  </h2>
+                  <LeadsTable showNotification={showNotification} />
+                </div>
+              </div>
+
+              <div className="lg:col-span-1 space-y-6">
+                <CampaignClientDetailsCard campaignId={selectedCampaignId} />
+              </div>
             </div>
           </LeadsProvider>
         )}

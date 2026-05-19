@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Link, useOutletContext } from "react-router-dom";
 import { getClientOffers } from "../services/api";
+import ClientProfilePerformanceCard from "../components/ClientProfilePerformanceCard";
 
 const statusClassMap = {
   offered:
@@ -84,6 +85,8 @@ export default function ClientDashboardPage() {
           </Link>
         </div>
       </div>
+
+      <ClientProfilePerformanceCard />
 
       <div className="grid gap-4 md:grid-cols-3">
         {summaryCards.map((card) => {

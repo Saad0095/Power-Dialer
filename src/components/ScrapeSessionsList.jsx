@@ -19,6 +19,7 @@ export default function ScrapeSessionsList({
   setSelectedSessionId,
   handleDeleteSession,
   handleCancelSession,
+  handleEditSession,
   isLoadingSessions,
   isLoadingResults,
   agents = [],
@@ -341,6 +342,16 @@ export default function ScrapeSessionsList({
               </div>
               <div className="mt-3 flex items-center justify-end">
                 <div className="flex items-center gap-3">
+                  {session.status === "queued" && (
+                    <button
+                      type="button"
+                      onClick={() => handleEditSession?.(session)}
+                      className="inline-flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 hover:underline text-sm font-medium"
+                    >
+                      Edit
+                    </button>
+                  )}
+
                   {session.status === "running" && (
                     <button
                       type="button"

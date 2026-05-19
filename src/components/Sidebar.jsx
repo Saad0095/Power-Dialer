@@ -89,6 +89,12 @@ function getSidebarItems(role) {
         icon: Users,
         path: "/manager/user-management",
       },
+      {
+        id: "client-management",
+        label: "Client Management",
+        icon: BriefcaseBusiness,
+        path: "/manager/client-management",
+      },
       
         //    {
         //   id: "call-logs",

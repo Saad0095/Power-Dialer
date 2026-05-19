@@ -248,6 +248,11 @@ export const getAgentCampaignStats = async () => {
   return response.data.data;
 };
 
+export const getClientProfileStats = async (clientId) => {
+  const response = await api.get(`/campaigns/client-profile/${clientId}`);
+  return response.data.data;
+};
+
 // // GET campaigns
 // export const getCampaigns = async () => {
 //   const res = await api.get("/campaigns");
@@ -842,6 +847,11 @@ export const deleteScrapeSession = async (sessionId) => {
 export const cancelScrapeSession = async (sessionId) => {
   const response = await api.post(`/scraper/sessions/${sessionId}/cancel`);
   return response.data;
+};
+
+export const updateScrapeSession = async (sessionId, payload) => {
+  const response = await api.put(`/scraper/sessions/${sessionId}`, payload);
+  return response.data.data;
 };
 
 // ==================== Earnings ====================

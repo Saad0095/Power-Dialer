@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useDialer } from '../hooks/useDialer';
 import SmartCampaignSelector from '../components/SmartCampaignSelector';
 import DialerControls from '../components/DialerControls';
+import CampaignClientDetailsCard from '../components/CampaignClientDetailsCard';
 import { LeadsProvider } from '../context/LeadsContext';
 import LeadsTable from '../components/LeadsTable';
 import { getLeads } from '../services/api';
@@ -56,36 +57,41 @@ export default function PowerDialerPage() {
         childOnly
       />
 
-      {/* Power Dialer Controls */}
+      {/* Power Dialer Controls & Layout */}
       {selectedCampaignId && (
-        <DialerControls
-          campaignId={selectedCampaignId}
-          isDialing={isDialing}
-          setIsDialing={setIsDialing}
-          onError={(message) => showNotification(message, 'error')}
-          onSuccess={(message) => showNotification(message, 'success')}
-          totalLeads={totalLeads}
-          isLoading={false}
-          mode="power"
-          agentId={user?._id}
-        />
-      )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <DialerControls
+              campaignId={selectedCampaignId}
+              isDialing={isDialing}
+              setIsDialing={setIsDialing}
+              onError={(message) => showNotification(message, 'error')}
+              onSuccess={(message) => showNotification(message, 'success')}
+              totalLeads={totalLeads}
+              isLoading={false}
+              mode="power"
+              agentId={user?._id}
+            />
 
-      {/* Active Calls */}
-      {selectedCampaignId && activeCalls && activeCalls.length > 0 && (
-        <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-4">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-200 mb-3">Active Calls: {activeCalls.length}</h3>
-          {/* Implement ActiveCalls component or display here */}
-        </div>
-      )}
+            {/* Active Calls */}
+            {activeCalls && activeCalls.length > 0 && (
+              <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-200 mb-3">Active Calls: {activeCalls.length}</h3>
+              </div>
+            )}
 
-      {/* Leads Display */}
-      {selectedCampaignId && (
-        <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-4 px-1">Assigned Leads</h2>
-          <LeadsProvider campaignId={selectedCampaignId}>
-            <LeadsTable showNotification={showNotification} />
-          </LeadsProvider>
+            {/* Leads Display */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-4 px-1">Assigned Leads</h2>
+              <LeadsProvider campaignId={selectedCampaignId}>
+                <LeadsTable showNotification={showNotification} />
+              </LeadsProvider>
+            </div>
+          </div>
+
+          <div className="lg:col-span-1 space-y-6">
+            <CampaignClientDetailsCard campaignId={selectedCampaignId} />
+          </div>
         </div>
       )}
 

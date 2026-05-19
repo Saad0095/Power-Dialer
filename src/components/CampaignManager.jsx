@@ -132,7 +132,10 @@ export default function CampaignManager({ selectedCampaignId, onCampaignSelect, 
                     <p className="text-xs text-slate-600 dark:text-slate-400">
                       {campaign.parentCampaign ? `Child of ${getParentName(campaign)}` : 'Root campaign'}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">{getDialerSummary(campaign)}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {getDialerSummary(campaign)}
+                      {campaign.assignedClient && ` • Client: ${campaign.assignedClient.companyName || campaign.assignedClient.name}`}
+                    </p>
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
                     <button

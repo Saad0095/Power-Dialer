@@ -5,11 +5,13 @@ import { useAuth } from "../hooks/useAuth";
 import {
   getManagerOffers,
   getQualifiedLeadsPool as loadQualifiedLeadsPool,
+  getAllAgents,
 } from "../services/api";
 import CreateOfferModal from "../components/CreateOfferModal";
 import OffersManagementTable from "../components/OffersManagementTable";
 import QualifiedLeadsTable from "../components/QualifiedLeadsTable";
 import LeadDetailsModal from "../components/LeadDetailsModal";
+import ClientProfilePerformanceCard from "../components/ClientProfilePerformanceCard";
 
 const QUALIFIED_OPTIONS = [
   "",
@@ -51,6 +53,21 @@ export default function ManageClientOffers() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedLeadForPreview, setSelectedLeadForPreview] = useState(null);
   const [allowReplace, setAllowReplace] = useState(false);
+
+  const [clients, setClients] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
+
+  useEffect(() => {
+    const loadClientsList = async () => {
+      try {
+        const data = await getAllAgents({ includeClients: true });
+        setClients((data || []).filter(u => u.role === "client"));
+      } catch (err) {
+        console.error("Failed to load clients list in offers manager", err);
+      }
+    };
+    loadClientsList();
+  }, []);
 
   const refreshQualifiedLeads = useCallback(async () => {
     setIsLoadingLeads(true);
@@ -134,6 +151,32 @@ export default function ManageClientOffers() {
             <span>{offers.filter((offer) => offer.status === "offered").length} active offers</span>
           </div>
         </div>
+      </div>
+
+      {/* Client Performance Analyzer Selector */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Client Performance Analyzer</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Select any client below to inspect their real-time delivery and financial metrics.</p>
+          </div>
+          <select
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-cyan-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white min-w-[220px]"
+          >
+            <option value="">-- Choose a Client --</option>
+            {clients.map(c => (
+              <option key={c._id} value={c._id}>{c.companyName || c.name}</option>
+            ))}
+          </select>
+        </div>
+        
+        {selectedClientId && (
+          <div className="pt-2">
+            <ClientProfilePerformanceCard clientId={selectedClientId} />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

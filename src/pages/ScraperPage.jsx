@@ -2,6 +2,7 @@ import ScrapeForm from "../components/ScrapeForm";
 import ScrapeResultsTable from "../components/ScrapeResultsTable";
 import ScrapeImportPanel from "../components/ScrapeImportPanel";
 import ScrapeSessionsList from "../components/ScrapeSessionsList";
+import EditSessionModal from "../components/modals/EditSessionModal";
 import { useEffect, useState } from "react";
 import { MapPinned, RefreshCw } from "lucide-react";
 import { csvEscape, normalizeExportPhone, getProgressValue } from "../utils/scraperUtils";
@@ -24,7 +25,7 @@ import {
 const DEFAULT_FORM = {
   businessType: "",
   location: "",
-  maxResults: 20,
+  maxResults: 100,
   skipResults: 0,
   strictLocation: true,
 };
@@ -110,6 +111,14 @@ export default function ScraperPage() {
 
   // Daily leads state: { count: number, series: Array<{ label, count }> }
   const [dailyLeads, setDailyLeads] = useState({ count: 0, series: [] });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
+
+  const handleEditSession = (session) => {
+    setEditingSession(session);
+    setIsEditModalOpen(true);
+  };
 
   const canImport =
     Boolean(selectedSessionId) && results.length > 0 && selectedCampaignId;
@@ -722,6 +731,7 @@ export default function ScraperPage() {
             setSelectedSessionId={setSelectedSessionId}
             handleDeleteSession={handleDeleteSession}
             handleCancelSession={handleCancelSession}
+            handleEditSession={handleEditSession}
             isLoadingSessions={isLoadingSessions}
             isLoadingResults={isLoadingResults}
             agents={agents}
@@ -730,6 +740,25 @@ export default function ScraperPage() {
           />
         </div>
       </div>
+
+      {/* Edit Session Modal */}
+      <EditSessionModal
+        isOpen={isEditModalOpen}
+        session={editingSession}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingSession(null);
+        }}
+        onSuccess={(updated) => {
+          setSessions((prev) =>
+            prev.map((s) => (s._id === updated._id ? { ...s, ...updated } : s))
+          );
+          if (selectedSessionId === updated._id) {
+            setSelectedSession(updated);
+          }
+        }}
+        showNotification={showNotification}
+      />
     </div>
   );
 }

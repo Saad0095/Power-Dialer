@@ -12,9 +12,13 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
     dialerType: '',
     assignedAgent: '',
     assignedAgents: [],
+    assignedClient: '',
+    isLocked: false,
+    price: 150,
   });
   const [campaigns, setCampaigns] = useState([]);
   const [callerAgents, setCallerAgents] = useState([]);
+  const [clients, setClients] = useState([]);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,14 +39,24 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
     [callerAgents],
   );
 
+  const clientOptions = useMemo(
+    () => clients.map((client) => ({ value: client._id, label: client.companyName ? `${client.companyName} (${client.name})` : client.name })),
+    [clients],
+  );
+
   useEffect(() => {
     if (!isOpen) return;
 
     const loadDependencies = async () => {
       try {
-        const [campaignList, agentList] = await Promise.all([getCampaigns(), getAllAgents()]);
+        const [campaignList, agentList] = await Promise.all([
+          getCampaigns(),
+          getAllAgents({ includeClients: true }),
+        ]);
         setCampaigns(Array.isArray(campaignList) ? campaignList : []);
-        setCallerAgents((Array.isArray(agentList) ? agentList : []).filter((agent) => agent.role === 'caller-agent'));
+        const list = Array.isArray(agentList) ? agentList : [];
+        setCallerAgents(list.filter((agent) => agent.role === 'caller-agent'));
+        setClients(list.filter((agent) => agent.role === 'client'));
       } catch (error) {
         onError?.('Failed to load campaign dependencies');
       }
@@ -59,6 +73,9 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
         dialerType: campaign.dialerType || '',
         assignedAgent: campaign.assignedAgent?._id || campaign.assignedAgent || '',
         assignedAgents: (campaign.assignedAgents || []).map((agent) => agent?._id || agent).filter(Boolean),
+        assignedClient: campaign.assignedClient?._id || campaign.assignedClient || '',
+        isLocked: campaign.clientOfferDefaults?.isLocked || false,
+        price: campaign.clientOfferDefaults?.price || 150,
       });
       setErrors({});
     }
@@ -155,6 +172,16 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
         payload.assignedAgents = sanitizeArray(formData.assignedAgents);
       }
 
+      // Parent level client configuration
+      if (!payload.parentCampaign) {
+        payload.assignedClient = formData.assignedClient || null;
+        payload.clientOfferDefaults = {
+          isLocked: formData.isLocked,
+          price: Number(formData.price) || 150,
+          currency: 'USD',
+        };
+      }
+
       const updated = await updateCampaign(campaign._id, payload);
       onSuccess?.(updated);
       onClose();
@@ -227,6 +254,49 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
             </div>
           )}
         </div>
+
+        {/* Section 2.5: Client Assignment (Only for Parent Campaigns) */}
+        {!isChildCampaign && (
+          <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
+              <UserIcon className="w-3.5 h-3.5 text-slate-450" />
+              Client Assignment & Settings
+            </div>
+
+            <FormSelect
+              label="Assigned Client"
+              name="assignedClient"
+              value={formData.assignedClient}
+              onChange={handleChange}
+              options={clientOptions}
+              placeholder="Unassigned (No Client)"
+            />
+
+            {formData.assignedClient && (
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20">
+                <FormInput
+                  label="Lead Price (USD)"
+                  name="price"
+                  type="number"
+                  min="0"
+                  value={formData.price}
+                  onChange={handleChange}
+                />
+
+                <FormSelect
+                  label="Leads Status Default"
+                  name="isLocked"
+                  value={formData.isLocked ? 'locked' : 'unlocked'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, isLocked: e.target.value === 'locked' }))}
+                  options={[
+                    { value: 'unlocked', label: 'Unlocked (Auto-paid & visible)' },
+                    { value: 'locked', label: 'Locked (Requires payment)' },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Section 3: Dialer Configuration */}
         {isChildCampaign && (
