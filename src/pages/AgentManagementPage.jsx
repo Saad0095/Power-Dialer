@@ -44,9 +44,9 @@ export default function AgentManagementPage() {
 
   const getAvailableRoles = () => {
     if (user?.role === 'admin') {
-      return ['admin', 'manager', 'caller-agent', 'closer-agent', 'scrapper', 'client'];
+      return ['admin', 'manager', 'team-lead', 'caller-agent', 'closer-agent', 'scrapper', 'client'];
     } else if (user?.role === 'manager') {
-      return ['caller-agent', 'closer-agent', 'scrapper', 'client'];
+      return ['team-lead', 'caller-agent', 'closer-agent', 'scrapper', 'client'];
     } else if (user?.role === 'client') {
       return ['client'];
     }
