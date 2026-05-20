@@ -54,6 +54,7 @@ export default function PowerDialerPage() {
         onShowNotification={showNotification}
         childDialerType="parallel"
         childOnly
+        assignedToMeOnly={true}
       />
 
       {/* Power Dialer Controls */}

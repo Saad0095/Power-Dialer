@@ -45,7 +45,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess, onErro
       try {
         const [campaignList, agentList] = await Promise.all([getCampaigns(), getAllAgents()]);
         setCampaigns(Array.isArray(campaignList) ? campaignList : []);
-        setCallerAgents((Array.isArray(agentList) ? agentList : []).filter((agent) => agent.role === 'caller-agent'));
+        setCallerAgents((Array.isArray(agentList) ? agentList : []).filter((agent) => ['caller-agent', 'team-lead'].includes(agent.role)));
       } catch (error) {
         onError?.('Failed to load campaign dependencies');
       }

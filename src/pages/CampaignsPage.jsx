@@ -52,7 +52,8 @@ export default function CampaignsPage() {
     loadAgents();
   }, []);
 
-  const canBulkAssign = user?.role === 'admin' || user?.role === 'manager';
+  const canBulkAssign = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'team-lead';
+  const canCreate = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
     if (user && !checkIsManager(user?.role)) {
@@ -426,7 +427,7 @@ export default function CampaignsPage() {
       <CampaignsPageHeader
         onCreateCampaign={() => setShowCreateModal(true)}
         onRefresh={loadCampaigns}
-        canCreate={canBulkAssign}
+        canCreate={canCreate}
       />
 
       <CampaignsFiltersPanel
@@ -461,13 +462,13 @@ export default function CampaignsPage() {
         onToggleParentSelection={toggleSelectParent}
         onToggleChildSelection={toggleSelectCampaign}
         onToggleExpanded={toggleExpandedRoot}
-        onUpload={openUploadModal}
+        onUpload={canCreate ? openUploadModal : undefined}
         onEdit={handleEditClick}
-        onDelete={handleDelete}
+        onDelete={canCreate ? handleDelete : undefined}
         onViewLeads={goToCampaignLeads}
-        onRemoveAgents={handleRemoveAgents}
+        onRemoveAgents={canBulkAssign ? handleRemoveAgents : undefined}
         onViewHistory={handleViewHistory}
-        onRecycleVoicemails={handleRecycleVoicemails}
+        onRecycleVoicemails={canCreate ? handleRecycleVoicemails : undefined}
       />
 
       <CreateCampaignModal
