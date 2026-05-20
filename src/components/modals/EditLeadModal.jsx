@@ -96,7 +96,10 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave, hideClose
         seen.add(field.key);
         if (field.key in formData && !field.readOnly) {
           if (user?.role === 'caller-agent' && field.key === 'appointmentStatus') return;
-          updateData[field.key] = formData[field.key] || null;
+          const value = formData[field.key] || null;
+          // Prevent sending null for appointmentStatus to avoid backend validation errors
+          if (field.key === 'appointmentStatus' && !value) return;
+          updateData[field.key] = value;
         }
       });
       const updated =
