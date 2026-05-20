@@ -38,7 +38,7 @@ export default function ScrapeForm({ form, setForm, isStarting, onSubmit }) {
             onChange={(event) => setForm((prev) => ({ ...prev, maxResults: Number(event.target.value) }))}
             className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2.5 text-slate-900 dark:text-white outline-none focus:border-cyan-500"
           >
-            {[10, 20, 40, 60, 100, 120, 150].map((value) => (
+            {[20, 40, 60, 100, 120, 150].map((value) => (
               <option key={value} value={value}>{value}</option>
             ))}
           </select>

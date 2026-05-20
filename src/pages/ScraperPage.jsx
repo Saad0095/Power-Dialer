@@ -24,7 +24,7 @@ import {
 const DEFAULT_FORM = {
   businessType: "",
   location: "",
-  maxResults: 20,
+  maxResults: 150,
   skipResults: 0,
   strictLocation: true,
 };
