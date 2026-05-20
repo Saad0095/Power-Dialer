@@ -67,7 +67,7 @@ export default function CampaignsPage() {
       const response = await getAllAgents();
       const allAgents = response.data || response;
       let filtered = allAgents.filter(
-        (agent) => agent.role === "caller-agent" || agent.role === "closer-agent",
+        (agent) => agent.role === "caller-agent" || agent.role === "closer-agent" || agent.role === "team-lead",
       );
 
       // If current user is a team-lead, only show their team members
