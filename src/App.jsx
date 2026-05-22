@@ -71,7 +71,7 @@ function App() {
               <Route
                 path="auto-dialer"
                 element={
-                  <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]}>
+                  <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.TEAM_LEAD]}>
                     <AutoDialerPage />
                   </ProtectedRoute>
                 }
@@ -115,7 +115,7 @@ function App() {
               <Route
                 path="auto-dialer"
                 element={
-                  <ProtectedRoute allowedRoles={[ROLES.CALLER_AGENT]}>
+                  <ProtectedRoute allowedRoles={[ROLES.CALLER_AGENT, ROLES.TEAM_LEAD]}>
                     <AutoDialerPage />
                   </ProtectedRoute>
                 }
