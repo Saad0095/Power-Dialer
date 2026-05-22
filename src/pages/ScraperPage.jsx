@@ -444,10 +444,43 @@ export default function ScraperPage() {
       const blob = new Blob([rows.join("\n")], {
         type: "text/csv;charset=utf-8",
       });
+
+      let fileName = `scrape-${selectedSessionId || Date.now()}.csv`;
+      if (selectedSession && selectedSession.businessType && selectedSession.location) {
+        const safeBiz = selectedSession.businessType.replace(/[^a-z0-9 -]/gi, '').trim();
+        const safeLoc = selectedSession.location.replace(/[^a-z0-9 -]/gi, '').trim();
+        fileName = `${safeBiz} in ${safeLoc}.csv`;
+      }
+
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "CSV File",
+                accept: { "text/csv": [".csv"] },
+              },
+            ],
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          showNotification?.("File saved successfully", "success");
+          return;
+        } catch (err) {
+          if (err.name === "AbortError") {
+            return; // User canceled the picker
+          }
+          console.error("SaveFilePicker error:", err);
+          // Fall back to standard download
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `scrape-${selectedSessionId || Date.now()}.csv`;
+      link.download = fileName;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
