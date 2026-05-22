@@ -10,6 +10,7 @@ export default function SmartCampaignSelector({
   pipelineType = "caller",
   childDialerType = null,
   childOnly = false,
+  assignedToMeOnly = false,
 }) {
   const [campaigns, setCampaigns] = useState([]);
   const [search, setSearch] = useState("");
@@ -51,7 +52,7 @@ export default function SmartCampaignSelector({
       try {
         setIsLoading(true);
 
-        const data = await getCampaigns();
+        const data = await getCampaigns({ assignedToMeOnly });
         const roots = Array.isArray(data) ? data : data?.data || [];
 
         const filtered = roots
