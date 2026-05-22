@@ -96,7 +96,10 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave, hideClose
         seen.add(field.key);
         if (field.key in formData && !field.readOnly) {
           if (user?.role === 'caller-agent' && field.key === 'appointmentStatus') return;
-          updateData[field.key] = formData[field.key] || null;
+          const value = formData[field.key] || null;
+          // Prevent sending null for appointmentStatus to avoid backend validation errors
+          if (field.key === 'appointmentStatus' && !value) return;
+          updateData[field.key] = value;
         }
       });
       const updated =
@@ -245,7 +248,7 @@ export default function EditLeadModal({ isOpen, lead, onClose, onSave, hideClose
 
         {!canEdit && (
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-3 flex items-start gap-3">
-            <Loader2 className="w-4 h-4 text-amber-600" />
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-sm text-amber-700">This appointment date has passed — agents cannot edit appointment leads after the appointment date.</p>
           </div>
         )}
