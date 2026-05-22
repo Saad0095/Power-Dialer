@@ -26,6 +26,10 @@ function RootCampaignRow({
   onViewHistory,
   onRecycleVoicemails,
 }) {
+  const assignedClientName = root.assignedClient
+    ? root.assignedClient.companyName || root.assignedClient.name
+    : null;
+
   return (
     <tr
       className={`group transition-colors ${
@@ -58,7 +62,14 @@ function RootCampaignRow({
               }`}
             />
           </button>
-          <span>{root.name}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            {assignedClientName && (
+              <span className="max-w-48 truncate rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                {assignedClientName}
+              </span>
+            )}
+            <span className="truncate">{root.name}</span>
+          </div>
         </div>
       </td>
       <td className="px-4 py-3">
