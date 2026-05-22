@@ -82,7 +82,6 @@ export default function AutoDialerPage() {
           onShowNotification={showNotification}
           childDialerType="auto"
           childOnly
-          assignedToMeOnly={true}
         />
         {selectedCampaignId && (
           <LeadsProvider campaignId={selectedCampaignId}>

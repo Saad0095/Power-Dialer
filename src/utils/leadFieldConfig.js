@@ -21,6 +21,7 @@ export const LEAD_FIELD_CONFIG = {
     { key: 'frequency', label: 'Frequency', type: 'text', readOnly: false },
     { key: 'currentChallenges', label: 'Current Challenges', type: 'textarea', readOnly: false },
     { key: 'interestLevel', label: 'Interest Level', type: 'select', options: ['cold', 'warm', 'hot'], readOnly: false },
+    { key: 'agentNotes', label: 'Notes', type: 'textarea', readOnly: false },
     { key: 'appointmentDate', label: 'Appointment Date', type: 'date', readOnly: false },
     { key: 'appointmentTime', label: 'Appointment Time', type: 'time', readOnly: false },
   ],

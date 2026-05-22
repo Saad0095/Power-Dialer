@@ -110,16 +110,14 @@ function RootCampaignRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
-          {onUpload && (
-            <button
-              onClick={onUpload}
-              className="p-2 text-slate-400 transition hover:text-primary-600"
-              title="Upload Leads"
-            >
-              <Upload className="h-4 w-4" />
-            </button>
-          )}
-          {onRecycleVoicemails && root.children?.length > 0 && (
+          <button
+            onClick={onUpload}
+            className="p-2 text-slate-400 transition hover:text-primary-600"
+            title="Upload Leads"
+          >
+            <Upload className="h-4 w-4" />
+          </button>
+          {root.children?.length > 0 && (
             <button
               onClick={onRecycleVoicemails}
               className="p-2 text-slate-400 transition hover:text-emerald-600"
@@ -128,24 +126,20 @@ function RootCampaignRow({
               <RotateCcw className="h-4 w-4" />
             </button>
           )}
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="p-2 text-slate-400 transition hover:text-amber-600"
-              title="Edit"
-            >
-              <Edit2 className="h-4 w-4" />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="p-2 text-slate-400 transition hover:text-rose-600"
-              title="Delete"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
+          <button
+            onClick={onEdit}
+            className="p-2 text-slate-400 transition hover:text-amber-600"
+            title="Edit"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 text-slate-400 transition hover:text-rose-600"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </td>
     </tr>
@@ -294,25 +288,21 @@ function ChildCampaignRow({
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </button>
-          {onRecycleVoicemails && (
-            <button
-              onClick={onRecycleVoicemails}
-              className="p-1.5 text-slate-400 transition hover:text-emerald-600"
-              title="Recycle Voicemails"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              className="p-1.5 text-slate-400 transition hover:text-amber-600"
-              title="Assign/Edit"
-            >
-              <UserIcon className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {onRemoveAgents && child.dialerType !== "direct" && (
+          <button
+            onClick={onRecycleVoicemails}
+            className="p-1.5 text-slate-400 transition hover:text-emerald-600"
+            title="Recycle Voicemails"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={onEdit}
+            className="p-1.5 text-slate-400 transition hover:text-amber-600"
+            title="Assign/Edit"
+          >
+            <UserIcon className="h-3.5 w-3.5" />
+          </button>
+          {child.dialerType !== "direct" && (
             <button
               onClick={onRemoveAgents}
               className="p-1.5 text-slate-400 transition hover:text-slate-600"
@@ -321,15 +311,13 @@ function ChildCampaignRow({
               <X className="h-3.5 w-3.5" />
             </button>
           )}
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              className="p-1.5 text-slate-400 transition hover:text-rose-600"
-              title="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            onClick={onDelete}
+            className="p-1.5 text-slate-400 transition hover:text-rose-600"
+            title="Delete"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
       </td>
     </tr>
