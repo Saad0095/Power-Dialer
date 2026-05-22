@@ -52,8 +52,7 @@ export default function CampaignsPage() {
     loadAgents();
   }, []);
 
-  const canBulkAssign = user?.role === 'admin' || user?.role === 'manager' || user?.role === 'team-lead';
-  const canCreate = user?.role === 'admin' || user?.role === 'manager';
+  const canBulkAssign = user?.role === 'admin' || user?.role === 'manager';
 
   useEffect(() => {
     if (user && !checkIsManager(user?.role)) {
@@ -67,7 +66,7 @@ export default function CampaignsPage() {
       const response = await getAllAgents();
       const allAgents = response.data || response;
       let filtered = allAgents.filter(
-        (agent) => agent.role === "caller-agent" || agent.role === "closer-agent" || agent.role === "team-lead",
+        (agent) => agent.role === "caller-agent" || agent.role === "closer-agent",
       );
 
       // If current user is a team-lead, only show their team members
@@ -427,7 +426,7 @@ export default function CampaignsPage() {
       <CampaignsPageHeader
         onCreateCampaign={() => setShowCreateModal(true)}
         onRefresh={loadCampaigns}
-        canCreate={canCreate}
+        canCreate={canBulkAssign}
       />
 
       <CampaignsFiltersPanel
@@ -462,13 +461,13 @@ export default function CampaignsPage() {
         onToggleParentSelection={toggleSelectParent}
         onToggleChildSelection={toggleSelectCampaign}
         onToggleExpanded={toggleExpandedRoot}
-        onUpload={canCreate ? openUploadModal : undefined}
+        onUpload={openUploadModal}
         onEdit={handleEditClick}
-        onDelete={canCreate ? handleDelete : undefined}
+        onDelete={handleDelete}
         onViewLeads={goToCampaignLeads}
-        onRemoveAgents={canBulkAssign ? handleRemoveAgents : undefined}
+        onRemoveAgents={handleRemoveAgents}
         onViewHistory={handleViewHistory}
-        onRecycleVoicemails={canCreate ? handleRecycleVoicemails : undefined}
+        onRecycleVoicemails={handleRecycleVoicemails}
       />
 
       <CreateCampaignModal
