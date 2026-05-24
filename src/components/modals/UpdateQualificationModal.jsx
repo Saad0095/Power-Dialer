@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Modal from "../common/Modal.jsx";
 import { updateQualification, getAllowedQualifications } from "../../services/api.js";
 import { Loader, AlertCircle, CheckCircle } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth.js";
 
 const ALL_QUALIFICATION_OPTIONS = [
   { value: "qualified-level-1", label: "Qualified - Level 1", level: 1 },
@@ -20,6 +21,7 @@ export default function UpdateQualificationModal({
   onSuccess,
   onError,
 }) {
+  const { user } = useAuth();
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [allowedStatuses, setAllowedStatuses] = useState([]);
@@ -28,6 +30,7 @@ export default function UpdateQualificationModal({
   const [managerNotes, setManagerNotes] = useState(lead?.managerNotes || "");
   const [recordingLink, setRecordingLink] = useState(lead?.recordingLink || "");
   const [callQuality, setCallQuality] = useState(lead?.callQuality || "");
+  const isCallerAgent = user?.role === "caller-agent";
 
   useEffect(() => {
     const fetchAllowedStatuses = async () => {
@@ -153,11 +156,12 @@ export default function UpdateQualificationModal({
         {currentLevel && (
           <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
             <p className="text-xs font-medium text-blue-900 dark:text-blue-300">
-              ℹ️ Sequential Qualification Required
+              {isCallerAgent ? "Appointment Confirmation Step" : "Sequential Qualification Required"}
             </p>
             <p className="mt-1 text-xs text-blue-800 dark:text-blue-200">
-              Leads must progress through levels: L1 → L2 → L3. You cannot skip
-              levels.
+              {isCallerAgent
+                ? "Confirming this appointment moves the lead to Qualified Level 1 and notifies leadership to review it for Level 2."
+                : "Leads must progress through levels: L1 → L2 → L3. You cannot skip levels."}
             </p>
           </div>
         )}
@@ -250,38 +254,42 @@ export default function UpdateQualificationModal({
 
         {/* Buttons */}
         {/* Manager notes + recording link (admin/manager only) */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Manager Notes</label>
-          <textarea
-            value={managerNotes}
-            onChange={(e) => setManagerNotes(e.target.value)}
-            placeholder="Internal notes for this qualification"
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2"
-          />
-        </div>
+        {!isCallerAgent && (
+          <>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Manager Notes</label>
+              <textarea
+                value={managerNotes}
+                onChange={(e) => setManagerNotes(e.target.value)}
+                placeholder="Internal notes for this qualification"
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+              />
+            </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Recording Link</label>
-          <input
-            value={recordingLink}
-            onChange={(e) => setRecordingLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Call Quality</label>
-          <select
-            value={callQuality}
-            onChange={(e) => setCallQuality(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition appearance-none bg-white dark:bg-slate-900 bg-clip-padding pr-10"
-          >
-            <option value="">Not Rated</option>
-            <option value="average">Average</option>
-            <option value="below-average">Below Average</option>
-            <option value="best">Best</option>
-          </select>
-        </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Recording Link</label>
+              <input
+                value={recordingLink}
+                onChange={(e) => setRecordingLink(e.target.value)}
+                placeholder="https://..."
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:ring-2"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Call Quality</label>
+              <select
+                value={callQuality}
+                onChange={(e) => setCallQuality(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition appearance-none bg-white dark:bg-slate-900 bg-clip-padding pr-10"
+              >
+                <option value="">Not Rated</option>
+                <option value="average">Average</option>
+                <option value="below-average">Below Average</option>
+                <option value="best">Best</option>
+              </select>
+            </div>
+          </>
+        )}
         <div className="flex gap-3 justify-end mt-6">
           <button
             type="button"
@@ -304,7 +312,11 @@ export default function UpdateQualificationModal({
             className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2 cursor-pointer"
           >
             {isLoading && <Loader className="w-4 h-4 animate-spin" />}
-            {isLoading ? "Updating..." : "Confirm Update"}
+            {isLoading
+              ? "Updating..."
+              : isCallerAgent
+                ? "Confirm Appointment"
+                : "Confirm Update"}
           </button>
         </div>
       </form>

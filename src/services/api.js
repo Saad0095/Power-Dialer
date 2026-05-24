@@ -357,7 +357,9 @@ export const getLeads = async (campaignId, options = {}) => {
     search = null,
     disposition = null,
     appointmentStatus = null,
+    confirmationStatus = null,
     agentId = null,
+    clientId = null,
     assignedOnly = false,
     filterType = null,
     startDate = null,
@@ -373,7 +375,10 @@ export const getLeads = async (campaignId, options = {}) => {
   if (disposition) url += `&disposition=${encodeURIComponent(disposition)}`;
   if (appointmentStatus)
     url += `&appointmentStatus=${encodeURIComponent(appointmentStatus)}`;
+  if (confirmationStatus)
+    url += `&confirmationStatus=${encodeURIComponent(confirmationStatus)}`;
   if (agentId) url += `&agentId=${encodeURIComponent(agentId)}`;
+  if (clientId) url += `&clientId=${encodeURIComponent(clientId)}`;
   if (assignedOnly) url += `&assignedOnly=true`;
   if (filterType) url += `&filterType=${encodeURIComponent(filterType)}`;
   if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
@@ -421,6 +426,11 @@ export const updateQualificationStatus = async (id, status) => {
   const response = await api.patch(`/caller-leads/${id}/qualification`, {
     appointmentStatus: status,
   });
+  return response.data.data;
+};
+
+export const requestAppointmentConfirmation = async (id) => {
+  const response = await api.post(`/caller-leads/${id}/confirm-appointment`);
   return response.data.data;
 };
 

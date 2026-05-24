@@ -22,6 +22,26 @@ import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function CampaignsPage() {
+  const PKT_NOON_UTC_HOUR = 7;
+  const getPkNoonBoundary = (dateValue) => {
+    if (!dateValue) return null;
+    const [year, month, day] = String(dateValue).split("-").map(Number);
+    if (!year || !month || !day) return null;
+    return new Date(Date.UTC(year, month - 1, day, PKT_NOON_UTC_HOUR, 0, 0, 0));
+  };
+  const matchesPkNoonRange = (value, range) => {
+    if (!value) return false;
+    const target = new Date(value);
+    if (Number.isNaN(target.getTime())) return false;
+
+    const startBoundary = getPkNoonBoundary(range?.start);
+    const endBoundary = getPkNoonBoundary(range?.end);
+
+    if (startBoundary && target < startBoundary) return false;
+    if (endBoundary && target > endBoundary) return false;
+    return true;
+  };
+
   const { showNotification } = useOutletContext();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +58,7 @@ export default function CampaignsPage() {
   const [historyCampaign, setHistoryCampaign] = useState(null);
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [agents, setAgents] = useState([]);
+  const [clients, setClients] = useState([]);
   const [expandedRootIds, setExpandedRootIds] = useState(new Set());
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadParentCampaign, setUploadParentCampaign] = useState(null);
@@ -45,6 +66,7 @@ export default function CampaignsPage() {
   const [isBulkAssigning, setIsBulkAssigning] = useState(false);
   const [dialerTypeFilter, setDialerTypeFilter] = useState("");
   const [assignmentFilter, setAssignmentFilter] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState("");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
 
   useEffect(() => {
@@ -64,11 +86,18 @@ export default function CampaignsPage() {
 
   const loadAgents = async () => {
     try {
-      const response = await getAllAgents();
+      const response = await getAllAgents({ includeClients: true });
       const allAgents = response.data || response;
       let filtered = allAgents.filter(
         (agent) => agent.role === "caller-agent" || agent.role === "closer-agent" || agent.role === "team-lead",
       );
+      const availableClients = allAgents
+        .filter((agent) => agent.role === "client")
+        .sort((left, right) =>
+          String(left.companyName || left.name || "").localeCompare(
+            String(right.companyName || right.name || ""),
+          ),
+        );
 
       // If current user is a team-lead, only show their team members
       if (user?.role === 'team-lead') {
@@ -76,6 +105,7 @@ export default function CampaignsPage() {
       }
 
       setAgents(filtered);
+      setClients(availableClients);
     } catch (error) {
       showNotification("Failed to load agents", "error");
     }
@@ -109,6 +139,11 @@ export default function CampaignsPage() {
   const filteredCampaigns = useMemo(() => {
     return campaigns
       .map((rootCampaign) => {
+        const rootClientId = String(
+          rootCampaign.assignedClient?._id || rootCampaign.assignedClient || "",
+        );
+        const rootMatchesClient =
+          !selectedClientId || rootClientId === String(selectedClientId);
         const rootMatchesSearch =
           !searchTerm ||
           rootCampaign.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -128,18 +163,10 @@ export default function CampaignsPage() {
             !assignmentFilter ||
             (assignmentFilter === "assigned" ? isAssigned : !isAssigned);
 
-          let childMatchesDate = true;
-          if (dateRange.start) {
-            childMatchesDate =
-              childMatchesDate &&
-              new Date(childCampaign.createdAt) >= new Date(dateRange.start);
-          }
-          if (dateRange.end) {
-            childMatchesDate =
-              childMatchesDate &&
-              new Date(childCampaign.createdAt) <=
-                new Date(`${dateRange.end}T23:59:59`);
-          }
+          const childMatchesDate =
+            !dateRange.start && !dateRange.end
+              ? true
+              : matchesPkNoonRange(childCampaign.createdAt, dateRange);
 
           return (
             childMatchesSearch &&
@@ -151,6 +178,7 @@ export default function CampaignsPage() {
 
         if (
           rootMatchesSearch &&
+          rootMatchesClient &&
           !dialerTypeFilter &&
           !assignmentFilter &&
           !dateRange.start &&
@@ -170,25 +198,22 @@ export default function CampaignsPage() {
         const rootMatchesPipeline =
           !pipelineTypeFilter ||
           rootCampaign.pipelineType === pipelineTypeFilter;
+        const rootClientId = String(
+          rootCampaign.assignedClient?._id || rootCampaign.assignedClient || "",
+        );
+        const rootMatchesClient =
+          !selectedClientId || rootClientId === String(selectedClientId);
+        const rootMatchesDate =
+          !dateRange.start && !dateRange.end
+            ? true
+            : matchesPkNoonRange(rootCampaign.createdAt, dateRange);
 
-        let rootMatchesDate = true;
-        if (dateRange.start) {
-          rootMatchesDate =
-            rootMatchesDate &&
-            new Date(rootCampaign.createdAt) >= new Date(dateRange.start);
-        }
-        if (dateRange.end) {
-          rootMatchesDate =
-            rootMatchesDate &&
-            new Date(rootCampaign.createdAt) <=
-              new Date(`${dateRange.end}T23:59:59`);
-        }
-
-        return rootMatchesPipeline && rootMatchesDate;
+        return rootMatchesPipeline && rootMatchesClient && rootMatchesDate;
       });
   }, [
     assignmentFilter,
     campaigns,
+    selectedClientId,
     dateRange,
     dialerTypeFilter,
     pipelineTypeFilter,
@@ -439,6 +464,7 @@ export default function CampaignsPage() {
         selectedAgentId={selectedAgentId}
         onSelectedAgentChange={setSelectedAgentId}
         agents={agents}
+        clients={clients}
         onBulkAssign={canBulkAssign ? handleBulkAssign : undefined}
         onClearSelected={handleClearSelected}
         isBulkAssigning={isBulkAssigning}
@@ -446,6 +472,8 @@ export default function CampaignsPage() {
         onDialerTypeChange={setDialerTypeFilter}
         assignmentFilter={assignmentFilter}
         onAssignmentFilterChange={setAssignmentFilter}
+        selectedClientId={selectedClientId}
+        onSelectedClientChange={setSelectedClientId}
         dateRange={dateRange}
         onDateRangeChange={setDateRange}
         onResetDateRange={() => setDateRange({ start: "", end: "" })}

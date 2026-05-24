@@ -59,6 +59,12 @@ const APPOINTMENT_STATUSES = [
   "onhold",
 ];
 
+const CONFIRMATION_FILTERS = [
+  { value: "", label: "All Appointments" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "not-confirmed", label: "Not Confirmed" },
+];
+
 const QUALIFIED_STATUSES = new Set([
   "qualified-level-1",
   "qualified-level-2",
@@ -70,7 +76,7 @@ export default function ManageCallerLeads() {
   const { user } = useAuth();
   const canExport = ["admin", "manager"].includes(user?.role);
   const canManageLeads = ["admin", "manager"].includes(user?.role);
-  const canQualifyAppointments = ["admin", "manager", "team-lead"].includes(
+  const canQualifyAppointments = ["admin", "manager", "team-lead", "caller-agent"].includes(
     user?.role,
   );
   const [dateFilterType, setDateFilterType] = useState("");
@@ -85,7 +91,10 @@ export default function ManageCallerLeads() {
   const [selectedDisposition, setSelectedDisposition] = useState("");
   const [selectedAppointmentStatus, setSelectedAppointmentStatus] =
     useState("");
+  const [selectedConfirmationStatus, setSelectedConfirmationStatus] =
+    useState("");
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedClient, setSelectedClient] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -98,6 +107,7 @@ export default function ManageCallerLeads() {
   const [selectedLeadForOffer, setSelectedLeadForOffer] = useState(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [agents, setAgents] = useState([]);
+  const [clients, setClients] = useState([]);
   const [stats, setStats] = useState({
     total: null,
     inProcess: null,
@@ -197,7 +207,9 @@ export default function ManageCallerLeads() {
         status: selectedDialerStatus || null,
         disposition: selectedDisposition || null,
         appointmentStatus: selectedAppointmentStatus || null,
+        confirmationStatus: selectedConfirmationStatus || null,
         agentId: selectedAgent || null,
+        clientId: selectedClient || null,
         assignedOnly: true,
         filterType: dateFilterType || null,
         startDate: customStartDate || null,
@@ -233,7 +245,9 @@ export default function ManageCallerLeads() {
     selectedDialerStatus,
     selectedDisposition,
     selectedAppointmentStatus,
+    selectedConfirmationStatus,
     selectedAgent,
+    selectedClient,
     dateFilterType,
     customStartDate,
     customEndDate,
@@ -290,8 +304,9 @@ export default function ManageCallerLeads() {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const users = await getAllAgents();
-        const callerOnly = (Array.isArray(users) ? users : [])
+        const users = await getAllAgents({ includeClients: true });
+        const allUsers = Array.isArray(users) ? users : [];
+        const callerOnly = allUsers
           .filter((user) => user.role === "caller-agent")
           .map((user) => ({
             _id: user._id,
@@ -299,7 +314,15 @@ export default function ManageCallerLeads() {
             email: user.email,
           }))
           .sort((a, b) => a.name.localeCompare(b.name));
+        const clientOnly = allUsers
+          .filter((user) => user.role === "client")
+          .map((user) => ({
+            _id: user._id,
+            name: user.companyName || user.name || user.email,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
         setAgents(callerOnly);
+        setClients(clientOnly);
       } catch (error) {
         console.error("Error loading caller agents:", error);
       }
@@ -377,7 +400,9 @@ export default function ManageCallerLeads() {
     setSelectedDialerStatus("");
     setSelectedDisposition("");
     setSelectedAppointmentStatus("");
+    setSelectedConfirmationStatus("");
     setSelectedAgent("");
+    setSelectedClient("");
     setDateFilterType("");
     setCustomStartDate("");
     setCustomEndDate("");
@@ -710,6 +735,24 @@ export default function ManageCallerLeads() {
             </select>
           </div>
 
+          {/* Confirmation */}
+          <div className="lg:col-span-2">
+            <select
+              value={selectedConfirmationStatus}
+              onChange={(e) => {
+                setSelectedConfirmationStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
+            >
+              {CONFIRMATION_FILTERS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Disposition */}
           <div className="lg:col-span-2">
             <select
@@ -730,7 +773,7 @@ export default function ManageCallerLeads() {
           </div>
 
           {/* Agent */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-1">
             <select
               value={selectedAgent}
               onChange={(e) => {
@@ -743,6 +786,25 @@ export default function ManageCallerLeads() {
               {agents.map((agent) => (
                 <option key={agent._id} value={agent._id}>
                   {agent.name || agent.email}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Client */}
+          <div className="lg:col-span-3">
+            <select
+              value={selectedClient}
+              onChange={(e) => {
+                setSelectedClient(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-11 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-600 dark:bg-slate-900"
+            >
+              <option value="">All Clients</option>
+              {clients.map((client) => (
+                <option key={client._id} value={client._id}>
+                  {client.name}
                 </option>
               ))}
             </select>

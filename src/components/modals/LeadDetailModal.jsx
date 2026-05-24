@@ -2,7 +2,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth.js";
 import { getCallerVisibleFields } from "../../utils/leadFieldConfig.js";
 import Modal from "../common/Modal.jsx";
-import { getLead, unlockManagerOffer } from "../../services/api.js";
+import {
+  getLead,
+  unlockManagerOffer,
+  requestAppointmentConfirmation,
+} from "../../services/api.js";
 import {
   Edit3,
   ListChecks,
@@ -112,6 +116,12 @@ export default function LeadDetailModal({
   const isManager = user?.role === "manager";
   const hasOffer = Boolean(lead.currentOffer);
   const hasEverBeenOffered = Boolean(lead.hasEverBeenOffered);
+  const assignedClientLabel = lead.assignedClient
+    ? lead.assignedClient.companyName ||
+      lead.assignedClient.name ||
+      lead.assignedClient.email ||
+      "Assigned Client"
+    : null;
   const canCreateOffer =
     !hasOffer &&
     !hasEverBeenOffered &&
@@ -122,6 +132,12 @@ export default function LeadDetailModal({
     lead.currentOffer.status === "offered" &&
     !lead.currentOffer.isUnlocked &&
     (user?.role === "admin" || user?.role === "manager");
+  const isCallerAgent = user?.role === "caller-agent";
+  const canConfirmAppointment =
+    isCallerAgent &&
+    lead.disposition === "appointment" &&
+    ["in-process", "qualified-level-1"].includes(lead.appointmentStatus || "") &&
+    !lead.appointmentConfirmationRequestedAt;
 
   const handleUnlockOffer = async () => {
     if (
@@ -138,6 +154,30 @@ export default function LeadDetailModal({
     } catch (error) {
       console.error("Failed to unlock offer", error);
       alert(error.response?.data?.error || "Failed to unlock offer");
+    } finally {
+      setIsActioning(false);
+    }
+  };
+
+  const handleConfirmAppointment = async () => {
+    if (
+      !window.confirm(
+        `Confirm appointment for ${lead.businessName || "this lead"}?`,
+      )
+    ) {
+      return;
+    }
+
+    setIsActioning(true);
+    try {
+      await requestAppointmentConfirmation(lead._id);
+      await loadLead();
+      window.dispatchEvent(
+        new CustomEvent("lead:updated", { detail: { leadId: lead._id } }),
+      );
+    } catch (error) {
+      console.error("Failed to confirm appointment", error);
+      alert(error.response?.data?.error || "Failed to confirm appointment");
     } finally {
       setIsActioning(false);
     }
@@ -260,6 +300,16 @@ export default function LeadDetailModal({
             <span className="text-xs text-slate-500">Client Access</span>
           </div>
         )}
+        {assignedClientLabel && (
+          <div className="col-span-2 md:col-span-4 rounded-lg border border-cyan-200 bg-cyan-50/70 px-4 py-3 dark:border-cyan-900/40 dark:bg-cyan-950/20">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">
+              Assigned Client
+            </span>
+            <span className="mt-1 block text-sm font-medium text-slate-900 dark:text-white">
+              {assignedClientLabel}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Fields Grid - Role-based */}
@@ -311,8 +361,20 @@ export default function LeadDetailModal({
             Edit
           </button>
         )}
+        {canConfirmAppointment && (
+          <button
+            onClick={handleConfirmAppointment}
+            disabled={isActioning}
+            className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-2 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:opacity-50"
+          >
+            <ListChecks className="w-4 h-4" />
+            {isActioning ? "Confirming..." : "Confirm Appointment"}
+          </button>
+        )}
         {onStatusUpdate &&
-          (user?.role === "manager" || user?.role === "admin" || user?.role === "team-lead") && (
+          (user?.role === "manager" ||
+            user?.role === "admin" ||
+            user?.role === "team-lead") && (
             <button
               onClick={() => onStatusUpdate?.(lead)}
               className="px-5 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition flex items-center gap-2 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
