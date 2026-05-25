@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getNotifications } from '../services/api';
 import { useNotificationContext } from '../context/NotificationContext';
 import { Bell, Check, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { getRoleHomeRoute } from '../utils/roleUtils';
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -11,6 +16,7 @@ export default function NotificationsPage() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   
   const { markAsRead, markAllAsRead } = useNotificationContext();
+  const basePath = getRoleHomeRoute(user?.role);
 
   const fetchNotifications = async (pageNum = 1) => {
     try {
@@ -52,6 +58,12 @@ export default function NotificationsPage() {
       setPage(nextPage);
       fetchNotifications(nextPage);
     }
+  };
+
+  const openLinkedTask = (notification) => {
+    const taskId = notification?.metadata?.taskId;
+    if (!taskId) return;
+    navigate(`${basePath}/tasks?taskId=${taskId}`);
   };
 
   return (
@@ -121,6 +133,13 @@ export default function NotificationsPage() {
                       <h4 className={`text-base mb-1 ${!notification.isRead ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>
                         {notification.title}
                       </h4>
+                      {notification.metadata?.isTask && notification.metadata?.taskStatus !== "completed" ? (
+                        <div className="mb-2">
+                          <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                            Action required
+                          </span>
+                        </div>
+                      ) : null}
                       <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
                         {notification.message}
                       </p>
@@ -129,6 +148,17 @@ export default function NotificationsPage() {
                       {new Date(notification.createdAt).toLocaleString()}
                     </span>
                   </div>
+
+                  {notification.metadata?.taskId ? (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => openLinkedTask(notification)}
+                        className="rounded-lg border border-cyan-200 dark:border-cyan-800 px-3 py-1.5 text-xs font-medium text-cyan-700 dark:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-900/10 transition"
+                      >
+                        Open linked task
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
 
                 {!notification.isRead && (

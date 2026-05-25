@@ -49,7 +49,12 @@ const TYPE_CONFIG = {
  */
 function resolveNotificationRoute(notification, basePath, isManagerLike) {
   const { type, metadata } = notification;
+  const taskId = metadata?.taskId;
   const leadId = metadata?.leadId;
+
+  if (taskId) {
+    return `${basePath}/tasks?taskId=${taskId}`;
+  }
 
   // Any notification that has a leadId → go to the leads management page with the lead pre-opened
   if (leadId) {
@@ -128,6 +133,11 @@ export default function NotificationPopup({ popup, onDismiss }) {
 
         {/* Body */}
         <div className="px-4 py-3">
+          {popup.metadata?.isTask && popup.metadata?.taskStatus !== "completed" ? (
+            <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+              Action required
+            </span>
+          ) : null}
           <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
             {popup.message}
           </p>

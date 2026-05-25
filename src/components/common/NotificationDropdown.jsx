@@ -34,7 +34,12 @@ export default function NotificationDropdown() {
    */
   const resolveRoute = (notification) => {
     const { type, metadata } = notification;
+    const taskId = metadata?.taskId;
     const leadId = metadata?.leadId;
+
+    if (taskId) {
+      return `${basePath}/tasks?taskId=${taskId}`;
+    }
 
     // Any notification with a leadId → open the lead directly
     if (leadId) {
@@ -152,6 +157,12 @@ export default function NotificationDropdown() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
                       {notification.message}
                     </p>
+                    {notification.metadata?.isTask &&
+                    notification.metadata?.taskStatus !== "completed" ? (
+                      <span className="mt-2 inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                        Action required
+                      </span>
+                    ) : null}
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">
                       {new Date(notification.createdAt).toLocaleDateString()}{" "}
                       {new Date(notification.createdAt).toLocaleTimeString([], {

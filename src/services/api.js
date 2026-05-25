@@ -1057,4 +1057,30 @@ export const markAllNotificationsAsRead = async () => {
   return response.data;
 };
 
+// ==================== Tasks ====================
+
+export const getTasks = async (status = "", taskId = "") => {
+  const params = new URLSearchParams();
+  if (status) params.append("status", status);
+  if (taskId) params.append("taskId", taskId);
+  const query = params.toString();
+  const response = await api.get(`/tasks${query ? `?${query}` : ""}`);
+  return response.data;
+};
+
+export const createTask = async (payload) => {
+  const response = await api.post("/tasks", payload);
+  return response.data;
+};
+
+export const updateTask = async (taskId, payload) => {
+  const response = await api.patch(`/tasks/${taskId}`, payload);
+  return response.data;
+};
+
+export const deleteTask = async (taskId) => {
+  const response = await api.delete(`/tasks/${taskId}`);
+  return response.data;
+};
+
 export default api;
