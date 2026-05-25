@@ -27,7 +27,7 @@ function getSidebarItems(role) {
       },
       {
         id: "tasks",
-        label: "My Tasks",
+        label: "Tasks Management",
         icon: ClipboardList,
         path: "/manager/tasks",
       },

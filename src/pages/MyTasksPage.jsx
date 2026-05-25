@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 import {
+  ChevronDown,
   CheckCircle2,
   Circle,
   ClipboardList,
@@ -15,6 +16,7 @@ import { createTask, deleteTask, getTasks, getUsers, updateTask } from "../servi
 import { getRoleHomeRoute } from "../utils/roleUtils";
 
 const ASSIGNABLE_ROLES = new Set(["caller-agent", "team-lead", "scrapper"]);
+const MANAGER_LIKE_ROLES = new Set(["admin", "manager"]);
 
 function formatDateTime(value) {
   if (!value) return "No due date";
@@ -44,8 +46,16 @@ export default function MyTasksPage() {
   });
   const [creating, setCreating] = useState(false);
 
-  const canAssignTasks = ["admin", "manager"].includes(user?.role);
+  const canAssignTasks = MANAGER_LIKE_ROLES.has(user?.role);
+  const isManagerView = MANAGER_LIKE_ROLES.has(user?.role);
   const basePath = getRoleHomeRoute(user?.role);
+  const pageTitle = isManagerView ? "Action Queue" : "My Tasks";
+  const pageDescription = isManagerView
+    ? "Track action-required work from appointments, follow-ups, and team assignments."
+    : "Actionable work from notifications and manual assignments lives here.";
+  const assignPanelTitle = "Assign New Task";
+  const assignButtonLabel = "Assign Task";
+  const [isAssignPanelOpen, setIsAssignPanelOpen] = useState(false);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -134,11 +144,11 @@ export default function MyTasksPage() {
             : entry,
         ),
       );
-    } catch (error) {
-      console.error("Failed to update task:", error);
-      showNotification?.("Failed to update task", "error");
-    } finally {
-      setSavingTaskId("");
+      } catch (error) {
+        console.error("Failed to update task:", error);
+        showNotification?.("Failed to update task", "error");
+      } finally {
+        setSavingTaskId("");
     }
   };
 
@@ -168,7 +178,8 @@ export default function MyTasksPage() {
         dueAt: form.dueAt || null,
       });
       setForm({ userId: "", title: "", description: "", dueAt: "" });
-      showNotification?.("Task assigned", "success");
+      showNotification?.("Task assigned successfully", "success");
+      setIsAssignPanelOpen(false);
     } catch (error) {
       console.error("Failed to assign task:", error);
       showNotification?.("Failed to assign task", "error");
@@ -179,111 +190,150 @@ export default function MyTasksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-linear-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-2xl dark:shadow-slate-900/30 p-6 border border-slate-200 dark:border-slate-700">
+      <div className="rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff_52%,_#f8fafc)] p-6 shadow-2xl dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_35%),linear-gradient(135deg,_rgba(15,23,42,1),_rgba(30,41,59,1)_55%,_rgba(15,23,42,1))] dark:shadow-slate-900/30">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-linear-to-r from-cyan-500 to-blue-500 rounded p-2">
+            <div className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 p-3 shadow-lg shadow-cyan-500/20">
               <ClipboardList className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                My Tasks
+                {pageTitle}
               </h1>
               <p className="text-slate-600 dark:text-slate-400 mt-1">
-                Actionable work from notifications and manual assignments lives here.
+                {pageDescription}
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-4 py-3">
+            <div className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/40">
               <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</p>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{tasks.length}</p>
             </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending</p>
+            <div className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/40">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                In Queue
+              </p>
               <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
             </div>
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Completed</p>
+            <div className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-900/40">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Closed
+              </p>
               <p className="text-2xl font-bold text-emerald-600">{completedCount}</p>
             </div>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100"
+              className="rounded-xl border border-white/70 bg-white/80 px-4 py-3 text-slate-900 backdrop-blur dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-100"
             >
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="all">All Tasks</option>
+              <option value="pending">Open Queue</option>
+              <option value="completed">Closed Tasks</option>
+              <option value="all">All Items</option>
             </select>
           </div>
         </div>
       </div>
 
       {canAssignTasks ? (
-        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Plus className="w-4 h-4 text-cyan-500" />
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Assign Custom Task
-            </h2>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <select
-              value={form.userId}
-              onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100"
-            >
-              <option value="">Select assignee</option>
-              {assignees.map((assignee) => (
-                <option key={assignee._id} value={assignee._id}>
-                  {assignee.name} ({assignee.role})
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="datetime-local"
-              value={form.dueAt}
-              onChange={(event) => setForm((prev) => ({ ...prev, dueAt: event.target.value }))}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100"
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <button
+            type="button"
+            onClick={() => setIsAssignPanelOpen((prev) => !prev)}
+            className="flex w-full items-center justify-between gap-4 text-left"
+          >
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-cyan-500" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  {assignPanelTitle}
+                </h2>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Create a focused task for an agent and assign it instantly.
+              </p>
+            </div>
+            <ChevronDown
+              className={`h-5 w-5 shrink-0 text-slate-500 transition-transform dark:text-slate-400 ${
+                isAssignPanelOpen ? "rotate-180" : ""
+              }`}
             />
+          </button>
 
-            <input
-              type="text"
-              value={form.title}
-              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="Task title"
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100 md:col-span-2"
-            />
+          {isAssignPanelOpen ? (
+            <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-700">
+              <div className="grid gap-3 md:grid-cols-2">
+                <select
+                  value={form.userId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, userId: event.target.value }))}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="">Select assignee</option>
+                  {assignees.map((assignee) => (
+                    <option key={assignee._id} value={assignee._id}>
+                      {assignee.name} ({assignee.role})
+                    </option>
+                  ))}
+                </select>
 
-            <textarea
-              value={form.description}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, description: event.target.value }))
-              }
-              placeholder="Optional instructions"
-              rows={3}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100 md:col-span-2"
-            />
-          </div>
+                <input
+                  type="datetime-local"
+                  value={form.dueAt}
+                  onChange={(event) => setForm((prev) => ({ ...prev, dueAt: event.target.value }))}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100"
+                />
 
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={handleCreateTask}
-              disabled={creating || !form.userId || !form.title.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-white font-medium hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Assign Task
-            </button>
-          </div>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Example: Review hot leads from yesterday's appointments"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100 md:col-span-2"
+                />
+
+                <textarea
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, description: event.target.value }))
+                  }
+                  placeholder="Optional instructions"
+                  rows={3}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3 text-slate-900 dark:text-slate-100 md:col-span-2"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={handleCreateTask}
+                  disabled={creating || !form.userId || !form.title.trim()}
+                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-white font-medium hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {assignButtonLabel}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-linear-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 shadow-xl p-6">
+      <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-50 p-6 shadow-xl dark:border-slate-700 dark:from-slate-800 dark:to-slate-700">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {isManagerView ? "Queue Items" : "Task List"}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {isManagerView
+                ? "Appointments, follow-ups, and assignments that still need action."
+                : "Everything that still needs your attention, in one place."}
+            </p>
+          </div>
+          <div className="rounded-full bg-slate-200/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-900/50 dark:text-slate-300">
+            {tasks.length} item{tasks.length === 1 ? "" : "s"}
+          </div>
+        </div>
         {loading ? (
           <div className="py-14 text-center text-slate-500 dark:text-slate-400">
             Loading tasks...
@@ -301,6 +351,7 @@ export default function MyTasksPage() {
               const isBusy = savingTaskId === task._id;
               const isHighlighted = highlightedTaskId === task._id;
               const canDelete = task.category === "custom";
+              const badgeLabel = task.category === "custom" ? "Assigned" : "System";
 
               return (
                 <div
@@ -334,7 +385,7 @@ export default function MyTasksPage() {
                             {task.title}
                           </h3>
                           <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-                            {task.category === "custom" ? "Custom" : "System"}
+                            {badgeLabel}
                           </span>
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-medium ${

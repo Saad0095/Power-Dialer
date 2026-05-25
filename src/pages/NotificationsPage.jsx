@@ -66,6 +66,30 @@ export default function NotificationsPage() {
     navigate(`${basePath}/tasks?taskId=${taskId}`);
   };
 
+  const openNotificationTarget = (notification) => {
+    const leadId = notification?.metadata?.leadId;
+    const taskId = notification?.metadata?.taskId;
+    const isManagerLike = ["admin", "manager", "team-lead"].includes(user?.role);
+
+    if (leadId) {
+      if (isManagerLike) {
+        navigate(`${basePath}/caller-leads?leadId=${leadId}`);
+        return;
+      }
+      if (user?.role === "client") {
+        navigate(`${basePath}/leads`);
+        return;
+      }
+      navigate(`${basePath}/followups?leadId=${leadId}`);
+      return;
+    }
+
+    if (taskId) {
+      navigate(`${basePath}/tasks?taskId=${taskId}`);
+      return;
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
@@ -113,6 +137,7 @@ export default function NotificationsPage() {
             {notifications.map((notification) => (
               <div 
                 key={notification._id} 
+                onClick={() => openNotificationTarget(notification)}
                 className={`p-5 flex gap-4 transition-colors ${
                   !notification.isRead 
                     ? 'bg-blue-50/50 dark:bg-blue-900/10' 
@@ -152,7 +177,10 @@ export default function NotificationsPage() {
                   {notification.metadata?.taskId ? (
                     <div className="mt-3">
                       <button
-                        onClick={() => openLinkedTask(notification)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openLinkedTask(notification);
+                        }}
                         className="rounded-lg border border-cyan-200 dark:border-cyan-800 px-3 py-1.5 text-xs font-medium text-cyan-700 dark:text-cyan-300 hover:bg-cyan-50 dark:hover:bg-cyan-900/10 transition"
                       >
                         Open linked task
@@ -163,7 +191,10 @@ export default function NotificationsPage() {
 
                 {!notification.isRead && (
                   <button 
-                    onClick={() => handleMarkAsRead(notification._id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleMarkAsRead(notification._id);
+                    }}
                     className="shrink-0 p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     title="Mark as read"
                   >
