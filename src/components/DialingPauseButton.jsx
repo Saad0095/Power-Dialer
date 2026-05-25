@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pause, Play } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -7,14 +7,20 @@ import { useAuth } from "../hooks/useAuth";
 import { isManager as checkIsManager } from "../utils/roleUtils";
 
 export default function DialingPauseButton({ user, onShowNotification }) {
+  const pauseWarningSeconds = 5 * 60;
+  const pauseLimitSeconds = 10 * 60;
   const { hydrateAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [pauseTimer, setPauseTimer] = useState(0);
+  const warningShownRef = useRef(false);
+  const limitHandledRef = useRef(false);
 
   const isDialing = user?.isAutoDialing;
   const onPause = user?.attendance?.onDialingPause;
+  const totalPauseUsedSeconds = Math.floor((user?.attendance?.totalDialingPauseMs || 0) / 1000);
+  const hasReachedPauseLimit = totalPauseUsedSeconds >= pauseLimitSeconds;
 
   const isManagerLike = checkIsManager(user?.role);
   const targetRoute = isManagerLike ? '/manager/auto-dialer' : '/agent/auto-dialer';
@@ -57,6 +63,61 @@ export default function DialingPauseButton({ user, onShowNotification }) {
     return () => clearInterval(interval);
   }, [onPause, user?.attendance]);
 
+  useEffect(() => {
+    if (!onPause) {
+      warningShownRef.current = false;
+      limitHandledRef.current = false;
+      return;
+    }
+
+    if (pauseTimer >= pauseWarningSeconds && !warningShownRef.current) {
+      warningShownRef.current = true;
+      onShowNotification?.("Pause warning: 5 minutes used. Please resume before the 10-minute limit.", "warning");
+    }
+
+    if (pauseTimer < pauseLimitSeconds || limitHandledRef.current) {
+      return;
+    }
+
+    limitHandledRef.current = true;
+
+    const autoResume = async () => {
+      const targetCampaignId = user?.attendance?.dialingPauseCampaignId || user?.autoDialCampaignId;
+      if (!targetCampaignId) {
+        onShowNotification?.("Dialing pause limit reached. Please reopen your auto dialer.", "error");
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        await resumeDialing(targetCampaignId, user._id, true);
+        await hydrateAuth();
+        onShowNotification?.("Pause limit reached. Dialing resumed automatically.", "warning");
+        if (location.pathname !== targetRoute) {
+          navigate(targetRoute);
+        }
+      } catch (err) {
+        const message = err?.response?.data?.error || "Pause limit reached, but auto-resume failed";
+        onShowNotification?.(message, "error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void autoResume();
+  }, [
+    hydrateAuth,
+    location.pathname,
+    navigate,
+    onPause,
+    onShowNotification,
+    pauseLimitSeconds,
+    pauseTimer,
+    pauseWarningSeconds,
+    targetRoute,
+    user,
+  ]);
+
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -82,6 +143,10 @@ export default function DialingPauseButton({ user, onShowNotification }) {
             navigate(targetRoute);
         }
       } else {
+        if (hasReachedPauseLimit) {
+          onShowNotification?.("Daily pause limit reached. You can pause for up to 10 minutes total.", "error");
+          return;
+        }
         if (!user?.autoDialCampaignId) {
              onShowNotification?.("No active campaign to pause", "error");
              return;
@@ -100,6 +165,9 @@ export default function DialingPauseButton({ user, onShowNotification }) {
 
   // Only show if dialing or paused
   if (!isDialing && !onPause) return null;
+
+  // Once the daily pause allowance is exhausted, hide the pause control.
+  if (!onPause && hasReachedPauseLimit) return null;
 
   // Don't show if we are in a ghost session (actively dialing but not on the right page)
   if (isDialing && !onPause && location.pathname !== targetRoute) return null;

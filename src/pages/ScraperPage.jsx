@@ -96,6 +96,7 @@ export default function ScraperPage() {
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [selectedImportSessionIds, setSelectedImportSessionIds] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [results, setResults] = useState([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);
@@ -121,7 +122,7 @@ export default function ScraperPage() {
   };
 
   const canImport =
-    Boolean(selectedSessionId) && results.length > 0 && selectedCampaignId;
+    selectedImportSessionIds.length > 0 && Boolean(selectedCampaignId);
 
   const hasActiveSession = sessions.some(
     (s) => s.status === "running" || s.status === "queued",
@@ -341,24 +342,50 @@ export default function ScraperPage() {
   };
 
   const handleImport = async () => {
-    if (!selectedSessionId || !selectedCampaignId) {
-      showNotification?.("Select a campaign before importing", "error");
+    if (!selectedImportSessionIds.length || !selectedCampaignId) {
+      showNotification?.("Select one or more sessions and a campaign before importing", "error");
       return;
     }
     try {
       setIsImporting(true);
       const payload = { campaignId: selectedCampaignId };
       if (selectedAgentId) payload.agentId = selectedAgentId;
-      const response = await importScrapeSessionResults(
-        selectedSessionId,
-        payload,
-      );
+      let totalImported = 0;
+      const importedSessions = [];
+      const skippedSessions = [];
+
+      for (const sessionId of selectedImportSessionIds) {
+        try {
+          const response = await importScrapeSessionResults(sessionId, payload);
+          totalImported += response?.data?.importedCount || 0;
+          importedSessions.push(sessionId);
+        } catch (error) {
+          skippedSessions.push({
+            sessionId,
+            message: error.response?.data?.error || "Import failed",
+          });
+        }
+      }
+
+      if (!importedSessions.length) {
+        const firstError = skippedSessions[0]?.message || "Failed to import selected sessions";
+        showNotification?.(firstError, "error");
+        return;
+      }
+
+      const responseMessage = skippedSessions.length
+        ? `${totalImported} leads imported from ${importedSessions.length} session${importedSessions.length === 1 ? "" : "s"}. ${skippedSessions.length} session${skippedSessions.length === 1 ? " was" : "s were"} skipped.`
+        : `${totalImported} leads imported from ${importedSessions.length} session${importedSessions.length === 1 ? "" : "s"}.`;
+
       showNotification?.(
-        response.message || "Results imported successfully",
+        responseMessage,
         "success",
       );
+      setSelectedImportSessionIds([]);
       await loadSessions(selectedSessionId);
-      await loadSessionResults(selectedSessionId, filters);
+      if (selectedSessionId) {
+        await loadSessionResults(selectedSessionId, filters);
+      }
     } catch (error) {
       console.error("Failed to import scrape results:", error);
       showNotification?.(
@@ -744,12 +771,12 @@ export default function ScraperPage() {
 
         <div className="space-y-6">
           <ScrapeImportPanel
-            campaigns={campaigns}
             agents={agents}
             selectedCampaignId={selectedCampaignId}
             setSelectedCampaignId={setSelectedCampaignId}
             selectedAgentId={selectedAgentId}
             setSelectedAgentId={setSelectedAgentId}
+            selectedImportSessionIds={selectedImportSessionIds}
             canImport={canImport}
             isImporting={isImporting}
             selectedSession={selectedSession}
@@ -762,6 +789,8 @@ export default function ScraperPage() {
             setSessionFilters={setSessionFilters}
             selectedSessionId={selectedSessionId}
             setSelectedSessionId={setSelectedSessionId}
+            selectedImportSessionIds={selectedImportSessionIds}
+            setSelectedImportSessionIds={setSelectedImportSessionIds}
             handleDeleteSession={handleDeleteSession}
             handleCancelSession={handleCancelSession}
             handleEditSession={handleEditSession}

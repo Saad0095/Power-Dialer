@@ -2,12 +2,12 @@ import { LoaderCircle, Upload } from "lucide-react";
 import SmartCampaignSelector from "./SmartCampaignSelector";
 
 export default function ScrapeImportPanel({
-  campaigns,
   agents,
   selectedCampaignId,
   setSelectedCampaignId,
   selectedAgentId,
   setSelectedAgentId,
+  selectedImportSessionIds,
   canImport,
   isImporting,
   selectedSession,
@@ -39,6 +39,11 @@ export default function ScrapeImportPanel({
             ))}
           </select>
         </label>
+        <div className="rounded-lg border border-emerald-200 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/20 p-3 text-sm text-emerald-800 dark:text-emerald-200">
+          {selectedImportSessionIds.length > 0
+            ? `${selectedImportSessionIds.length} session${selectedImportSessionIds.length === 1 ? "" : "s"} selected for import into the chosen campaign.`
+            : "Select one or more scrape sessions from the list below to import them together."}
+        </div>
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/30 p-4 text-sm text-slate-600 dark:text-slate-300">
           Imports skip rows without a business name or phone number, and they also skip duplicates already present in the selected campaign by phone number.
         </div>

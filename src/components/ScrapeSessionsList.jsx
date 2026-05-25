@@ -17,6 +17,8 @@ export default function ScrapeSessionsList({
   setSessionFilters,
   selectedSessionId,
   setSelectedSessionId,
+  selectedImportSessionIds = [],
+  setSelectedImportSessionIds,
   handleDeleteSession,
   handleCancelSession,
   handleEditSession,
@@ -47,23 +49,24 @@ export default function ScrapeSessionsList({
   };
 
 
-  const [selectedIds, setSelectedIds] = useState(new Set());
   const selectAllRef = useRef(null);
 
   const toggleSelect = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+    const currentIds = new Set(selectedImportSessionIds);
+    if (currentIds.has(id)) {
+      currentIds.delete(id);
+    } else {
+      currentIds.add(id);
+    }
+    setSelectedImportSessionIds?.(Array.from(currentIds));
   };
 
-  const clearSelection = () => setSelectedIds(new Set());
+  const clearSelection = () => setSelectedImportSessionIds?.([]);
 
   // Keep the select-all checkbox state (checked / indeterminate) in sync
   useEffect(() => {
     const totalVisible = sessions.length;
-    const selectedCount = selectedIds.size;
+    const selectedCount = selectedImportSessionIds.length;
     const el = selectAllRef.current;
     if (!el) return;
     if (selectedCount === 0) {
@@ -79,17 +82,17 @@ export default function ScrapeSessionsList({
       el.indeterminate = false;
       el.checked = false;
     }
-  }, [selectedIds, sessions]);
+  }, [selectedImportSessionIds, sessions]);
 
   const handleBulkDelete = async () => {
-    if (!selectedIds.size) return;
-    const confirmed = window.confirm(`Delete ${selectedIds.size} sessions and their imported leads?`);
+    if (!selectedImportSessionIds.length) return;
+    const confirmed = window.confirm(`Delete ${selectedImportSessionIds.length} sessions and their imported leads?`);
     if (!confirmed) return;
     try {
       const resp = await fetch(`/api/scraper/sessions/bulk-delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("authToken")}` },
-        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        body: JSON.stringify({ ids: selectedImportSessionIds }),
       });
 
       // Defensive parsing: handle empty or non-JSON responses
@@ -129,7 +132,16 @@ export default function ScrapeSessionsList({
     }
   };
 
-  useEffect(() => {    
+  useEffect(() => {
+    if (!selectedImportSessionIds.length) return;
+    const visibleIds = new Set(sessions.map((session) => session._id));
+    const filtered = selectedImportSessionIds.filter((id) => visibleIds.has(id));
+    if (filtered.length !== selectedImportSessionIds.length) {
+      setSelectedImportSessionIds?.(filtered);
+    }
+  }, [sessions, selectedImportSessionIds, setSelectedImportSessionIds]);
+
+  useEffect(() => {
     if (selectedSessionId && !sessions.some((s) => s._id === selectedSessionId)) {
       setSelectedSessionId?.(null);
     }
@@ -230,7 +242,7 @@ export default function ScrapeSessionsList({
                 type="checkbox"
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setSelectedIds(new Set(sessions.map((s) => s._id)));
+                    setSelectedImportSessionIds?.(sessions.map((s) => s._id));
                   } else {
                     clearSelection();
                   }
@@ -245,10 +257,10 @@ export default function ScrapeSessionsList({
             <button
               type="button"
               onClick={handleBulkDelete}
-              disabled={selectedIds.size === 0}
+              disabled={selectedImportSessionIds.length === 0}
               className="px-3 py-2 rounded-md bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-300 hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              Delete selected ({selectedIds.size})
+              Delete selected ({selectedImportSessionIds.length})
             </button>
           </div>
 
@@ -335,7 +347,7 @@ export default function ScrapeSessionsList({
               <div className="absolute top-3 right-3 z-20">
                 <input
                   type="checkbox"
-                  checked={selectedIds.has(session._id)}
+                  checked={selectedImportSessionIds.includes(session._id)}
                   onChange={() => toggleSelect(session._id)}
                   className="w-4 h-4"
                 />

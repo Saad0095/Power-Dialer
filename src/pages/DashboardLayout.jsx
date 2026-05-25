@@ -11,7 +11,72 @@ import ActiveCallPanel from '../components/ActiveCallPanel';
 import LeadDetailModal from '../components/modals/LeadDetailModal';
 import { checkIn } from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
-import { LogIn, X, Clock, AlertTriangle } from 'lucide-react';
+import { LogIn, X, Clock } from 'lucide-react';
+
+const DEFAULT_SHIFT_END_TIME = '04:00';
+const DEFAULT_TIMEZONE = 'Asia/Karachi';
+
+const getZonedDateParts = (date, timezone) => {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(date)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value]),
+  );
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+  };
+};
+
+const getShiftReminderWindowState = (date, user) => {
+  const timezone = user?.timezone || DEFAULT_TIMEZONE;
+  const shiftEndTime = user?.shiftEndTime || DEFAULT_SHIFT_END_TIME;
+  const [endHourRaw, endMinuteRaw] = String(shiftEndTime).split(':');
+  const endHour = Number(endHourRaw);
+  const endMinute = Number(endMinuteRaw);
+
+  if (!Number.isFinite(endHour) || !Number.isFinite(endMinute)) {
+    return { isReminderWindow: false, dayKey: null };
+  }
+
+  const nowParts = getZonedDateParts(date, timezone);
+  const nowValue = Date.UTC(
+    nowParts.year,
+    nowParts.month - 1,
+    nowParts.day,
+    nowParts.hour,
+    nowParts.minute,
+  );
+  const shiftEndValue = Date.UTC(
+    nowParts.year,
+    nowParts.month - 1,
+    nowParts.day,
+    endHour,
+    endMinute,
+  );
+
+  return {
+    isReminderWindow:
+      nowValue >= shiftEndValue - (10 * 60 * 1000) &&
+      nowValue < shiftEndValue + (30 * 60 * 1000),
+    dayKey: `${nowParts.year}-${String(nowParts.month).padStart(2, '0')}-${String(nowParts.day).padStart(2, '0')}`,
+  };
+};
 
 // ─── Check-in Enforcement Modal ─────────────────────────────────────────────
 function CheckInModal({ user, onCheckedIn }) {
@@ -121,27 +186,19 @@ export default function DashboardLayout() {
     setShowCheckInModal(!isCheckedIn);
   }, [user, isAttendanceRole, isCheckedIn]);
 
-  // 3:45 AM shift-end reminder (runs every minute)
+  // Shift-end reminder (runs every minute)
   useEffect(() => {
     if (!isAttendanceRole) return;
 
     const checkReminderTime = () => {
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-
-      // Show reminder between 3:45 AM and 4:30 AM
-      const isReminderWindow =
-        (hours === 3 && minutes >= 45) || (hours === 4 && minutes < 30);
+      const { isReminderWindow, dayKey } = getShiftReminderWindowState(now, user);
 
       if (isReminderWindow) {
-        // Only show again if we haven't dismissed within this window
-        const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-        if (reminderDismissedAt !== todayKey) {
+        if (reminderDismissedAt !== dayKey) {
           setShowShiftReminder(true);
         }
       } else {
-        // Reset outside window so it can show again next time
         setShowShiftReminder(false);
       }
     };
@@ -149,14 +206,14 @@ export default function DashboardLayout() {
     checkReminderTime();
     const interval = setInterval(checkReminderTime, 60 * 1000);
     return () => clearInterval(interval);
-  }, [isAttendanceRole, reminderDismissedAt]);
+  }, [isAttendanceRole, reminderDismissedAt, user]);
 
   const handleDismissReminder = useCallback(() => {
     const now = new Date();
-    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-    setReminderDismissedAt(todayKey);
+    const { dayKey } = getShiftReminderWindowState(now, user);
+    setReminderDismissedAt(dayKey);
     setShowShiftReminder(false);
-  }, []);
+  }, [user]);
 
   // Initialize Twilio Voice SDK for agent browsers (receiving calls)
   const { 
