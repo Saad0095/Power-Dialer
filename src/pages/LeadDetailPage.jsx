@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Clock3,
+  ExternalLink,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -36,7 +37,6 @@ const leadFieldOrder = [
   "country",
   "appointmentDate",
   "appointmentTime",
-  "appointmentStatus",
   "leadFor",
   "currentSetup",
   "servicesGetting",
@@ -59,7 +59,6 @@ const leadFieldLabels = {
   country: "Country",
   appointmentDate: "Appointment Date",
   appointmentTime: "Appointment Time",
-  appointmentStatus: "Qualification",
   leadFor: "Lead Type",
   currentSetup: "Current Setup",
   servicesGetting: "Services",
@@ -209,7 +208,7 @@ export default function LeadDetailPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {offer.isUnlocked
                 ? "Full contact details have been unlocked and are visible below."
-                : "Complete payment to unlock full details. Only the masked data is visible below."}
+                : "Only the masked data is visible below until a manager unlocks this lead."}
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -236,14 +235,16 @@ export default function LeadDetailPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/50">
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Qualification
-                </span>
-                <span className="font-medium text-slate-900 dark:text-white">
-                  {offer.meta.appointmentStatus || "Unknown"}
-                </span>
-              </div>
+              {offer.meta.appointmentStatus && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Appointment Status
+                  </span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {offer.meta.appointmentStatus}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400">
                   Interest level
@@ -260,6 +261,17 @@ export default function LeadDetailPage() {
                   {offer.payment?.status || "pending"}
                 </span>
               </div>
+              {offer.invoiceLink && (
+                <a
+                  href={offer.invoiceLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100 dark:border-cyan-900/50 dark:bg-cyan-950/30 dark:text-cyan-100"
+                >
+                  Pay via Invoice
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500 dark:text-slate-400">
                   Region

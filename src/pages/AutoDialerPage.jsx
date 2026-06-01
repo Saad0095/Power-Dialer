@@ -109,7 +109,7 @@ export default function AutoDialerPage() {
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-200 mb-4 px-1">
                     Campaign Queue
                   </h2>
-                  <LeadsTable showNotification={showNotification} />
+                  <LeadsTable showNotification={showNotification} hideManualCall />
                 </div>
               </div>
 

@@ -66,12 +66,6 @@ function getSidebarItems(role) {
       // { id: 'followups', label: 'Lead Followups', icon: Repeat2, path: '/manager/followups' },
 
       {
-        id: "agents",
-        label: "Agents Live Status",
-        icon: Users,
-        path: "/manager/agents",
-      },
-      {
         id: "attendance",
         label: "Attendance Record",
         icon: CalendarDays,
@@ -142,12 +136,6 @@ function getSidebarItems(role) {
         label: "Direct Dialer",
         icon: Phone,
         path: "/manager/direct-dialer",
-      },
-      {
-        id: "agents",
-        label: "Team Live Status",
-        icon: Users,
-        path: "/manager/agents",
       },
       {
         id: "attendance",

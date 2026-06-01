@@ -1002,6 +1002,11 @@ export const unlockManagerOffer = async (offerId) => {
   return response.data.data;
 };
 
+export const markManagerOfferPaid = async (offerId) => {
+  const response = await api.patch(`/manager/offers/${offerId}/paid`);
+  return response.data.data;
+};
+
 export const getClientOffers = async ({
   status = "",
   page = 1,

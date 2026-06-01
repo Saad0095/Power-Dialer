@@ -71,7 +71,7 @@ export default function ClientDashboardPage() {
                 Client Dashboard
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Track your leads, payment status, and qualification activity at
+                Track your leads, payment status, and lead activity at
                 a glance.
               </p>
             </div>

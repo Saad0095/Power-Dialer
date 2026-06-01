@@ -52,8 +52,8 @@ export const LEAD_FIELD_CONFIG = {
 
 export const LEAD_WORKFLOW_FIELDS = [
   { key: 'dialerStatus', label: 'Dialer Status', type: 'select', options: ['pending', 'dialing', 'connected', 'failed', 'completed'], readOnly: true },
-  { key: 'appointmentStatus', label: 'Appointment Status', type: 'select', options: ['qualified', 'disqualified', 'in-process', 'reschedule', 'onhold'], readOnly: false },
-  { key: 'disposition', label: 'Disposition', type: 'select', options: ['voicemail', 'followup', 'not-interested', 'appointment', 'wrong-number'], readOnly: false },
+  { key: 'appointmentStatus', label: 'Appointment Status', type: 'select', options: ['qualified-level-1', 'qualified-level-2', 'qualified-level-3', 'disqualified', 'cancelled', 'in-process', 'reschedule', 'onhold'], readOnly: false },
+  { key: 'disposition', label: 'Disposition', type: 'select', options: ['voicemail', 'followup', 'callback', 'not-interested', 'appointment', 'wrong-number'], readOnly: false },
   { key: 'agentNotes', label: 'Agent Notes', type: 'textarea', readOnly: false },
   { key: 'followUpDate', label: 'Follow-Up Date', type: 'date', readOnly: false },
   { key: 'followUpTime', label: 'Follow-Up Time', type: 'time', readOnly: false },

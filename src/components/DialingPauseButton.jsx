@@ -8,7 +8,7 @@ import { isManager as checkIsManager } from "../utils/roleUtils";
 
 export default function DialingPauseButton({ user, onShowNotification }) {
   const pauseWarningSeconds = 5 * 60;
-  const pauseLimitSeconds = 10 * 60;
+  const pauseLimitSeconds = 20 * 60;
   const { hydrateAuth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,7 +72,7 @@ export default function DialingPauseButton({ user, onShowNotification }) {
 
     if (pauseTimer >= pauseWarningSeconds && !warningShownRef.current) {
       warningShownRef.current = true;
-      onShowNotification?.("Pause warning: 5 minutes used. Please resume before the 10-minute limit.", "warning");
+      onShowNotification?.("Pause warning: 5 minutes used. Please resume before the 20-minute limit.", "warning");
     }
 
     if (pauseTimer < pauseLimitSeconds || limitHandledRef.current) {
@@ -144,7 +144,7 @@ export default function DialingPauseButton({ user, onShowNotification }) {
         }
       } else {
         if (hasReachedPauseLimit) {
-          onShowNotification?.("Daily pause limit reached. You can pause for up to 10 minutes total.", "error");
+          onShowNotification?.("Daily pause limit reached. You can pause for up to 20 minutes total.", "error");
           return;
         }
         if (!user?.autoDialCampaignId) {

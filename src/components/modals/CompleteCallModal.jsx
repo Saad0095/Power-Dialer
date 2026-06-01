@@ -7,6 +7,7 @@ import { Loader } from 'lucide-react';
 const DISPOSITIONS = [
   { value: 'appointment', label: 'Appointment' },
   { value: 'followup', label: 'Follow Up' },
+  { value: 'callback', label: 'Callback' },
   { value: 'voicemail', label: 'Voicemail' },
   { value: 'wrong-number', label: 'Wrong Number' },
   { value: 'not-interested', label: 'Not Interested' },

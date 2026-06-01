@@ -8,6 +8,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import AgentCallStatsPanel from '../components/AgentCallStatsPanel';
 import AgentEarningsDashboard from '../components/AgentEarningsDashboard';
 import { getAllAgents } from '../services/api';
+import AgentAvailabilityPage from './AgentAvailabilityPage';
 
 export default function OverviewPage() {
   const { showNotification } = useOutletContext();
@@ -101,6 +102,7 @@ export default function OverviewPage() {
           dailyCallsError={dailyCallsError}
           maxDate={maxDate}
         />
+        <AgentAvailabilityPage />
         </>
       ) : (
         <AgentEarningsDashboard />

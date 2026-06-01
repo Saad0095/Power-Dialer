@@ -30,6 +30,7 @@ const STATUS_COLORS = {
   closed: "bg-slate-600/20 text-slate-700 dark:text-slate-300",
   qualified: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
   disqualified: "bg-rose-500/20 text-rose-700 dark:text-rose-400",
+  cancelled: "bg-rose-500/20 text-rose-700 dark:text-rose-400",
   "in-process": "bg-cyan-500/20 text-cyan-700 dark:text-cyan-400",
   reschedule: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
   onhold: "bg-slate-500/20 text-slate-700 dark:text-slate-300",
@@ -38,6 +39,7 @@ const STATUS_COLORS = {
 const DISPOSITION_COLORS = {
   voicemail: "bg-slate-500/20 text-slate-700 dark:text-slate-400",
   followup: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+  callback: "bg-violet-500/20 text-violet-700 dark:text-violet-400",
   "not-interested": "bg-rose-500/20 text-rose-700 dark:text-rose-400",
   appointment: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
   "wrong-number": "bg-orange-500/20 text-orange-700 dark:text-orange-400",

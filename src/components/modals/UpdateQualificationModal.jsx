@@ -9,6 +9,7 @@ const ALL_QUALIFICATION_OPTIONS = [
   { value: "qualified-level-2", label: "Qualified - Level 2", level: 2 },
   { value: "qualified-level-3", label: "Qualified - Level 3", level: 3 },
   { value: "disqualified", label: "Disqualified", level: 0 },
+  { value: "cancelled", label: "Cancelled", level: 0 },
   { value: "in-process", label: "In Process", level: 0 },
   { value: "reschedule", label: "Reschedule", level: 0 },
   { value: "onhold", label: "On Hold", level: 0 },
@@ -31,6 +32,7 @@ export default function UpdateQualificationModal({
   const [recordingLink, setRecordingLink] = useState(lead?.recordingLink || "");
   const [callQuality, setCallQuality] = useState(lead?.callQuality || "");
   const isCallerAgent = user?.role === "caller-agent";
+  const isTeamLead = user?.role === "team-lead";
 
   useEffect(() => {
     const fetchAllowedStatuses = async () => {
@@ -50,13 +52,13 @@ export default function UpdateQualificationModal({
 
     if (isOpen && lead) {
       setStatus(lead.appointmentStatus || "");
-      setManagerNotes(lead?.managerNotes || "");
+      setManagerNotes(isTeamLead ? (lead?.tlNotes || "") : (lead?.managerNotes || ""));
       setRecordingLink(lead?.recordingLink || "");
       setCallQuality(lead?.callQuality || "");
       setValidationError(null);
       fetchAllowedStatuses();
     }
-  }, [lead, isOpen]); 
+  }, [lead, isOpen, isTeamLead]); 
 
   const filterQualificationOptions = () => {
     const allowed = new Set([...allowedStatuses, lead?.appointmentStatus].filter(Boolean));
@@ -257,7 +259,9 @@ export default function UpdateQualificationModal({
         {!isCallerAgent && (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">Manager Notes</label>
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                {isTeamLead ? "TL Notes" : "Manager Notes"}
+              </label>
               <textarea
                 value={managerNotes}
                 onChange={(e) => setManagerNotes(e.target.value)}
@@ -305,7 +309,7 @@ export default function UpdateQualificationModal({
               validationError ||
               (status !== lead?.appointmentStatus && status !== "" && !allowedStatuses.includes(status)) ||
               (status === lead?.appointmentStatus &&
-                managerNotes === (lead?.managerNotes || "") &&
+                managerNotes === (isTeamLead ? (lead?.tlNotes || "") : (lead?.managerNotes || "")) &&
                 recordingLink === (lead?.recordingLink || "") &&
                 callQuality === (lead?.callQuality || ""))
             }

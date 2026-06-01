@@ -20,7 +20,6 @@ const FIELD_OPTIONS = [
   "interestLevel",
   "appointmentDate",
   "appointmentTime",
-  "appointmentStatus",
   "agentNotes",
 ];
 
@@ -31,7 +30,6 @@ const DEFAULT_VISIBLE_FIELDS = [
   "interestLevel",
   "currentSetup",
   "appointmentDate",
-  "appointmentStatus",
 ];
 
 const DEFAULT_MASKING = {
@@ -312,7 +310,7 @@ export default function CreateOfferModal({
                 className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
               />
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Include Invoice Link in Email
+                Include Invoice Link
               </span>
             </label>
             {form.includeInvoiceLink && (
@@ -329,7 +327,7 @@ export default function CreateOfferModal({
         </div>
 
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Leave expiry empty if this offer should stay open until it is paid, cancelled, or manually handled.
+          Leave expiry empty if this offer should stay open until it is cancelled or manually handled.
         </p>
 
         {allowReplace && (

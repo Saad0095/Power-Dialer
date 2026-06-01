@@ -40,7 +40,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default function LeadsTable({ showNotification, activeCalls = [] }) {
+export default function LeadsTable({ showNotification, activeCalls = [], hideManualCall = false }) {
   const {
     leads,
     isLoading,
@@ -623,29 +623,29 @@ export default function LeadsTable({ showNotification, activeCalls = [] }) {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          {/* Zoom Phone Integration */}
-                          <button
-                            onClick={() => {
-                              const cleanNumber = String(
-                                lead.phoneNumber,
-                              ).replace(/[^\d+]/g, "");
-                              window.open(
-                                `zoomphonecall://${cleanNumber}`,
-                                "_self",
-                              );
-                              showNotification(
-                                `Calling ${lead.phoneNumber} via Zoom`,
-                                "success",
-                              );
-                              // Immediately open disposition modal for manual calls
-                              handleEditLead(lead);
-                            }}
-                            disabled={isLoading || !lead.phoneNumber}
-                            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 disabled:text-slate-400 dark:disabled:text-slate-600 transition cursor-pointer p-1 hover:bg-slate-200 dark:hover:bg-slate-600/30 rounded"
-                            title="Direct Call (Zoom)"
-                          >
-                            <Phone className="w-4 h-4" />
-                          </button>
+                          {!hideManualCall && (
+                            <button
+                              onClick={() => {
+                                const cleanNumber = String(
+                                  lead.phoneNumber,
+                                ).replace(/[^\d+]/g, "");
+                                window.open(
+                                  `zoomphonecall://${cleanNumber}`,
+                                  "_self",
+                                );
+                                showNotification(
+                                  `Calling ${lead.phoneNumber} via Zoom`,
+                                  "success",
+                                );
+                                handleEditLead(lead);
+                              }}
+                              disabled={isLoading || !lead.phoneNumber}
+                              className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 disabled:text-slate-400 dark:disabled:text-slate-600 transition cursor-pointer p-1 hover:bg-slate-200 dark:hover:bg-slate-600/30 rounded"
+                              title="Direct Call (Zoom)"
+                            >
+                              <Phone className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               handleEditLead(lead);

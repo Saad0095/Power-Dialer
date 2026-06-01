@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Ban, Clock3, CreditCard, Repeat2, Search, Unlock } from "lucide-react";
-import { cancelManagerOffer, unlockManagerOffer } from "../services/api";
+import { Ban, CheckCircle2, Clock3, CreditCard, Repeat2, Search, Unlock } from "lucide-react";
+import { cancelManagerOffer, markManagerOfferPaid, unlockManagerOffer } from "../services/api";
 import ConfirmModal from "./common/ConfirmModal";
 
 const STATUS_OPTIONS = ["offered", "paid", "expired", "cancelled"];
@@ -25,6 +25,7 @@ export default function OffersManagementTable({
 }) {
   const [offerToCancel, setOfferToCancel] = useState(null);
   const [offerToUnlock, setOfferToUnlock] = useState(null);
+  const [offerToMarkPaid, setOfferToMarkPaid] = useState(null);
   const totalPages = pagination?.pages || 1;
 
   const handleCancel = async () => {
@@ -42,6 +43,24 @@ export default function OffersManagementTable({
       );
     } finally {
       setOfferToCancel(null);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!offerToMarkPaid?._id) return;
+
+    try {
+      const paid = await markManagerOfferPaid(offerToMarkPaid._id);
+      showNotification?.("Offer marked as paid", "success");
+      onOfferCancelled?.(paid);
+    } catch (error) {
+      console.error("Failed to mark offer paid", error);
+      showNotification?.(
+        error.response?.data?.error || "Failed to mark offer paid",
+        "error",
+      );
+    } finally {
+      setOfferToMarkPaid(null);
     }
   };
 
@@ -190,8 +209,18 @@ export default function OffersManagementTable({
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      {offer.status === "offered" ? (
+                      {["offered", "paid"].includes(offer.status) ? (
                         <div className="flex items-center gap-2">
+                          {offer.payment?.status !== "paid" && (
+                            <button
+                              type="button"
+                              onClick={() => setOfferToMarkPaid(offer)}
+                              className="inline-flex items-center gap-2 rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-100 dark:border-cyan-800/50 dark:bg-cyan-950/40 dark:text-cyan-100"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Mark Paid
+                            </button>
+                          )}
                           {offer.isUnlocked ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                               <Unlock className="h-3 w-3" />
@@ -207,14 +236,16 @@ export default function OffersManagementTable({
                               Unlock
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => setOfferToCancel(offer)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-200"
-                          >
-                            <Ban className="h-4 w-4" />
-                            Cancel
-                          </button>
+                          {offer.status === "offered" && (
+                            <button
+                              type="button"
+                              onClick={() => setOfferToCancel(offer)}
+                              className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-800/50 dark:bg-rose-950/40 dark:text-rose-200"
+                            >
+                              <Ban className="h-4 w-4" />
+                              Cancel
+                            </button>
+                          )}
                           {!offer.isUnlocked && offer.payment?.status !== "paid" && (
                             <button
                               type="button"
@@ -276,9 +307,17 @@ export default function OffersManagementTable({
       <ConfirmModal
         isOpen={Boolean(offerToUnlock)}
         title="Unlock offer"
-        message={`Unlock the offer for ${offerToUnlock?.lead?.businessName || "this lead"}? The client will be granted full access to the unmasked data immediately.`}
+        message={`Unlock the offer for ${offerToUnlock?.lead?.businessName || "this lead"}? The client will be granted full access to the unmasked data immediately. Payment status will not change.`}
         onConfirm={handleUnlock}
         onCancel={() => setOfferToUnlock(null)}
+      />
+
+      <ConfirmModal
+        isOpen={Boolean(offerToMarkPaid)}
+        title="Mark offer paid"
+        message={`Mark the offer for ${offerToMarkPaid?.lead?.businessName || "this lead"} as paid? This will not change the lock status.`}
+        onConfirm={handleMarkPaid}
+        onCancel={() => setOfferToMarkPaid(null)}
       />
     </div>
   );

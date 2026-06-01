@@ -289,8 +289,8 @@ export default function EditCampaignModal({ isOpen, campaign, onClose, onSuccess
                   value={formData.isLocked ? 'locked' : 'unlocked'}
                   onChange={(e) => setFormData(prev => ({ ...prev, isLocked: e.target.value === 'locked' }))}
                   options={[
-                    { value: 'unlocked', label: 'Unlocked (Auto-paid & visible)' },
-                    { value: 'locked', label: 'Locked (Requires payment)' },
+                    { value: 'unlocked', label: 'Unlocked (Visible, unpaid)' },
+                    { value: 'locked', label: 'Locked (Manager unlocks manually)' },
                   ]}
                 />
               </div>
