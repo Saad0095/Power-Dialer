@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { isManager as checkIsManager } from "../utils/roleUtils";
 
 export default function DialingPauseButton({ user, onShowNotification }) {
-  const pauseWarningSeconds = 5 * 60;
+  const pauseWarningSeconds = 15 * 60;
   const pauseLimitSeconds = 20 * 60;
   const { hydrateAuth } = useAuth();
   const navigate = useNavigate();
@@ -25,9 +25,6 @@ export default function DialingPauseButton({ user, onShowNotification }) {
   const isManagerLike = checkIsManager(user?.role);
   const targetRoute = isManagerLike ? '/manager/auto-dialer' : '/agent/auto-dialer';
 
-  // Cleanup ghost sessions: if backend thinks we are actively dialing (not paused), 
-  // but we are NOT on the auto-dialer page (e.g. due to a hard page refresh), 
-  // the local dialing loop is dead. We must hide the button and stop the backend session.
   useEffect(() => {
     if (isDialing && !onPause && location.pathname !== targetRoute) {
        if (user?.autoDialCampaignId) {
@@ -72,7 +69,7 @@ export default function DialingPauseButton({ user, onShowNotification }) {
 
     if (pauseTimer >= pauseWarningSeconds && !warningShownRef.current) {
       warningShownRef.current = true;
-      onShowNotification?.("Pause warning: 5 minutes used. Please resume before the 20-minute limit.", "warning");
+      onShowNotification?.("Pause warning: 15 minutes used. Please resume before the 20-minute limit.", "warning");
     }
 
     if (pauseTimer < pauseLimitSeconds || limitHandledRef.current) {
@@ -163,13 +160,10 @@ export default function DialingPauseButton({ user, onShowNotification }) {
     }
   };
 
-  // Only show if dialing or paused
   if (!isDialing && !onPause) return null;
 
-  // Once the daily pause allowance is exhausted, hide the pause control.
   if (!onPause && hasReachedPauseLimit) return null;
 
-  // Don't show if we are in a ghost session (actively dialing but not on the right page)
   if (isDialing && !onPause && location.pathname !== targetRoute) return null;
 
   const content = (
@@ -197,7 +191,11 @@ export default function DialingPauseButton({ user, onShowNotification }) {
         </div>
         
         {onPause && (
-          <div className="font-mono text-amber-300 font-bold bg-amber-950/50 px-2 py-0.5 rounded border border-amber-500/30">
+          <div className={`font-mono font-bold px-2 py-0.5 rounded border ${
+            pauseTimer >= pauseWarningSeconds
+              ? "text-red-400 bg-red-950/50 border-red-500/50 animate-pulse"
+              : "text-amber-300 bg-amber-950/50 border-amber-500/30"
+          }`}>
             {formatTime(pauseTimer)}
           </div>
         )}

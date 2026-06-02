@@ -307,7 +307,7 @@ export default function ManageCallerLeads() {
         const users = await getAllAgents({ includeClients: true });
         const allUsers = Array.isArray(users) ? users : [];
         const callerOnly = allUsers
-          .filter((user) => user.role === "caller-agent")
+          .filter((user) => user.role === "caller-agent" || user.role === "team-lead")
           .map((user) => ({
             _id: user._id,
             name: user.name || user.email,
